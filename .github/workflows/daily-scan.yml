@@ -30,21 +30,24 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Verify eligible_universe.json exists
+      - name: Verify input CSV exists
         run: |
-          if [ ! -f eligible_universe.json ]; then
-            echo "::error::eligible_universe.json missing. Run build_universe.py locally with your CSV export first, then commit the result."
+          if [ ! -f input/manual_universe.csv ]; then
+            echo "::error::input/manual_universe.csv is missing. See SCREENING.md for how to create it."
             exit 1
           fi
+
+      - name: Build eligible universe from CSV
+        run: python build_universe.py
 
       - name: Run daily scan
         run: python daily_scan.py
 
-      - name: Commit report and updated history
+      - name: Commit universe, report, and updated history
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add reports/ data/
+          git add eligible_universe.json reports/ data/
           if ! git diff --cached --quiet; then
             git commit -m "Daily scan $(date -u +%Y-%m-%d)"
             git push

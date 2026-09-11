@@ -29,11 +29,10 @@ Quick reference:
 
 1. Screen on **Stockanalysis.com** (free CSV export) or Finviz (better filters, manual copy for free tier)
 2. Apply the filter recipe (see SCREENING.md — country, market cap, price, volume, sector, EPS, revenue growth, D/E, ROE)
-3. Save the export as `input/manual_universe.csv`
-4. Run `python build_universe.py`
-5. Commit both files
+3. Save the export as `input/manual_universe.csv` (overwrite the previous quarter's file)
+4. Commit and push — the next daily scan auto-rebuilds `eligible_universe.json` and runs
 
-Expected result: 300–600 stocks. Takes 5–10 min end-to-end.
+Expected result: 300–600 stocks. Takes 5 min end-to-end.
 
 ---
 
@@ -65,21 +64,22 @@ The **Daily Scan** workflow runs Mon–Fri at 22:00 UTC. It won't run until
 ```bash
 # 1. Screen and export from your chosen tool (see SCREENING.md for the recipe)
 # 2. Save the CSV as input/manual_universe.csv (already-provided sample works too)
-# 3. Build the universe file:
-python build_universe.py
 
-# 4. Run today's scan locally to test:
+# 3. (Optional local test) Build and scan locally to verify:
+python build_universe.py
 python daily_scan.py
 open reports/*.html
 
-# 5. Commit and push
+# 4. Commit and push
 git add input/ eligible_universe.json reports/ data/
 git commit -m "Initial universe and first scan"
 git push
 ```
 
-From here, GitHub Actions runs the daily scan every weekday. You just review
-`reports/YYYY-MM-DD.html` on weekends.
+From here, GitHub Actions runs the daily scan every weekday at 22:00 UTC.
+It auto-rebuilds `eligible_universe.json` from your CSV, runs the scan,
+and commits everything back. You just review `reports/YYYY-MM-DD.html`
+on weekends.
 
 ---
 

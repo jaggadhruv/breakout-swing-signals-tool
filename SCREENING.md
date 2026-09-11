@@ -81,32 +81,25 @@ Just overwrite the previous quarter's file. That's the whole update.
 
 ---
 
-## 5. Rebuild the universe file
+## 5. Commit and push
 
 ```bash
-cd breakout-swing-tool
-python build_universe.py
-```
-
-Takes about a second. Output:
-
-```
-Read 491 rows from input/manual_universe.csv.
-Wrote eligible_universe.json with 491 unique tickers.
-```
-
----
-
-## 6. Commit and push
-
-```bash
-git add input/manual_universe.csv eligible_universe.json
+git add input/manual_universe.csv
 git commit -m "Quarterly universe refresh $(date +%Y-%m-%d)"
 git push
 ```
 
-The next scheduled Daily Scan (Mon–Fri 22:00 UTC) picks up the new universe
-automatically. No further action needed.
+The next scheduled Daily Scan (Mon–Fri 22:00 UTC) will automatically:
+1. Rebuild `eligible_universe.json` from your new CSV
+2. Run the breakout scan
+3. Commit the updated universe file, today's report, and history back to the repo
+
+No further action needed. You can also trigger the scan on demand from the
+**Actions** tab if you want to see results immediately.
+
+**Optional local test:** if you want to verify the CSV parses cleanly before
+pushing, run `python build_universe.py` locally — it takes about a second
+and shows the count of unique tickers.
 
 ---
 
