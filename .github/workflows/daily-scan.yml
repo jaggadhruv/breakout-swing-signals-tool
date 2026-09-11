@@ -33,7 +33,7 @@ jobs:
       - name: Verify eligible_universe.json exists
         run: |
           if [ ! -f eligible_universe.json ]; then
-            echo "::error::eligible_universe.json missing. Run 'Refresh Universe' first."
+            echo "::error::eligible_universe.json missing. Run build_universe.py locally with your CSV export first, then commit the result."
             exit 1
           fi
 

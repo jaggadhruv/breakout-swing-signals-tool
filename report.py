@@ -313,6 +313,7 @@ def _render_sector_breakdown(sector_counts: dict) -> str:
 def _render_funnel(funnel: dict) -> str:
     steps = [
         ("Eligible pool", funnel["eligible"]),
+        ("Skipped (no data)", funnel.get("no_data", 0)),
         ("Passed trend filter", funnel["trend_pass"]),
         ("Passed behavioral filter", funnel["behavioral_pass"]),
         ("Breakout signals", funnel["signals"]),

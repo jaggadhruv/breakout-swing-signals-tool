@@ -485,6 +485,7 @@ def main() -> None:
     # Iterate through eligible pool
     log(f"Scanning {len(eligible)} eligible tickers...")
     price_cache: dict[str, pd.DataFrame] = {}
+    no_data = 0
     trend_pass = 0
     behavioral_pass = 0
     signals: list[dict] = []
@@ -494,6 +495,9 @@ def main() -> None:
         prices = fetch_prices(ticker)
         time.sleep(YFINANCE_DELAY_SECONDS)
         if prices is None:
+            no_data += 1
+            if (i + 1) % 50 == 0:
+                log(f"  {i+1}/{len(eligible)} scanned, {len(signals)} signals, {no_data} skipped")
             continue
         price_cache[ticker] = prices
 
@@ -547,7 +551,8 @@ def main() -> None:
         if (i + 1) % 50 == 0:
             log(f"  {i+1}/{len(eligible)} scanned, {len(signals)} signals")
 
-    log(f"Scan complete: {trend_pass} passed trend, "
+    log(f"Scan complete: {no_data} skipped (no yfinance data), "
+        f"{trend_pass} passed trend, "
         f"{behavioral_pass} passed behavioral, {len(signals)} signals.")
 
     # Update history with today's signals BEFORE breadth (breadth stores _breadth entry)
@@ -571,6 +576,7 @@ def main() -> None:
 
     funnel = {
         "eligible": len(eligible),
+        "no_data": no_data,
         "trend_pass": trend_pass,
         "behavioral_pass": behavioral_pass,
         "signals": len(signals),

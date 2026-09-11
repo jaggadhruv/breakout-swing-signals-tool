@@ -1,15 +1,15 @@
 # Breakout Swing Trading Tool
 
 Standalone US-market breakout scanner. Discovery-focused: surfaces swing trade
-candidates from the Russell 3000 that aren't in a curated watchlist.
+candidates from your curated universe of ~300–600 fundamentally-solid stocks.
 
-Two scripts, one input, one output:
+Two parts, one input, one output:
 
 ```
-refresh_universe.py  (quarterly, ~30-60 min)
-  Russell 3000 → liquidity → fundamentals → eligible_universe.json (~500-800 stocks)
+build_universe.py  (quarterly, manual, <1 min)
+  Your CSV export from a stock screener → eligible_universe.json
 
-daily_scan.py  (Mon-Fri after US close, ~2-3 min)
+daily_scan.py  (Mon-Fri after US close, ~5 min via GitHub Actions)
   eligible_universe.json → trend + behavioral filters → breakout detection
   → scoring → stops/targets → market breadth → reports/YYYY-MM-DD.html
 ```
@@ -17,11 +17,29 @@ daily_scan.py  (Mon-Fri after US close, ~2-3 min)
 Reports live in `reports/`. Multi-day streak state lives in `data/report_history.json`.
 Both are committed by CI so history is visible in the repo.
 
+Zero paid services. Zero secrets. All data from yfinance (free, no key needed).
+
 ---
 
-## Setup
+## Quarterly workflow — build your eligible universe
 
-### 1. First-time local setup
+Every ~3 months, refresh your stock list from a free screener. **Full step-by-step: [SCREENING.md](SCREENING.md).**
+
+Quick reference:
+
+1. Screen on **Stockanalysis.com** (free CSV export) or Finviz (better filters, manual copy for free tier)
+2. Apply the filter recipe (see SCREENING.md — country, market cap, price, volume, sector, EPS, revenue growth, D/E, ROE)
+3. Save the export as `input/manual_universe.csv`
+4. Run `python build_universe.py`
+5. Commit both files
+
+Expected result: 300–600 stocks. Takes 5–10 min end-to-end.
+
+---
+
+## Setup (one-time)
+
+### Local
 
 ```bash
 git clone <your-fork-url>
@@ -30,68 +48,57 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. SEC User-Agent
+### GitHub Actions
 
-SEC EDGAR requires a User-Agent identifying you with a contact email. Set it as
-an env var locally and as a GitHub Actions secret named `SEC_USER_AGENT`.
+Push to your GitHub repo. Under the **Actions** tab, enable workflows if prompted.
+
+Grant workflow write permission so the daily scan can commit reports back:
+**Settings → Actions → General → Workflow permissions → Read and write permissions**.
+
+That's it. **No secrets needed.** The tool doesn't hit any authenticated APIs.
+
+The **Daily Scan** workflow runs Mon–Fri at 22:00 UTC. It won't run until
+`eligible_universe.json` exists in the repo (build it locally first).
+
+### First run
 
 ```bash
-export SEC_USER_AGENT="Your Name your.email@example.com"
-```
+# 1. Screen and export from your chosen tool (see SCREENING.md for the recipe)
+# 2. Save the CSV as input/manual_universe.csv (already-provided sample works too)
+# 3. Build the universe file:
+python build_universe.py
 
-In GitHub: **Settings → Secrets and variables → Actions → New repository secret**
-- Name: `SEC_USER_AGENT`
-- Value: `Your Name your.email@example.com`
-
-### 3. First run (local)
-
-```bash
-# Build the initial eligible universe (30-60 min)
-python refresh_universe.py
-
-# Run the first scan
+# 4. Run today's scan locally to test:
 python daily_scan.py
 open reports/*.html
+
+# 5. Commit and push
+git add input/ eligible_universe.json reports/ data/
+git commit -m "Initial universe and first scan"
+git push
 ```
 
-Commit `eligible_universe.json` after the first refresh — CI needs it in the repo.
-
-### 4. Enable GitHub Actions
-
-Push to GitHub. Two workflows will appear under the **Actions** tab:
-
-- **Refresh Universe (Quarterly)** — runs 15 Feb / May / Aug / Nov at 07:00 UTC.
-  Trigger manually first to seed the repo.
-- **Daily Scan** — runs Mon-Fri at 22:00 UTC. Won't run until
-  `eligible_universe.json` exists.
-
-Enable Actions if prompted. Grant workflow write permission if the commit step fails:
-**Settings → Actions → General → Workflow permissions → Read and write permissions**.
+From here, GitHub Actions runs the daily scan every weekday. You just review
+`reports/YYYY-MM-DD.html` on weekends.
 
 ---
 
 ## What each layer does
 
-**Refresh universe (Script 1)**
+**Universe (Script 1: build_universe.py)**
+
+Reads your manual CSV export and normalises it. All fundamental screening
+happens in your screener before you export — the tool trusts your picks.
+
+**Daily scan (Script 2: daily_scan.py)**
 
 | Layer | Filter | Notes |
 |-------|--------|-------|
-| 1     | Russell 3000 via iShares IWV holdings | Sector exclusions applied: Financials, Real Estate |
-| 2     | 20-day ADV ≥ $10M and price ≥ $10 | yfinance sequential, 0.3s delays |
-| 3     | Profitable 3 of 4 quarters; TTM revenue growth positive; TTM OCF positive; D/E < 2 | SEC EDGAR company facts; AND gate; any missing metric → excluded |
-
-Output includes a computed Piotroski F-score per stock (0-9) as a quality read.
-Not used as a hard cutoff.
-
-**Daily scan (Script 2)**
-
-| Layer | Filter | Notes |
-|-------|--------|-------|
-| 4     | Above 50 & 200 SMA; 200 SMA rising; within 25% of 52-week high | Recomputed daily |
-| 5     | No -10% gap-down in last 20 sessions; earnings-check disabled by default | Toggle `ENABLE_EARNINGS_CHECK` in `daily_scan.py` to enable |
+| 4     | Above 50 & 200 SMA; 200 SMA rising; within 25% of 52-week high | Recomputed daily via yfinance |
+| 5     | No -10% gap-down in last 20 sessions; earnings-check disabled by default | Toggle `ENABLE_EARNINGS_CHECK` in `daily_scan.py` |
 | Detect | 20 / 55 / 252-week high; horizontal resistance break; VCP break | All require volume ≥ 1.5x 20-day avg |
-| Score  | See scoring rubric below | 0-100+, only score ≥ 40 shown |
-| Stops  | Stop = **tighter** of (breakout × 0.93) or 20-day swing low; TP1 = 2R; TP2 = 3R | Caps risk at ~7% while respecting a tight base |
+| Score  | See scoring rubric below | 0–100+, only score ≥ 40 shown in report |
+| Stops  | Stop = tighter of (breakout × 0.93) or 20-day swing low; TP1 = 2R; TP2 = 3R | Caps risk at ~7% while respecting a tight base |
 
 ---
 
@@ -106,7 +113,7 @@ Not used as a hard cutoff.
 | Volatility contraction break    | +25                                             |
 | Volume bonus                    | (vol_multiple − 1.5) × 10, capped at 15         |
 | Base length bonus               | days_in_consolidation / 5, capped at 10         |
-| Piotroski bonus                 | piotroski × 2, capped at 18                     |
+| Piotroski bonus                 | piotroski × 2, capped at 18 (not applied in manual mode — Piotroski isn't computed) |
 | Trend context bonus             | +10 if 200 SMA rising AND within 15% of 52W high |
 | Multi-day streak bonus          | +5 per consecutive day on report, capped at 15  |
 
@@ -114,13 +121,16 @@ Not used as a hard cutoff.
 its keep. A stock that appears 3 days in a row is a materially stronger signal than
 a one-day flash — genuine breakouts tend to hold, false starts don't.
 
+Without the Piotroski bonus, max realistic score is ~130 instead of ~145. Adjust
+`min_show_score` in `daily_scan.py` if you want to see more/fewer candidates.
+
 ---
 
 ## Market breadth (0–10, weekly + monthly)
 
-Five sub-indicators, each normalized to 0–10, then averaged:
+Five sub-indicators, each normalised to 0–10, then averaged:
 
-| Sub-indicator                     | Normalization                          |
+| Sub-indicator                     | Normalisation                          |
 |-----------------------------------|----------------------------------------|
 | % of eligible above 200 SMA       | Linear: 0% → 0, 100% → 10              |
 | % of eligible above 50 SMA        | Linear: 0% → 0, 100% → 10              |
@@ -147,9 +157,9 @@ Ranked candidate table columns:
 | Stop        | Suggested initial stop-loss                                             |
 | TP1 / TP2   | Take-profit targets at 2R and 3R                                        |
 | R:R         | Reward-to-risk multiple of TP1                                          |
-| Piotroski   | 0-9 fundamental quality (green ≥ 7, red ≤ 3)                            |
+| Piotroski   | 0–9 fundamental quality (— in manual mode)                              |
 | Streak      | Days appearing on the report (×N means N consecutive)                   |
-| Sector      | GICS sector                                                             |
+| Sector      | From your CSV                                                           |
 
 Below the table:
 - Sector distribution across all breakout signals today
@@ -159,29 +169,23 @@ Below the table:
 
 ## Configuration knobs
 
-All thresholds are top-of-file constants:
+All thresholds are top-of-file constants in `daily_scan.py`:
 
-- Fundamentals gate: `refresh_universe.py` (`MIN_*`, `MAX_*`)
-- Trend filter: `daily_scan.py` (`TREND_*`)
-- Behavioral filter: `daily_scan.py` (`BEHAVIORAL_*`, `EARNINGS_LOOKAHEAD_DAYS`)
-- Scoring weights: `daily_scan.py` (`SCORING` dict)
-- Stops/targets: `daily_scan.py` (`STOP_*`, `TP*_R_MULTIPLE`)
-- Breadth normalization: `daily_scan.py` (`_normalize_*` functions)
+- Trend filter: `TREND_*`
+- Behavioral filter: `BEHAVIORAL_*`, `ENABLE_EARNINGS_CHECK`
+- Scoring weights: `SCORING` dict
+- Stops/targets: `STOP_*`, `TP*_R_MULTIPLE`
+- Breadth normalisation: `_normalize_*` functions
 
 ---
 
 ## Deliberate v1 limitations
 
-- **US only.** India universe isn't loaded; would require a separate quarterly refresh.
-- **No cup-and-handle or flag/pennant detection.** False-positive rate on automated
-  detection is too high without visual review.
-- **Piotroski F-score is a simplified version.** Skips shares-outstanding dilution
-  check and uses TTM proxies for asset turnover / margin. Good enough as a display
-  metric; not used as a hard cutoff.
-- **Earnings check is best-effort.** If yfinance can't return earnings dates for
-  a ticker, the stock isn't excluded on that basis.
+- **US only.**
+- **No cup-and-handle or flag/pennant detection.** Automated detection false-positive rate is too high without visual review.
+- **No Piotroski score in manual mode.** The screener you use before export can filter on similar quality metrics; the scoring bonus is just skipped.
+- **Earnings check off by default.** Toggle `ENABLE_EARNINGS_CHECK = True` if you want it — yfinance earnings dates are unreliable and roughly double scan runtime.
 - **No intraday.** End-of-day close data only.
-- **Sequential fetches.** Full daily scan runs ~2-3 min for a 500-800 stock pool.
 
 ---
 
