@@ -169,6 +169,59 @@ table.candidates tbody tr:hover { background: rgba(42, 74, 107, 0.04); }
   background: var(--surface); border: 1px solid var(--rule);
 }
 
+/* Methodology */
+.methodology { margin-top: 32px; }
+details.method-block {
+  margin: 6px 0;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+}
+details.method-block > summary {
+  cursor: pointer;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  list-style: none;
+  position: relative;
+}
+details.method-block > summary::-webkit-details-marker { display: none; }
+details.method-block > summary::before {
+  content: "▸";
+  display: inline-block;
+  width: 14px;
+  color: var(--muted);
+  font-size: 10px;
+  transition: transform 0.15s;
+}
+details.method-block[open] > summary::before { transform: rotate(90deg); }
+details.method-block > summary:hover { color: var(--accent); }
+.method-body {
+  padding: 4px 14px 14px 28px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  border-top: 1px solid var(--rule);
+}
+.method-body p { margin: 8px 0; }
+.method-body strong { color: var(--ink); font-weight: 600; }
+.method-body ul { margin: 6px 0; padding-left: 18px; }
+.method-body li { margin: 4px 0; }
+.method-table {
+  width: 100%; border-collapse: collapse;
+  margin: 8px 0 12px 0; font-size: 12px;
+}
+.method-table th, .method-table td {
+  padding: 5px 8px; text-align: left;
+  border-bottom: 1px solid var(--rule);
+}
+.method-table th {
+  font-weight: 600; color: var(--ink);
+  border-bottom: 1.5px solid var(--rule-strong);
+  text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em;
+}
+.method-table td.num { color: var(--ink); }
+
 /* Footer */
 footer {
   margin-top: 48px; padding-top: 16px;
@@ -328,6 +381,87 @@ def _render_funnel(funnel: dict) -> str:
 
 
 # ============================================================================
+# Methodology block — explains what scores mean and how they're computed
+# ============================================================================
+
+def _render_methodology() -> str:
+    """Static methodology section. Keep the numeric values in sync with
+    SCORING and STOP_* constants in daily_scan.py."""
+    return """
+<section class="methodology">
+  <h2 class="section">Methodology</h2>
+
+  <details class="method-block" open>
+    <summary>How the setup score is calculated</summary>
+    <div class="method-body">
+      <p>Setup score is a composite 0–100+ number. Every triggered component adds points; higher = stronger setup.</p>
+      <table class="method-table">
+        <thead><tr><th>Component</th><th class="num">Points</th></tr></thead>
+        <tbody>
+          <tr><td>20-day high (breakout above prior 20-session high)</td><td class="num mono">+10</td></tr>
+          <tr><td>55-day high</td><td class="num mono">+20 (added on top of 20-day)</td></tr>
+          <tr><td>52-week high (252-day)</td><td class="num mono">+30 (added on top of 20 and 55)</td></tr>
+          <tr><td>Horizontal resistance break (tested cluster of swing highs)</td><td class="num mono">+25</td></tr>
+          <tr><td>Volatility contraction break (ATR compression → range expansion)</td><td class="num mono">+25</td></tr>
+          <tr><td>Volume confirmation bonus</td><td class="num mono">(vol_multiple − 1.5) × 10, capped at +15</td></tr>
+          <tr><td>Base length bonus (days consolidating before breakout)</td><td class="num mono">days ÷ 5, capped at +10</td></tr>
+          <tr><td>Fundamental quality (Piotroski F-score)</td><td class="num mono">score × 2, capped at +18 (not applied in manual mode)</td></tr>
+          <tr><td>Trend context bonus (200 SMA rising AND within 15% of 52W high)</td><td class="num mono">+10</td></tr>
+          <tr><td>Multi-day streak bonus (consecutive days on report)</td><td class="num mono">(streak − 1) × 5, capped at +15</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Reading scores.</strong> Only setups scoring ≥40 are shown. As a rough guide:</p>
+      <ul>
+        <li><strong style="color:var(--muted)">40–59:</strong> Emerging setup. One or two patterns triggered without much confirmation. Worth watching; not a primary trade.</li>
+        <li><strong>60–79:</strong> Solid setup. Multiple patterns and/or strong volume, decent base length or streak.</li>
+        <li><strong style="color:var(--sig-pos)">80+:</strong> High conviction. Multiple breakout patterns triggering together with volume, base length, and streak confirmation. Rare but strongest historical hit rates.</li>
+      </ul>
+      <p><strong>Why multi-day streak matters.</strong> The daily-run / weekend-review cadence exists so that stocks appearing 2–3 days in a row get flagged as stronger. First-day breakouts fail often; genuine ones tend to hold and re-appear.</p>
+    </div>
+  </details>
+
+  <details class="method-block">
+    <summary>How market breadth is calculated</summary>
+    <div class="method-body">
+      <p>Market breadth is the average of 5 sub-indicators, each normalised to 0–10:</p>
+      <ul>
+        <li><strong>% of eligible pool above 200-day SMA</strong> — linear: 0% → 0, 100% → 10</li>
+        <li><strong>% of eligible pool above 50-day SMA</strong> — linear</li>
+        <li><strong>New 52-week highs vs new 52-week lows ratio</strong> — 5:1 → 10, 1:1 → 5, 1:5 → 0</li>
+        <li><strong>SPY 14-day rate of change</strong> — −5% → 0, 0% → 5, +5% → 10</li>
+        <li><strong>VIX (inverted)</strong> — VIX 10 → 10, VIX 40 → 0</li>
+      </ul>
+      <p><strong>Weekly</strong> = today's snapshot. <strong>Monthly</strong> = 20-day rolling average of daily weekly-scores.</p>
+      <p><strong>Verdict thresholds:</strong></p>
+      <ul>
+        <li><strong style="color:var(--sig-neg)">Adverse (&lt;4):</strong> Broad market weakness. Even good setups fail more often in this regime. Consider standing aside or sizing smaller.</li>
+        <li><strong>Neutral (4–7):</strong> Normal environment. Trade setups on their own merits with standard risk management.</li>
+        <li><strong style="color:var(--sig-pos)">Favorable (&gt;7):</strong> Broad participation. Higher hit rate on breakouts. Look for setups actively.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="method-block">
+    <summary>Column reference</summary>
+    <div class="method-body">
+      <ul>
+        <li><strong>Score.</strong> Composite setup quality (see above). Sorted descending.</li>
+        <li><strong>Patterns.</strong> Which breakout patterns triggered today. Multiple = stronger.</li>
+        <li><strong>Entry.</strong> Today's closing price — your reference entry.</li>
+        <li><strong>Stop.</strong> Suggested initial stop-loss. Computed as the tighter of (breakout price × 0.93) or the 20-day swing low. This caps risk near ~7% while still respecting a tight base if one exists.</li>
+        <li><strong>TP1 / TP2.</strong> Take-profit targets at 2R and 3R, where R = entry − stop. TP1 is your first partial-exit target; TP2 is the runner target.</li>
+        <li><strong>R:R.</strong> Reward-to-risk multiple at TP1. Higher = more attractive risk profile.</li>
+        <li><strong>Piotroski.</strong> 0–9 fundamental quality score (green ≥ 7, red ≤ 3). Shown as "—" in manual mode — quality was pre-filtered by your screener.</li>
+        <li><strong>Streak.</strong> Number of consecutive days this stock has appeared on the report. "×3" means today is the third consecutive appearance. Higher = more confirmation.</li>
+        <li><strong>Sector.</strong> From your screener CSV, or "Unknown" if the column wasn't included.</li>
+      </ul>
+    </div>
+  </details>
+</section>
+"""
+
+
+# ============================================================================
 # Top-level renderer
 # ============================================================================
 
@@ -379,6 +513,8 @@ def render(
       {_render_funnel(funnel)}
     </div>
   </div>
+
+  {_render_methodology()}
 
   <footer>
     <div>Eligible universe last refreshed: {escape(eligible_refreshed_at)}</div>
