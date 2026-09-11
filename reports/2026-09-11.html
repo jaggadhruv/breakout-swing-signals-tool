@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Breakout Scan — 2026-09-11</title>
+<style>
+:root {
+  --bg:       #FAFAF8;
+  --surface:  #FFFFFF;
+  --ink:      #1A1A1F;
+  --muted:    #6B6B75;
+  --rule:     #E4E2DE;
+  --rule-strong: #C8C5BF;
+  --accent:   #2A4A6B;
+  --sig-pos:  #2E7D5B;
+  --sig-neg:  #B8402E;
+  --sig-warn: #A8862B;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.container { max-width: 1400px; margin: 0 auto; padding: 32px 24px 48px; }
+.mono { font-family: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+.num { text-align: right; }
+.dim { color: var(--muted); }
+.upper { letter-spacing: 0.04em; }
+
+/* Header */
+header.masthead {
+  border-bottom: 2px solid var(--rule-strong);
+  padding-bottom: 20px; margin-bottom: 28px;
+}
+.masthead-top {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 20px;
+}
+h1.title { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+.title-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.date-block { text-align: right; }
+.date-primary { font-size: 15px; font-weight: 500; }
+.date-secondary { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* Breadth panel */
+.breadth {
+  display: grid; grid-template-columns: 1fr 1fr 2fr;
+  gap: 32px; align-items: end;
+  padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+}
+.breadth-metric .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.breadth-metric .value { font-size: 30px; font-weight: 500; margin-top: 4px; }
+.breadth-metric .value .max { font-size: 15px; color: var(--muted); font-weight: 400; }
+.breadth-verdict {
+  text-align: right;
+}
+.verdict-tag {
+  display: inline-block; padding: 4px 10px;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--surface);
+}
+.subindicators {
+  margin-top: 12px; padding-top: 12px;
+  border-top: 1px solid var(--rule);
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+  font-size: 12px;
+}
+.subindicator .name { color: var(--muted); }
+.subindicator .val { margin-top: 2px; font-weight: 500; }
+
+/* Section headings */
+h2.section {
+  font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted);
+  margin: 32px 0 10px 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--rule);
+}
+
+/* Table */
+table.candidates {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+}
+table.candidates thead th {
+  text-align: left; font-weight: 600; padding: 8px 10px;
+  border-bottom: 1.5px solid var(--rule-strong);
+  color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+}
+table.candidates thead th.num { text-align: right; }
+table.candidates tbody td { padding: 10px; border-bottom: 1px solid var(--rule); }
+table.candidates tbody tr:hover { background: rgba(42, 74, 107, 0.04); }
+.ticker { font-weight: 600; }
+.score { font-weight: 600; }
+.score-hi { color: var(--sig-pos); }
+.score-mid { color: var(--ink); }
+.score-lo { color: var(--muted); }
+.patterns { color: var(--muted); font-size: 12px; }
+.pattern-tag {
+  display: inline-block; margin-right: 4px; padding: 1px 6px;
+  border: 1px solid var(--rule-strong); border-radius: 2px;
+  font-size: 11px; color: var(--ink); background: var(--surface);
+}
+.piotroski-hi { color: var(--sig-pos); font-weight: 600; }
+.piotroski-mid { color: var(--ink); }
+.piotroski-lo { color: var(--sig-neg); }
+.streak { color: var(--accent); font-weight: 600; }
+
+/* Two-column secondary */
+.secondary { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 24px; }
+.sector-list, .funnel-list { list-style: none; padding: 0; margin: 0; }
+.sector-list li, .funnel-list li {
+  display: flex; justify-content: space-between;
+  padding: 8px 0; border-bottom: 1px solid var(--rule);
+  font-size: 13px;
+}
+.sector-list li:last-child, .funnel-list li:last-child { border-bottom: none; }
+.funnel-list .step-name { color: var(--muted); }
+.funnel-list .step-count { font-weight: 500; }
+
+/* Empty state */
+.empty {
+  padding: 32px 20px; text-align: center; color: var(--muted);
+  background: var(--surface); border: 1px solid var(--rule);
+}
+
+/* Footer */
+footer {
+  margin-top: 48px; padding-top: 16px;
+  border-top: 1px solid var(--rule);
+  font-size: 11px; color: var(--muted);
+  display: flex; justify-content: space-between;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="masthead">
+    <div class="masthead-top">
+      <div>
+        <h1 class="title">Breakout Swing Scan</h1>
+        <div class="title-sub">Discovery from Russell 3000, filtered and ranked.</div>
+      </div>
+      <div class="date-block">
+        <div class="date-primary">2026-09-11</div>
+        <div class="date-secondary">Generated 2026-09-11 20:57 UTC</div>
+      </div>
+    </div>
+    
+<section class="breadth">
+  <div class="breadth-metric">
+    <div class="label">This Week</div>
+    <div class="value mono">5.7<span class="max"> / 10</span></div>
+  </div>
+  <div class="breadth-metric">
+    <div class="label">This Month</div>
+    <div class="value mono">5.7<span class="max"> / 10</span></div>
+  </div>
+  <div class="breadth-verdict">
+    <div class="label">Environment</div>
+    <div style="margin-top:8px;">
+      <span class="verdict-tag" style="background:var(--muted)">Neutral</span>
+    </div>
+  </div>
+</section>
+<section class="breadth" style="border-top:none; padding-top:0; padding-bottom:16px;">
+  <div style="grid-column: 1 / -1;">
+    <div class="subindicators">
+      <div class="subindicator"><div class="name">% eligible above 200 SMA</div><div class="val mono">5.9<span class="dim"> / 10</span></div></div><div class="subindicator"><div class="name">% eligible above 50 SMA</div><div class="val mono">4.8<span class="dim"> / 10</span></div></div><div class="subindicator"><div class="name">New 52W highs vs lows</div><div class="val mono">5.0<span class="dim"> / 10</span></div></div><div class="subindicator"><div class="name">SPY 14-day rate of change</div><div class="val mono">4.8<span class="dim"> / 10</span></div></div><div class="subindicator"><div class="name">VIX (inverted)</div><div class="val mono">8.1<span class="dim"> / 10</span></div></div>
+    </div>
+  </div>
+</section>
+
+  </header>
+
+  <h2 class="section">Ranked Candidates</h2>
+  
+<table class="candidates">
+  <thead>
+    <tr>
+      <th>Ticker</th>
+      <th class="num">Score</th>
+      <th>Patterns</th>
+      <th class="num">Entry</th>
+      <th class="num">Stop</th>
+      <th class="num">TP1</th>
+      <th class="num">TP2</th>
+      <th class="num">R:R</th>
+      <th class="num">Piotroski</th>
+      <th class="num">Streak</th>
+      <th>Sector</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+  <td class="ticker">SWKS</td>
+  <td class="score score-mid num mono">69</td>
+  <td class="patterns"><span class="pattern-tag">55D High</span><span class="pattern-tag">Resistance Break</span></td>
+  <td class="num mono">88.35</td>
+  <td class="num mono">79.88</td>
+  <td class="num mono">105.29</td>
+  <td class="num mono">113.77</td>
+  <td class="num mono">2.0R</td>
+  <td class="num mono dim">—</td>
+  <td class="num mono">1</td>
+  <td class="dim">Unknown</td>
+</tr>
+<tr>
+  <td class="ticker">DHT</td>
+  <td class="score score-mid num mono">65</td>
+  <td class="patterns"><span class="pattern-tag">55D High</span><span class="pattern-tag">Resistance Break</span></td>
+  <td class="num mono">22.00</td>
+  <td class="num mono">20.08</td>
+  <td class="num mono">25.84</td>
+  <td class="num mono">27.76</td>
+  <td class="num mono">2.0R</td>
+  <td class="num mono dim">—</td>
+  <td class="num mono">1</td>
+  <td class="dim">Unknown</td>
+</tr>
+<tr>
+  <td class="ticker">AVT</td>
+  <td class="score score-mid num mono">51</td>
+  <td class="patterns"><span class="pattern-tag">20D High</span><span class="pattern-tag">Resistance Break</span></td>
+  <td class="num mono">99.63</td>
+  <td class="num mono">92.31</td>
+  <td class="num mono">114.27</td>
+  <td class="num mono">121.58</td>
+  <td class="num mono">2.0R</td>
+  <td class="num mono dim">—</td>
+  <td class="num mono">1</td>
+  <td class="dim">Unknown</td>
+</tr>
+<tr>
+  <td class="ticker">HPE</td>
+  <td class="score score-mid num mono">40</td>
+  <td class="patterns"><span class="pattern-tag">Resistance Break</span></td>
+  <td class="num mono">62.09</td>
+  <td class="num mono">54.80</td>
+  <td class="num mono">76.68</td>
+  <td class="num mono">83.97</td>
+  <td class="num mono">2.0R</td>
+  <td class="num mono dim">—</td>
+  <td class="num mono">1</td>
+  <td class="dim">Unknown</td>
+</tr></tbody>
+</table>
+
+
+  <div class="secondary">
+    <div>
+      <h2 class="section">Sector Distribution</h2>
+      <ul class="sector-list"><li><span>Unknown</span><span class="mono">8</span></li></ul>
+    </div>
+    <div>
+      <h2 class="section">Funnel</h2>
+      <ul class="funnel-list"><li><span class="step-name">Eligible pool</span><span class="step-count mono">491</span></li><li><span class="step-name">Skipped (no data)</span><span class="step-count mono">1</span></li><li><span class="step-name">Passed trend filter</span><span class="step-count mono">159</span></li><li><span class="step-name">Passed behavioral filter</span><span class="step-count mono">159</span></li><li><span class="step-name">Breakout signals</span><span class="step-count mono">8</span></li><li><span class="step-name">Scored ≥ 40 (shown)</span><span class="step-count mono">4</span></li></ul>
+    </div>
+  </div>
+
+  <footer>
+    <div>Eligible universe last refreshed: 2026-09-11</div>
+    <div>Not investment advice. For personal research use.</div>
+  </footer>
+</div>
+</body>
+</html>
