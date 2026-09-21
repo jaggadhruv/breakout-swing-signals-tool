@@ -43,6 +43,16 @@ jobs:
       - name: Run daily scan
         run: python daily_scan.py
 
+      - name: Publish latest report as index.html
+        run: |
+          latest=$(ls -1 reports/*.html 2>/dev/null | sort | tail -1)
+          if [ -n "$latest" ]; then
+            cp "$latest" index.html
+            echo "Published $latest as index.html"
+          else
+            echo "No reports found — skipping index.html"
+          fi
+
       - name: Commit universe, report, index, and updated history
         run: |
           git config user.name  "github-actions[bot]"
