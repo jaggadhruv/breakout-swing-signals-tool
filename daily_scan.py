@@ -114,9 +114,23 @@ def load_eligible_universe() -> dict:
 
 
 def fetch_prices(ticker: str, period: str = PRICE_HISTORY_PERIOD) -> pd.DataFrame | None:
+    """Fetch OHLCV. Drops the last bar if its volume looks incomplete
+    (protects against manual runs during US trading hours — the intraday
+    bar has ~10-30% of normal volume and would break the pattern-detection
+    volume filter otherwise)."""
     try:
         hist = yf.Ticker(ticker).history(period=period, auto_adjust=False)
         if hist is None or hist.empty or len(hist) < 60:
+            return None
+        # Partial-day guard: if the most recent bar has less than 30% of the
+        # prior 20-day average volume, treat it as an incomplete session and
+        # drop it. Scan will then use the last complete trading day.
+        if len(hist) >= 22:
+            avg_vol_20d = float(hist["Volume"].iloc[-21:-1].mean())
+            last_vol = float(hist["Volume"].iloc[-1])
+            if avg_vol_20d > 0 and last_vol < avg_vol_20d * 0.30:
+                hist = hist.iloc[:-1]
+        if len(hist) < 60:
             return None
         return hist
     except Exception:
