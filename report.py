@@ -531,3 +531,152 @@ def write_report(html: str, reports_dir: Path, date_str: str) -> Path:
     path = reports_dir / f"{date_str}.html"
     path.write_text(html, encoding="utf-8")
     return path
+
+
+# ============================================================================
+# Root index — landing page listing all reports
+# ============================================================================
+
+def render_index(reports_dir: Path, latest: dict | None = None) -> str:
+    """Render root index.html. Lists every dated report (newest first).
+
+    Args:
+      reports_dir: folder containing YYYY-MM-DD.html files
+      latest: dict with keys {date, weekly_breadth, monthly_breadth,
+              signals, shown, top_ticker, top_score, eligible} for today's
+              scan. If None, index shows history only.
+    """
+    # Discover all report files, newest first
+    if reports_dir.exists():
+        report_files = sorted(
+            [p for p in reports_dir.glob("*.html") if p.stem != "index"],
+            key=lambda p: p.stem,
+            reverse=True,
+        )
+    else:
+        report_files = []
+
+    # Latest-scan panel (uses current scan data if provided, else parses filename)
+    if latest is None and report_files:
+        latest = {"date": report_files[0].stem}
+
+    if latest is None:
+        latest_panel = (
+            '<section class="breadth"><div class="breadth-metric" '
+            'style="grid-column: 1 / -1;"><div class="label">Status</div>'
+            '<div class="value" style="font-size:16px;font-weight:400;'
+            'margin-top:6px;">No reports generated yet. Wait for the next '
+            'scheduled scan or trigger one manually.</div></div></section>'
+        )
+    else:
+        verdict = verdict_from_score(latest.get("weekly_breadth", 5.0))
+        vcolor = verdict_color(verdict)
+        weekly = latest.get("weekly_breadth")
+        monthly = latest.get("monthly_breadth")
+        top_desc = "—"
+        if latest.get("top_ticker") and latest.get("top_score") is not None:
+            top_desc = f'{escape(latest["top_ticker"])} @ {latest["top_score"]:.0f}'
+
+        breadth_line = ""
+        if weekly is not None and monthly is not None:
+            breadth_line = (
+                f'<div class="breadth-metric">'
+                f'<div class="label">Week / Month Breadth</div>'
+                f'<div class="value mono">{weekly:.1f}'
+                f'<span class="max"> / {monthly:.1f}</span></div></div>'
+                f'<div class="breadth-verdict">'
+                f'<div class="label">Environment</div>'
+                f'<div style="margin-top:8px;">'
+                f'<span class="verdict-tag" style="background:{vcolor}">'
+                f'{escape(verdict)}</span></div></div>'
+            )
+
+        signals_line = ""
+        if latest.get("signals") is not None:
+            signals_line = (
+                f'<p style="text-align:center;color:var(--muted);'
+                f'font-size:13px;margin-top:16px;">'
+                f'{latest["signals"]} breakout signals today, '
+                f'{latest.get("shown", 0)} scored ≥ 40. '
+                f'Top pick: <strong style="color:var(--ink)">{top_desc}</strong>.</p>'
+            )
+
+        latest_panel = f"""
+<section class="breadth">
+  <div class="breadth-metric">
+    <div class="label">Latest Scan</div>
+    <div class="value mono" style="font-size:22px;">{escape(latest["date"])}</div>
+  </div>
+  {breadth_line}
+</section>
+<div style="text-align:center;padding:20px 0 4px 0;">
+  <a href="reports/{escape(latest["date"])}.html"
+     style="display:inline-block;padding:10px 24px;background:var(--accent);
+            color:var(--surface);text-decoration:none;font-weight:500;
+            font-size:14px;letter-spacing:0.02em;">
+    Open Latest Report →
+  </a>
+</div>
+{signals_line}
+"""
+
+    # History list — all past reports
+    if report_files:
+        history_rows = "".join(
+            f'<li><a href="reports/{escape(p.stem)}.html" class="mono">'
+            f'{escape(p.stem)}</a></li>'
+            for p in report_files
+        )
+        history_html = f"""
+<h2 class="section">All Reports</h2>
+<ul class="report-list">{history_rows}</ul>
+<p style="color:var(--muted);font-size:12px;margin-top:12px;">
+  {len(report_files)} report{"s" if len(report_files) != 1 else ""} archived.
+</p>
+"""
+    else:
+        history_html = ""
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Breakout Swing Scan</title>
+<style>{CSS}
+.report-list {{ list-style: none; padding: 0; margin: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px; }}
+.report-list li a {{ display: block; padding: 8px 12px;
+  border: 1px solid var(--rule); background: var(--surface);
+  color: var(--ink); text-decoration: none; font-size: 13px;
+  text-align: center; transition: background 0.15s; }}
+.report-list li a:hover {{ background: rgba(42, 74, 107, 0.06);
+  border-color: var(--accent); }}
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="masthead">
+    <div class="masthead-top">
+      <div>
+        <h1 class="title">Breakout Swing Scan</h1>
+        <div class="title-sub">Daily breakout candidates from a curated US universe. Runs Mon–Fri after US market close.</div>
+      </div>
+    </div>
+    {latest_panel}
+  </header>
+  {history_html}
+  <footer>
+    <div>Reports refresh Mon–Fri at ~22:00 UTC.</div>
+    <div>Not investment advice. For personal research use.</div>
+  </footer>
+</div>
+</body>
+</html>
+"""
+
+
+def write_index(html: str, output_path: Path = Path("index.html")) -> Path:
+    output_path.write_text(html, encoding="utf-8")
+    return output_path

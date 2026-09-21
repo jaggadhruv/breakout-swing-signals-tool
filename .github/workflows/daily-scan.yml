@@ -43,11 +43,11 @@ jobs:
       - name: Run daily scan
         run: python daily_scan.py
 
-      - name: Commit universe, report, and updated history
+      - name: Commit universe, report, index, and updated history
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add eligible_universe.json reports/ data/
+          git add eligible_universe.json reports/ data/ index.html
           if ! git diff --cached --quiet; then
             git commit -m "Daily scan $(date -u +%Y-%m-%d)"
             git push

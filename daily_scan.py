@@ -595,7 +595,23 @@ def main() -> None:
         eligible_refreshed_at=universe["refreshed_at"][:10],
     )
     report_path = report.write_report(html, REPORTS_DIR, today_str)
-    log(f"=== Done. Wrote {report_path} ===")
+    log(f"Wrote {report_path}")
+
+    # Regenerate root index.html so GitHub Pages has a landing page
+    log("Updating index.html for site landing...")
+    latest_meta = {
+        "date": today_str,
+        "weekly_breadth": breadth["weekly_score"],
+        "monthly_breadth": breadth["monthly_score"],
+        "signals": len(signals),
+        "shown": len(shown),
+        "top_ticker": shown[0]["ticker"] if shown else None,
+        "top_score": shown[0]["score"] if shown else None,
+        "eligible": len(eligible),
+    }
+    index_html = report.render_index(REPORTS_DIR, latest_meta)
+    index_path = report.write_index(index_html)
+    log(f"=== Done. Wrote {report_path} and {index_path} ===")
 
 
 if __name__ == "__main__":
