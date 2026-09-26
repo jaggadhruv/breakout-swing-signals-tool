@@ -352,6 +352,95 @@ def _render_candidates_table(candidates: list[dict]) -> str:
 """
 
 
+def _render_recent_quality_table(candidates: list[dict], today_str: str) -> str:
+    """Render Recent Quality Breakouts. Each row is one ticker aggregated
+    across the archive: peak score, pick date (when the peak fired), total
+    appearance count. Entry/stop/TP levels are from the peak signal."""
+    if not candidates:
+        return ('<div class="empty">No quality breakouts recorded yet. '
+                'This section fills in as the tool accumulates history.</div>')
+
+    rows = []
+    for c in candidates:
+        pattern_tags = "".join(
+            f'<span class="pattern-tag">{escape(p)}</span>'
+            for p in c.get("peak_patterns", [])
+        )
+        entry = c.get("peak_entry")
+        stop = c.get("peak_stop")
+        tp1 = c.get("peak_tp1")
+        tp2 = c.get("peak_tp2")
+        rr = (
+            (tp1 - entry) / (entry - stop)
+            if entry and stop and entry > stop else 0
+        )
+
+        pick_date = c.get("best_score_date", "")
+        date_cell = (
+            f'<span class="streak">{escape(pick_date)}</span>'
+            if pick_date == today_str
+            else f'<span class="dim">{escape(pick_date)}</span>'
+        )
+
+        # Seen counter — accent if repeated
+        seen = int(c.get("appearances", 1))
+        seen_html = (
+            f'<span class="streak">×{seen}</span>' if seen >= 3
+            else (f'<span class="mono">×{seen}</span>' if seen >= 2
+                  else f'<span class="dim mono">×{seen}</span>')
+        )
+
+        # Small volume indicator
+        vol_mult = float(c.get("max_vol_mult", 0))
+        vol_marker = ""
+        if vol_mult >= 3.0:
+            vol_marker = ' <span class="streak" title="Very high volume">▲▲</span>'
+        elif vol_mult >= 2.0:
+            vol_marker = ' <span class="dim" title="High volume">▲</span>'
+
+        rows.append(f"""
+<tr>
+  <td class="mono">{date_cell}</td>
+  <td class="ticker">{escape(c["ticker"])}</td>
+  <td class="num mono">{seen_html}</td>
+  <td class="{_score_class(c["best_score"])} num mono">{_fmt(c["best_score"], ".0f")}{vol_marker}</td>
+  <td class="patterns">{pattern_tags}</td>
+  <td class="num mono">{_fmt(entry, ".2f")}</td>
+  <td class="num mono">{_fmt(stop, ".2f")}</td>
+  <td class="num mono">{_fmt(tp1, ".2f")}</td>
+  <td class="num mono">{_fmt(tp2, ".2f")}</td>
+  <td class="num mono">{_fmt(rr, ".1f")}R</td>
+  <td class="num mono {_piotroski_class(c.get("piotroski"))}">{_fmt(c.get("piotroski"))}</td>
+  <td class="dim">{escape(c.get("sector", ""))}</td>
+</tr>""")
+
+    return f"""
+<table class="candidates">
+  <thead>
+    <tr>
+      <th>Pick Date</th>
+      <th>Ticker</th>
+      <th class="num">Seen</th>
+      <th class="num">Best Score</th>
+      <th>Patterns</th>
+      <th class="num">Entry*</th>
+      <th class="num">Stop*</th>
+      <th class="num">TP1*</th>
+      <th class="num">TP2*</th>
+      <th class="num">R:R</th>
+      <th class="num">Piotroski</th>
+      <th>Sector</th>
+    </tr>
+  </thead>
+  <tbody>{"".join(rows)}</tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  * Entry / Stop / TP levels are from the pick date shown (the ticker's peak-scoring signal). Check current price before acting.
+  Volume markers: <span class="dim">▲</span> = ≥ 2× avg, <span class="streak">▲▲</span> = ≥ 3× avg.
+</p>
+"""
+
+
 def _render_sector_breakdown(sector_counts: dict) -> str:
     if not sector_counts:
         return '<div class="dim">No signals to break down.</div>'
@@ -457,6 +546,31 @@ def _render_methodology() -> str:
       </ul>
     </div>
   </details>
+
+  <details class="method-block">
+    <summary>How Recent Quality Breakouts is ranked</summary>
+    <div class="method-body">
+      <p>The Recent Quality Breakouts section aggregates every signal from the past 90 days, then picks the top 10 by a composite <strong>keep score</strong>:</p>
+      <table class="method-table">
+        <thead><tr><th>Component</th><th class="num">Contribution</th></tr></thead>
+        <tbody>
+          <tr><td>Ticker's best score ever achieved (base)</td><td class="num mono">full value</td></tr>
+          <tr><td>Recency bonus (latest appearance)</td><td class="num mono">+15 within 7 days, +5 within 21 days, 0 older</td></tr>
+          <tr><td>Appearance bonus (times seen in archive)</td><td class="num mono">+2 per appearance, capped at +15</td></tr>
+          <tr><td>Volume bonus (max multiple observed)</td><td class="num mono">+5 if ≥ 2× avg, +10 if ≥ 3× avg</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Eligibility:</strong> ticker's peak score must be ≥ 60 (the "solid setup" tier). Fresh tickers hitting 60+ enter the ranking; low-quality signals never do.</p>
+      <p><strong>Effect of the composite:</strong></p>
+      <ul>
+        <li><strong>High-conviction stays sticky.</strong> A 90-score signal from three weeks ago still outranks a 65-score fresh signal.</li>
+        <li><strong>Repeat winners rise.</strong> A ticker seen 6 times climbs above one-offs, all else equal.</li>
+        <li><strong>Volume-confirmed setups get priority</strong> over low-volume ones at the same score.</li>
+        <li><strong>Recency still matters</strong> — but as a tiebreaker, not a dominant factor.</li>
+      </ul>
+      <p><strong>Row data:</strong> the <strong>Pick Date</strong> is when the ticker's best score fired; <strong>Seen</strong> is total appearances in the archive; Entry / Stop / TPs are from that peak signal. Always sanity-check the current price against these — they can be days or weeks old.</p>
+    </div>
+  </details>
 </section>
 """
 
@@ -471,6 +585,7 @@ def render(
     generated_at_utc: str,
     breadth: dict,
     candidates: list[dict],
+    recent_quality: list[dict],
     sector_counts: dict,
     funnel: dict,
     eligible_refreshed_at: str,
@@ -500,8 +615,11 @@ def render(
     {_render_breadth_panel(breadth)}
   </header>
 
-  <h2 class="section">Ranked Candidates</h2>
+  <h2 class="section">Today's Breakouts</h2>
   {_render_candidates_table(candidates)}
+
+  <h2 class="section">Recent Quality Breakouts <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(top 10 by conviction, appearances, volume, and recency)</span></h2>
+  {_render_recent_quality_table(recent_quality, date_str)}
 
   <div class="secondary">
     <div>

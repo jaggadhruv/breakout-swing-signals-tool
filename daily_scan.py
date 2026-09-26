@@ -40,10 +40,16 @@ import report
 
 ELIGIBLE_UNIVERSE_PATH = Path("eligible_universe.json")
 HISTORY_PATH = Path("data/report_history.json")
+SIGNALS_ARCHIVE_PATH = Path("data/signals_archive.json")
 REPORTS_DIR = Path("reports")
 
 YFINANCE_DELAY_SECONDS = 0.3
 PRICE_HISTORY_PERIOD = "1y"
+
+# Recent-quality section: rolling archive of past signals, filtered by score
+ARCHIVE_RETENTION_DAYS = 90
+HIGH_QUALITY_THRESHOLD = 60
+RECENT_TOP_N = 10
 
 # Layer 4: trend context filter — a stock passes if all four hold
 TREND_ABOVE_50_SMA = True
@@ -472,6 +478,169 @@ def update_history(history: dict, todays_tickers: list[str]) -> None:
 
 
 # ============================================================================
+# Signals archive (rolling 90-day store for the Recent Quality Breakouts section)
+# ============================================================================
+
+def load_signals_archive() -> list[dict]:
+    if not SIGNALS_ARCHIVE_PATH.exists():
+        return []
+    try:
+        data = json.loads(SIGNALS_ARCHIVE_PATH.read_text())
+        return data.get("signals", []) if isinstance(data, dict) else []
+    except Exception:
+        return []
+
+
+def save_signals_archive(archive: list[dict]) -> None:
+    SIGNALS_ARCHIVE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SIGNALS_ARCHIVE_PATH.write_text(json.dumps({"signals": archive}, indent=2))
+
+
+def _extract_max_volume_mult(sig: dict) -> float:
+    """Max volume_multiple across all patterns triggered on this signal."""
+    patterns = sig.get("patterns", {})
+    if not isinstance(patterns, dict):
+        return 0.0
+    mults = [
+        p.get("volume_multiple", 0)
+        for p in patterns.values()
+        if isinstance(p, dict) and p.get("triggered")
+    ]
+    return float(max(mults)) if mults else 0.0
+
+
+def update_signals_archive(
+    archive: list[dict], todays_signals: list[dict], today_str: str
+) -> list[dict]:
+    """Prune old entries, drop any prior entry for today (re-runs), add today's."""
+    cutoff = (
+        datetime.utcnow() - timedelta(days=ARCHIVE_RETENTION_DAYS)
+    ).strftime("%Y-%m-%d")
+    archive = [
+        s for s in archive
+        if s.get("date", "") >= cutoff and s.get("date") != today_str
+    ]
+    for sig in todays_signals:
+        archive.append({
+            "date": today_str,
+            "ticker": sig["ticker"],
+            "name": sig.get("name", ""),
+            "sector": sig.get("sector", "Unknown"),
+            "score": sig["score"],
+            "pattern_labels": sig.get("pattern_labels", []),
+            "entry": sig["entry"],
+            "stop": sig["stop"],
+            "tp1": sig["tp1"],
+            "tp2": sig["tp2"],
+            "piotroski": sig.get("piotroski"),
+            "days_on_report": sig.get("days_on_report", 1),
+            "volume_multiple": _extract_max_volume_mult(sig),
+        })
+    return archive
+
+
+def compute_recent_high_quality(archive: list[dict], n: int = RECENT_TOP_N) -> list[dict]:
+    """Composite-ranked top N unique tickers from the archive.
+
+    Ranking prioritises high-conviction, repeated appearances, and volume:
+      keep_score = best_score_achieved
+                 + recency_bonus (+15 within 7d / +5 within 21d)
+                 + appearance_bonus (+2 per appearance, cap 15)
+                 + volume_bonus (+5 if max_vol_mult >= 2.0, +10 if >= 3.0)
+
+    Only tickers whose best score ever met HIGH_QUALITY_THRESHOLD are eligible.
+    Each returned entry aggregates the ticker's history: best_score with its
+    date, total appearances, latest appearance date, max volume multiple,
+    and the peak signal's entry/stop/TP levels.
+    """
+    if not archive:
+        return []
+
+    today = datetime.utcnow().date()
+
+    # Aggregate per ticker
+    by_ticker: dict[str, dict] = {}
+    for s in archive:
+        t = s.get("ticker")
+        if not t:
+            continue
+        score = float(s.get("score", 0))
+        vol_mult = float(s.get("volume_multiple", 0))
+        date_str = s.get("date", "")
+
+        if t not in by_ticker:
+            by_ticker[t] = {
+                "ticker": t,
+                "name": s.get("name", ""),
+                "sector": s.get("sector", "Unknown"),
+                "best_score": score,
+                "best_score_date": date_str,
+                "peak_entry": s.get("entry"),
+                "peak_stop": s.get("stop"),
+                "peak_tp1": s.get("tp1"),
+                "peak_tp2": s.get("tp2"),
+                "peak_patterns": s.get("pattern_labels", []),
+                "piotroski": s.get("piotroski"),
+                "appearances": 1,
+                "latest_date": date_str,
+                "max_vol_mult": vol_mult,
+            }
+        else:
+            agg = by_ticker[t]
+            agg["appearances"] += 1
+            if date_str > agg["latest_date"]:
+                agg["latest_date"] = date_str
+            if vol_mult > agg["max_vol_mult"]:
+                agg["max_vol_mult"] = vol_mult
+            if score > agg["best_score"]:
+                agg["best_score"] = score
+                agg["best_score_date"] = date_str
+                agg["peak_entry"] = s.get("entry")
+                agg["peak_stop"] = s.get("stop")
+                agg["peak_tp1"] = s.get("tp1")
+                agg["peak_tp2"] = s.get("tp2")
+                agg["peak_patterns"] = s.get("pattern_labels", [])
+                # Refresh sector/piotroski with the peak signal's values
+                if s.get("piotroski") is not None:
+                    agg["piotroski"] = s.get("piotroski")
+
+    # Filter: only tickers whose peak score met the quality bar
+    eligible = [c for c in by_ticker.values() if c["best_score"] >= HIGH_QUALITY_THRESHOLD]
+
+    # Compute keep_score for ranking
+    for c in eligible:
+        try:
+            latest = datetime.strptime(c["latest_date"], "%Y-%m-%d").date()
+            days_since = (today - latest).days
+        except (ValueError, TypeError):
+            days_since = 999
+
+        # Recency bonus
+        if days_since <= 7:
+            recency = 15
+        elif days_since <= 21:
+            recency = 5
+        else:
+            recency = 0
+
+        # Appearance bonus: 2 per appearance, capped at 15
+        appearance_bonus = min(c["appearances"] * 2, 15)
+
+        # Volume bonus
+        if c["max_vol_mult"] >= 3.0:
+            vol_bonus = 10
+        elif c["max_vol_mult"] >= 2.0:
+            vol_bonus = 5
+        else:
+            vol_bonus = 0
+
+        c["keep_score"] = round(c["best_score"] + recency + appearance_bonus + vol_bonus, 1)
+
+    eligible.sort(key=lambda c: c["keep_score"], reverse=True)
+    return eligible[:n]
+
+
+# ============================================================================
 # Orchestration
 # ============================================================================
 
@@ -599,11 +768,22 @@ def main() -> None:
 
     # Render report
     log(f"Rendering report ({len(shown)} candidates shown)...")
+
+    # Update rolling signals archive and compute the Recent Quality Breakouts list
+    log("Updating signals archive...")
+    archive = load_signals_archive()
+    archive = update_signals_archive(archive, signals, today_str)
+    save_signals_archive(archive)
+    recent_quality = compute_recent_high_quality(archive, n=RECENT_TOP_N)
+    log(f"Archive: {len(archive)} signals in last {ARCHIVE_RETENTION_DAYS} days; "
+        f"{len(recent_quality)} recent-quality tickers (score ≥ {HIGH_QUALITY_THRESHOLD}).")
+
     html = report.render(
         date_str=today_str,
         generated_at_utc=generated_at,
         breadth=breadth,
         candidates=shown,
+        recent_quality=recent_quality,
         sector_counts=sector_counts,
         funnel=funnel,
         eligible_refreshed_at=universe["refreshed_at"][:10],
