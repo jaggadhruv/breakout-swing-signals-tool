@@ -201,18 +201,18 @@ footer {
       </div>
       <div class="date-block">
         <div class="date-primary">2026-09-26</div>
-        <div class="date-secondary">Generated 2026-09-26 00:27 UTC</div>
+        <div class="date-secondary">Generated 2026-09-26 13:55 UTC</div>
       </div>
     </div>
     
 <section class="breadth">
   <div class="breadth-metric">
     <div class="label">This Week</div>
-    <div class="value mono">4.7<span class="max"> / 10</span></div>
+    <div class="value mono">5.5<span class="max"> / 10</span></div>
   </div>
   <div class="breadth-metric">
     <div class="label">This Month</div>
-    <div class="value mono">4.8<span class="max"> / 10</span></div>
+    <div class="value mono">4.9<span class="max"> / 10</span></div>
   </div>
   <div class="breadth-verdict">
     <div class="label">Environment</div>
@@ -224,24 +224,59 @@ footer {
 <section class="breadth" style="border-top:none; padding-top:0; padding-bottom:16px;">
   <div style="grid-column: 1 / -1;">
     <div class="subindicators">
-      <div class="subindicator"><div class="name">% eligible above 200 SMA</div><div class="val mono">0.0<span class="dim"> / 10</span></div></div><div class="subindicator"><div class="name">% eligible above 50 SMA</div><div class="val mono">0.0<span class="dim"> / 10</span></div></div><div class="subindicator"><div class="name">New 52W highs vs lows</div><div class="val mono">5.0<span class="dim"> / 10</span></div></div><div class="subindicator"><div class="name">SPY 14-day rate of change</div><div class="val mono">10.0<span class="dim"> / 10</span></div></div><div class="subindicator"><div class="name">VIX (inverted)</div><div class="val mono">8.4<span class="dim"> / 10</span></div></div>
+      <div class="subindicator"><div class="name">% eligible above 200 SMA</div><div class="val mono">5.4<span class="dim"> / 10</span></div></div><div class="subindicator"><div class="name">% eligible above 50 SMA</div><div class="val mono">3.9<span class="dim"> / 10</span></div></div><div class="subindicator"><div class="name">New 52W highs vs lows</div><div class="val mono">5.0<span class="dim"> / 10</span></div></div><div class="subindicator"><div class="name">SPY 14-day rate of change</div><div class="val mono">5.2<span class="dim"> / 10</span></div></div><div class="subindicator"><div class="name">VIX (inverted)</div><div class="val mono">8.4<span class="dim"> / 10</span></div></div>
     </div>
   </div>
 </section>
 
   </header>
 
-  <h2 class="section">Ranked Candidates</h2>
-  <div class="empty">No breakout signals with setup score ≥ 40 today.</div>
+  <h2 class="section">Today's Breakouts</h2>
+  
+<table class="candidates">
+  <thead>
+    <tr>
+      <th>Ticker</th>
+      <th class="num">Score</th>
+      <th>Patterns</th>
+      <th class="num">Entry</th>
+      <th class="num">Stop</th>
+      <th class="num">TP1</th>
+      <th class="num">TP2</th>
+      <th class="num">R:R</th>
+      <th class="num">Piotroski</th>
+      <th class="num">Streak</th>
+      <th>Sector</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+  <td class="ticker">MSFT</td>
+  <td class="score score-mid num mono">42</td>
+  <td class="patterns"><span class="pattern-tag">Resistance Break</span></td>
+  <td class="num mono">516.17</td>
+  <td class="num mono">486.00</td>
+  <td class="num mono">576.51</td>
+  <td class="num mono">606.68</td>
+  <td class="num mono">2.0R</td>
+  <td class="num mono dim">—</td>
+  <td class="num mono">1</td>
+  <td class="dim">Unknown</td>
+</tr></tbody>
+</table>
+
+
+  <h2 class="section">Recent Quality Breakouts <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(top 10 by conviction, appearances, volume, and recency)</span></h2>
+  <div class="empty">No quality breakouts recorded yet. This section fills in as the tool accumulates history.</div>
 
   <div class="secondary">
     <div>
       <h2 class="section">Sector Distribution</h2>
-      <div class="dim">No signals to break down.</div>
+      <ul class="sector-list"><li><span>Unknown</span><span class="mono">2</span></li></ul>
     </div>
     <div>
       <h2 class="section">Funnel</h2>
-      <ul class="funnel-list"><li><span class="step-name">Eligible pool</span><span class="step-count mono">491</span></li><li><span class="step-name">Skipped (no data)</span><span class="step-count mono">1</span></li><li><span class="step-name">Passed trend filter</span><span class="step-count mono">0</span></li><li><span class="step-name">Passed behavioral filter</span><span class="step-count mono">0</span></li><li><span class="step-name">Breakout signals</span><span class="step-count mono">0</span></li><li><span class="step-name">Scored ≥ 40 (shown)</span><span class="step-count mono">0</span></li></ul>
+      <ul class="funnel-list"><li><span class="step-name">Eligible pool</span><span class="step-count mono">491</span></li><li><span class="step-name">Skipped (no data)</span><span class="step-count mono">1</span></li><li><span class="step-name">Passed trend filter</span><span class="step-count mono">127</span></li><li><span class="step-name">Passed behavioral filter</span><span class="step-count mono">125</span></li><li><span class="step-name">Breakout signals</span><span class="step-count mono">2</span></li><li><span class="step-name">Scored ≥ 40 (shown)</span><span class="step-count mono">1</span></li></ul>
     </div>
   </div>
 
@@ -313,6 +348,31 @@ footer {
         <li><strong>Streak.</strong> Number of consecutive days this stock has appeared on the report. "×3" means today is the third consecutive appearance. Higher = more confirmation.</li>
         <li><strong>Sector.</strong> From your screener CSV, or "Unknown" if the column wasn't included.</li>
       </ul>
+    </div>
+  </details>
+
+  <details class="method-block">
+    <summary>How Recent Quality Breakouts is ranked</summary>
+    <div class="method-body">
+      <p>The Recent Quality Breakouts section aggregates every signal from the past 90 days, then picks the top 10 by a composite <strong>keep score</strong>:</p>
+      <table class="method-table">
+        <thead><tr><th>Component</th><th class="num">Contribution</th></tr></thead>
+        <tbody>
+          <tr><td>Ticker's best score ever achieved (base)</td><td class="num mono">full value</td></tr>
+          <tr><td>Recency bonus (latest appearance)</td><td class="num mono">+15 within 7 days, +5 within 21 days, 0 older</td></tr>
+          <tr><td>Appearance bonus (times seen in archive)</td><td class="num mono">+2 per appearance, capped at +15</td></tr>
+          <tr><td>Volume bonus (max multiple observed)</td><td class="num mono">+5 if ≥ 2× avg, +10 if ≥ 3× avg</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Eligibility:</strong> ticker's peak score must be ≥ 60 (the "solid setup" tier). Fresh tickers hitting 60+ enter the ranking; low-quality signals never do.</p>
+      <p><strong>Effect of the composite:</strong></p>
+      <ul>
+        <li><strong>High-conviction stays sticky.</strong> A 90-score signal from three weeks ago still outranks a 65-score fresh signal.</li>
+        <li><strong>Repeat winners rise.</strong> A ticker seen 6 times climbs above one-offs, all else equal.</li>
+        <li><strong>Volume-confirmed setups get priority</strong> over low-volume ones at the same score.</li>
+        <li><strong>Recency still matters</strong> — but as a tiebreaker, not a dominant factor.</li>
+      </ul>
+      <p><strong>Row data:</strong> the <strong>Pick Date</strong> is when the ticker's best score fired; <strong>Seen</strong> is total appearances in the archive; Entry / Stop / TPs are from that peak signal. Always sanity-check the current price against these — they can be days or weeks old.</p>
     </div>
   </details>
 </section>

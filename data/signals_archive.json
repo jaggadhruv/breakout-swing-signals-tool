@@ -1,0 +1,38 @@
+{
+  "signals": [
+    {
+      "date": "2026-09-26",
+      "ticker": "MSFT",
+      "name": "MSFT",
+      "sector": "Unknown",
+      "score": 41.5,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 516.17,
+      "stop": 486.0,
+      "tp1": 576.51,
+      "tp2": 606.68,
+      "piotroski": null,
+      "days_on_report": 1,
+      "volume_multiple": 1.79
+    },
+    {
+      "date": "2026-09-26",
+      "ticker": "TWLO",
+      "name": "TWLO",
+      "sector": "Unknown",
+      "score": 39.3,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 275.8,
+      "stop": 236.8,
+      "tp1": 353.81,
+      "tp2": 392.81,
+      "piotroski": null,
+      "days_on_report": 1,
+      "volume_multiple": 1.93
+    }
+  ]
+}
