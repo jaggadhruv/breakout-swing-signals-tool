@@ -33,6 +33,40 @@
       "piotroski": null,
       "days_on_report": 1,
       "volume_multiple": 1.93
+    },
+    {
+      "date": "2026-09-29",
+      "ticker": "ACA",
+      "name": "ACA",
+      "sector": "Unknown",
+      "score": 41.3,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 146.53,
+      "stop": 145.0,
+      "tp1": 149.59,
+      "tp2": 151.12,
+      "piotroski": null,
+      "days_on_report": 2,
+      "volume_multiple": 1.63
+    },
+    {
+      "date": "2026-09-29",
+      "ticker": "IMAX",
+      "name": "IMAX",
+      "sector": "Unknown",
+      "score": 35.0,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 56.13,
+      "stop": 50.94,
+      "tp1": 66.52,
+      "tp2": 71.71,
+      "piotroski": null,
+      "days_on_report": 1,
+      "volume_multiple": 1.5
     }
   ]
 }
