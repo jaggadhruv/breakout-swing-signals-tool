@@ -190,6 +190,31 @@ def range_52w_position(prices: pd.DataFrame) -> float | None:
     return (cur - lo) / (hi - lo)
 
 
+def accumulation_day_count(prices: pd.DataFrame, lookback: int = 25, vol_avg_window: int = 20) -> int:
+    """Count accumulation days in the last `lookback` sessions.
+
+    An accumulation day = close in upper 25% of day's range AND volume
+    above the trailing average. This is the standard IBD definition and
+    identifies institutional buying footprints. 5+ in 25 sessions is a
+    meaningful accumulation signal.
+    """
+    if len(prices) < lookback + vol_avg_window:
+        return 0
+    recent = prices.iloc[-lookback:]
+    avg_vol = float(prices["Volume"].iloc[-(lookback + vol_avg_window):-lookback].mean())
+    if avg_vol <= 0:
+        return 0
+    count = 0
+    for _, row in recent.iterrows():
+        rng = row["High"] - row["Low"]
+        if rng <= 0:
+            continue
+        close_pos = (row["Close"] - row["Low"]) / rng
+        if close_pos >= 0.75 and row["Volume"] > avg_vol:
+            count += 1
+    return int(count)
+
+
 def check_momentum_confluence(prices: pd.DataFrame) -> dict:
     """Four momentum/trend-quality checks. Returns per-check results plus total
     passed count. Caller decides minimum threshold (e.g., 3 of 4 required).

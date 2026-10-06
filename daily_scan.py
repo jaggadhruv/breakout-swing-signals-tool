@@ -41,6 +41,7 @@ import report
 ELIGIBLE_UNIVERSE_PATH = Path("eligible_universe.json")
 HISTORY_PATH = Path("data/report_history.json")
 SIGNALS_ARCHIVE_PATH = Path("data/signals_archive.json")
+WATCHLIST_ARCHIVE_PATH = Path("data/watchlist_archive.json")
 REPORTS_DIR = Path("reports")
 
 YFINANCE_DELAY_SECONDS = 0.3
@@ -50,6 +51,14 @@ PRICE_HISTORY_PERIOD = "1y"
 ARCHIVE_RETENTION_DAYS = 90
 HIGH_QUALITY_THRESHOLD = 60
 RECENT_TOP_N = 10
+
+# Watchlist: swing-ready stocks that pass all quality gates but haven't
+# triggered a breakout pattern yet. Scored differently from breakouts since
+# there's no entry trigger — these are "stalking list" candidates.
+WATCHLIST_MIN_SHOW_SCORE = 60       # minimum composite watchlist score to display
+WATCHLIST_QUALITY_THRESHOLD = 70    # bar for inclusion in Recent Quality Watchlist history
+WATCHLIST_RECENT_TOP_N = 10
+ACCUMULATION_LOOKBACK_DAYS = 25     # IBD-style accumulation day count window
 
 # Layer 4: trend context filter — a stock passes if all four hold
 TREND_ABOVE_50_SMA = True
@@ -535,6 +544,230 @@ def compute_stop_and_targets(prices: pd.DataFrame, patterns_result: dict) -> dic
 
 
 # ============================================================================
+# Watchlist — swing-ready stocks without a fired pattern
+# ============================================================================
+
+def compute_watchlist_setup(prices: pd.DataFrame, lookback: int = 20) -> dict | None:
+    """Compute the pending breakout setup for a watchlist ticker.
+
+    Trigger = nearest resistance (20-day high; falls back to 55-day if already
+    above). Stop = tighter of (trigger × 0.93) or 20-day swing low. TPs at 2R
+    and 3R from the pending trigger. Returns None if we can't locate a sensible
+    trigger above current price.
+    """
+    if len(prices) < 60:
+        return None
+    close_now = float(prices["Close"].iloc[-1])
+
+    trigger = float(prices["High"].iloc[-(lookback + 1):-1].max())
+    if trigger <= close_now:
+        # Already above 20-day high — try 55-day as the next natural resistance
+        trigger = float(prices["High"].iloc[-(55 + 1):-1].max())
+        if trigger <= close_now:
+            return None  # trading above all nearby resistance; no clean pending trigger
+
+    swing_low = float(prices["Low"].iloc[-lookback:].min())
+    stop = max(trigger * 0.93, swing_low)
+    if stop >= trigger:
+        stop = trigger * 0.93
+    risk = trigger - stop
+    pct_to_trigger = (trigger - close_now) / close_now * 100
+
+    return {
+        "current": round(close_now, 2),
+        "trigger": round(trigger, 2),
+        "stop_pending": round(stop, 2),
+        "tp1_pending": round(trigger + 2 * risk, 2),
+        "tp2_pending": round(trigger + 3 * risk, 2),
+        "pct_to_trigger": round(pct_to_trigger, 2),
+    }
+
+
+def compute_watchlist_score(
+    *,
+    rs_percentile: float | None,
+    momentum_passes: int,
+    sector_rank: int | None,
+    accumulation_days: int,
+    range_52w_position: float | None,
+) -> tuple[float, dict]:
+    """Composite watchlist quality score (0 to ~112).
+
+    Weights:
+      RS strength         up to 50 (rs_percentile / 2)
+      Momentum confluence up to 20 (5 per check passed)
+      Sector strength     up to 12 (based on rank 1-7)
+      Accumulation days   up to 20 (2 per day, cap 10 days)
+      52W position bonus      +10 if ≥ 75% up the range
+    """
+    breakdown = {}
+    total = 0.0
+
+    if rs_percentile is not None:
+        pts = round(rs_percentile / 2, 1)
+        breakdown["rs_strength"] = pts
+        total += pts
+
+    mom_pts = momentum_passes * 5
+    breakdown["momentum"] = mom_pts
+    total += mom_pts
+
+    if sector_rank is not None and sector_rank <= 7:
+        sec_pts = (8 - sector_rank) * 2
+        # Rank 1 -> 14, rank 7 -> 2. Clamp at 12 for consistency.
+        sec_pts = min(sec_pts, 12)
+        breakdown["sector_strength"] = sec_pts
+        total += sec_pts
+
+    acc_pts = min(accumulation_days, 10) * 2
+    breakdown["accumulation"] = acc_pts
+    total += acc_pts
+
+    if range_52w_position is not None and range_52w_position >= 0.75:
+        breakdown["range_52w_bonus"] = 10
+        total += 10
+
+    return round(total, 1), breakdown
+
+
+# ============================================================================
+# Watchlist archive (parallel to signals_archive)
+# ============================================================================
+
+def load_watchlist_archive() -> list[dict]:
+    if not WATCHLIST_ARCHIVE_PATH.exists():
+        return []
+    try:
+        data = json.loads(WATCHLIST_ARCHIVE_PATH.read_text())
+        return data.get("watchlist", []) if isinstance(data, dict) else []
+    except Exception:
+        return []
+
+
+def save_watchlist_archive(archive: list[dict]) -> None:
+    WATCHLIST_ARCHIVE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    WATCHLIST_ARCHIVE_PATH.write_text(json.dumps({"watchlist": archive}, indent=2))
+
+
+def update_watchlist_archive(
+    archive: list[dict], todays_watchlist: list[dict], today_str: str
+) -> list[dict]:
+    cutoff = (
+        datetime.utcnow() - timedelta(days=ARCHIVE_RETENTION_DAYS)
+    ).strftime("%Y-%m-%d")
+    archive = [
+        s for s in archive
+        if s.get("date", "") >= cutoff and s.get("date") != today_str
+    ]
+    for w in todays_watchlist:
+        archive.append({
+            "date": today_str,
+            "ticker": w["ticker"],
+            "name": w.get("name", ""),
+            "sector": w.get("sector", "Unknown"),
+            "sector_rank": w.get("sector_rank"),
+            "watchlist_score": w["watchlist_score"],
+            "rs_percentile": w.get("rs_percentile"),
+            "momentum_passes": w.get("momentum_passes", 0),
+            "accumulation_days": w.get("accumulation_days", 0),
+            "range_52w_position": w.get("range_52w_position"),
+            "current": w.get("current"),
+            "trigger": w.get("trigger"),
+            "stop_pending": w.get("stop_pending"),
+            "tp1_pending": w.get("tp1_pending"),
+            "tp2_pending": w.get("tp2_pending"),
+            "pct_to_trigger": w.get("pct_to_trigger"),
+            "piotroski": w.get("piotroski"),
+        })
+    return archive
+
+
+def compute_recent_quality_watchlist(archive: list[dict], n: int = WATCHLIST_RECENT_TOP_N) -> list[dict]:
+    """Composite-ranked top N unique watchlist tickers from the archive.
+
+    Only tickers whose best watchlist_score ever met WATCHLIST_QUALITY_THRESHOLD
+    are eligible. Uses the same recency + appearance + accumulation weighting
+    philosophy as compute_recent_high_quality, adapted for watchlist fields.
+    """
+    if not archive:
+        return []
+
+    today = datetime.utcnow().date()
+    by_ticker: dict[str, dict] = {}
+    for s in archive:
+        t = s.get("ticker")
+        if not t:
+            continue
+        score = float(s.get("watchlist_score", 0))
+        date_str = s.get("date", "")
+
+        if t not in by_ticker:
+            by_ticker[t] = {
+                "ticker": t,
+                "name": s.get("name", ""),
+                "sector": s.get("sector", "Unknown"),
+                "sector_rank": s.get("sector_rank"),
+                "best_score": score,
+                "best_score_date": date_str,
+                "peak_current": s.get("current"),
+                "peak_trigger": s.get("trigger"),
+                "peak_stop_pending": s.get("stop_pending"),
+                "peak_tp1_pending": s.get("tp1_pending"),
+                "peak_tp2_pending": s.get("tp2_pending"),
+                "peak_pct_to_trigger": s.get("pct_to_trigger"),
+                "peak_rs_percentile": s.get("rs_percentile"),
+                "peak_momentum_passes": s.get("momentum_passes", 0),
+                "peak_accumulation_days": s.get("accumulation_days", 0),
+                "piotroski": s.get("piotroski"),
+                "appearances": 1,
+                "latest_date": date_str,
+            }
+        else:
+            agg = by_ticker[t]
+            agg["appearances"] += 1
+            if date_str > agg["latest_date"]:
+                agg["latest_date"] = date_str
+            if score > agg["best_score"]:
+                agg["best_score"] = score
+                agg["best_score_date"] = date_str
+                agg["peak_current"] = s.get("current")
+                agg["peak_trigger"] = s.get("trigger")
+                agg["peak_stop_pending"] = s.get("stop_pending")
+                agg["peak_tp1_pending"] = s.get("tp1_pending")
+                agg["peak_tp2_pending"] = s.get("tp2_pending")
+                agg["peak_pct_to_trigger"] = s.get("pct_to_trigger")
+                agg["peak_rs_percentile"] = s.get("rs_percentile")
+                agg["peak_momentum_passes"] = s.get("momentum_passes", 0)
+                agg["peak_accumulation_days"] = s.get("accumulation_days", 0)
+                if s.get("piotroski") is not None:
+                    agg["piotroski"] = s.get("piotroski")
+
+    eligible = [c for c in by_ticker.values() if c["best_score"] >= WATCHLIST_QUALITY_THRESHOLD]
+
+    for c in eligible:
+        try:
+            latest = datetime.strptime(c["latest_date"], "%Y-%m-%d").date()
+            days_since = (today - latest).days
+        except (ValueError, TypeError):
+            days_since = 999
+
+        if days_since <= 7:
+            recency = 15
+        elif days_since <= 21:
+            recency = 5
+        else:
+            recency = 0
+
+        appearance_bonus = min(c["appearances"] * 2, 15)
+        acc_bonus = min(c["peak_accumulation_days"], 10)
+
+        c["keep_score"] = round(c["best_score"] + recency + appearance_bonus + acc_bonus, 1)
+
+    eligible.sort(key=lambda c: c["keep_score"], reverse=True)
+    return eligible[:n]
+
+
+# ============================================================================
 # Market breadth
 # ============================================================================
 
@@ -906,6 +1139,7 @@ def main() -> None:
     momentum_pass = 0
     pattern_pass = 0
     raw_candidates: list[dict] = []
+    raw_watchlist: list[dict] = []
     ticker_rs: dict[str, float] = {}
 
     for i, entry in enumerate(eligible):
@@ -939,33 +1173,61 @@ def main() -> None:
             continue
         momentum_pass += 1
 
-        # Pattern detection
-        p_result = patterns.scan_all_patterns(prices)
-        if not patterns.any_triggered(p_result):
-            continue
-        pattern_pass += 1
-
-        # Compute RS vs SPY (will be percentile-ranked after loop)
+        # Compute RS vs SPY (will be percentile-ranked after loop); do this
+        # BEFORE pattern branching so both breakouts AND watchlist tickers
+        # share the same percentile ranking pool.
         rs_val = compute_ticker_rs(prices, spy)
         if rs_val is not None:
             ticker_rs[ticker] = rs_val
 
-        raw_candidates.append({
-            "ticker": ticker,
-            "entry": entry,
-            "trend_ctx": trend_ctx,
-            "beh_ctx": beh_ctx,
-            "momentum_ctx": mom_ctx,
-            "p_result": p_result,
-            "rs_raw": rs_val,
-        })
+        # Pattern detection: pattern fired → breakout candidate; else → watchlist
+        p_result = patterns.scan_all_patterns(prices)
+        pattern_triggered = patterns.any_triggered(p_result)
+
+        if pattern_triggered:
+            pattern_pass += 1
+            raw_candidates.append({
+                "ticker": ticker,
+                "entry": entry,
+                "trend_ctx": trend_ctx,
+                "beh_ctx": beh_ctx,
+                "momentum_ctx": mom_ctx,
+                "p_result": p_result,
+                "rs_raw": rs_val,
+            })
+        else:
+            # Watchlist: no pattern fired, but trend + behavioral + momentum
+            # all passed. Record for Pass 2 scoring (RS + sector gates applied).
+            acc_days = patterns.accumulation_day_count(prices, ACCUMULATION_LOOKBACK_DAYS)
+            range_pos = patterns.range_52w_position(prices)
+            setup = compute_watchlist_setup(prices)
+            if setup is None:
+                # Already extended past 55-day high with no pattern trigger;
+                # not a clean watchlist setup, skip.
+                if (i + 1) % 50 == 0:
+                    log(f"  {i+1}/{len(eligible)} scanned, "
+                        f"{len(raw_candidates)} breakouts, {len(raw_watchlist)} watchlist")
+                continue
+            raw_watchlist.append({
+                "ticker": ticker,
+                "entry": entry,
+                "trend_ctx": trend_ctx,
+                "beh_ctx": beh_ctx,
+                "momentum_ctx": mom_ctx,
+                "rs_raw": rs_val,
+                "accumulation_days": acc_days,
+                "range_52w_position": range_pos,
+                "setup": setup,
+            })
 
         if (i + 1) % 50 == 0:
-            log(f"  {i+1}/{len(eligible)} scanned, {len(raw_candidates)} candidates")
+            log(f"  {i+1}/{len(eligible)} scanned, "
+                f"{len(raw_candidates)} breakouts, {len(raw_watchlist)} watchlist")
 
     log(f"Pass 1 complete: {no_data} skipped, {trend_pass} trend, "
         f"{behavioral_pass} behavioral, {momentum_pass} momentum, "
-        f"{pattern_pass} patterns → {len(raw_candidates)} raw candidates.")
+        f"{pattern_pass} patterns → {len(raw_candidates)} breakouts, "
+        f"{len(raw_watchlist)} watchlist.")
 
     # ---- Confluence gates: RS percentile + sector regime ----
     rs_percentiles = compute_rs_percentiles(ticker_rs)
@@ -1026,11 +1288,59 @@ def main() -> None:
             **stops,
         })
 
-    log(f"Pass 2 complete: {rs_gated} dropped by RS<{RS_PERCENTILE_MIN}, "
-        f"{sector_gated} dropped by sector gate → {len(signals)} final signals.")
+    log(f"Pass 2 (breakouts) complete: {rs_gated} dropped by RS<{RS_PERCENTILE_MIN}, "
+        f"{sector_gated} dropped by sector gate → {len(signals)} final breakout signals.")
 
-    # Update history with today's signals BEFORE breadth (breadth stores _breadth entry)
+    # ---- Pass 2b: apply same RS + sector gates to watchlist ----
+    log("Pass 2b — scoring watchlist candidates...")
+    watchlist: list[dict] = []
+    wl_rs_gated = 0
+    wl_sector_gated = 0
+
+    for cand in raw_watchlist:
+        ticker = cand["ticker"]
+        entry = cand["entry"]
+        rs_pct = rs_percentiles.get(ticker)
+        sector_label = entry.get("sector", "Unknown")
+
+        if rs_pct is None or rs_pct < RS_PERCENTILE_MIN:
+            wl_rs_gated += 1
+            continue
+        sector_ok, sector_rank = passes_sector_gate(sector_label, sector_ranks)
+        if not sector_ok:
+            wl_sector_gated += 1
+            continue
+
+        mom_passes = cand["momentum_ctx"].get("pass_count", 0)
+        wl_score, wl_breakdown = compute_watchlist_score(
+            rs_percentile=rs_pct,
+            momentum_passes=mom_passes,
+            sector_rank=sector_rank,
+            accumulation_days=cand["accumulation_days"],
+            range_52w_position=cand["range_52w_position"],
+        )
+
+        watchlist.append({
+            "ticker": ticker,
+            "name": entry["name"],
+            "sector": sector_label,
+            "sector_rank": sector_rank,
+            "watchlist_score": wl_score,
+            "watchlist_breakdown": wl_breakdown,
+            "rs_percentile": rs_pct,
+            "momentum_passes": mom_passes,
+            "accumulation_days": cand["accumulation_days"],
+            "range_52w_position": cand["range_52w_position"],
+            "piotroski": entry.get("piotroski_f_score"),
+            **cand["setup"],  # current, trigger, stop_pending, tp1_pending, tp2_pending, pct_to_trigger
+        })
+
+    log(f"Pass 2b (watchlist) complete: {wl_rs_gated} dropped by RS, "
+        f"{wl_sector_gated} dropped by sector → {len(watchlist)} watchlist entries.")
+
+    # Update history with today's signals (both breakouts and watchlist) BEFORE breadth
     update_history(history, [s["ticker"] for s in signals])
+    update_history(history, [w["ticker"] for w in watchlist])
 
     # Compute market breadth
     log("Computing market breadth...")
@@ -1046,9 +1356,13 @@ def main() -> None:
         log(f"Market regime: Adverse (weekly breadth {breadth['weekly_score']:.1f}). "
             f"Raising min show score {SCORING['min_show_score']} -> {adaptive_min_score}.")
 
-    # Filter and rank signals for display
+    # Filter and rank BREAKOUT signals for display
     shown = [s for s in signals if s["score"] >= adaptive_min_score]
     shown.sort(key=lambda s: s["score"], reverse=True)
+
+    # Filter and rank WATCHLIST entries for display
+    watchlist_shown = [w for w in watchlist if w["watchlist_score"] >= WATCHLIST_MIN_SHOW_SCORE]
+    watchlist_shown.sort(key=lambda w: w["watchlist_score"], reverse=True)
 
     # Sector breakdown across all signals (not just shown)
     sector_counts: dict = {}
@@ -1066,27 +1380,42 @@ def main() -> None:
         "sector_gated": sector_gated,
         "signals": len(signals),
         "shown": len(shown),
+        "watchlist_raw": len(raw_watchlist),
+        "watchlist_signals": len(watchlist),
+        "watchlist_shown": len(watchlist_shown),
         "min_show_score_used": adaptive_min_score,
     }
 
     # Render report
-    log(f"Rendering report ({len(shown)} candidates shown)...")
+    log(f"Rendering report ({len(shown)} breakouts, {len(watchlist_shown)} watchlist shown)...")
 
-    # Update rolling signals archive and compute the Recent Quality Breakouts list
+    # Update rolling BREAKOUT archive and compute Recent Quality Breakouts
     log("Updating signals archive...")
     archive = load_signals_archive()
     archive = update_signals_archive(archive, signals, today_str)
     save_signals_archive(archive)
     recent_quality = compute_recent_high_quality(archive, n=RECENT_TOP_N)
-    log(f"Archive: {len(archive)} signals in last {ARCHIVE_RETENTION_DAYS} days; "
+    log(f"Breakout archive: {len(archive)} signals in last {ARCHIVE_RETENTION_DAYS} days; "
         f"{len(recent_quality)} recent-quality tickers (score ≥ {HIGH_QUALITY_THRESHOLD}).")
+
+    # Update rolling WATCHLIST archive and compute Recent Quality Watchlist
+    log("Updating watchlist archive...")
+    wl_archive = load_watchlist_archive()
+    wl_archive = update_watchlist_archive(wl_archive, watchlist, today_str)
+    save_watchlist_archive(wl_archive)
+    recent_quality_watchlist = compute_recent_quality_watchlist(wl_archive, n=WATCHLIST_RECENT_TOP_N)
+    log(f"Watchlist archive: {len(wl_archive)} entries in last {ARCHIVE_RETENTION_DAYS} days; "
+        f"{len(recent_quality_watchlist)} recent-quality watchlist tickers "
+        f"(score ≥ {WATCHLIST_QUALITY_THRESHOLD}).")
 
     html = report.render(
         date_str=today_str,
         generated_at_utc=generated_at,
         breadth=breadth,
         candidates=shown,
+        watchlist=watchlist_shown,
         recent_quality=recent_quality,
+        recent_quality_watchlist=recent_quality_watchlist,
         sector_counts=sector_counts,
         funnel=funnel,
         eligible_refreshed_at=universe["refreshed_at"][:10],

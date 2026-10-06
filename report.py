@@ -463,6 +463,149 @@ def _render_recent_quality_table(candidates: list[dict], today_str: str) -> str:
 """
 
 
+def _render_watchlist_table(candidates: list[dict]) -> str:
+    """Today's swing-ready watchlist — passed all quality gates, no pattern fired yet.
+    Shows pending trigger / stop / TP levels so you can set alerts."""
+    if not candidates:
+        return ('<div class="empty">No swing-ready watchlist entries today. '
+                'All quality-passing tickers either triggered a breakout or are too extended to stalk.</div>')
+
+    rows = []
+    for c in candidates:
+        rs_val = c.get("rs_percentile")
+        rs_display = f'P{rs_val:.0f}' if rs_val is not None else '—'
+        sector_cell = _render_sector_cell(c.get("sector", ""), c.get("sector_rank"))
+        mom_passes = c.get("momentum_passes", 0)
+        mom_display = f'{mom_passes}/4'
+
+        acc_days = c.get("accumulation_days", 0)
+        acc_class = "piotroski-hi" if acc_days >= 7 else ("piotroski-mid" if acc_days >= 4 else "dim")
+
+        pct_to = c.get("pct_to_trigger")
+        pct_display = f'{pct_to:+.1f}%' if pct_to is not None else '—'
+        # Color: close to trigger (<3%) is interesting
+        pct_class = "streak" if pct_to is not None and pct_to <= 3 else "mono"
+
+        range_pos = c.get("range_52w_position")
+        range_display = f'{range_pos*100:.0f}%' if range_pos is not None else '—'
+
+        rows.append(f"""
+<tr>
+  <td class="ticker">{escape(c["ticker"])}</td>
+  <td class="{_score_class(c["watchlist_score"])} num mono">{_fmt(c["watchlist_score"], ".0f")}</td>
+  <td class="num mono {_rs_class(rs_val)}">{rs_display}</td>
+  <td class="num mono">{mom_display}</td>
+  <td class="num mono {acc_class}">{acc_days}</td>
+  <td class="num mono">{range_display}</td>
+  <td class="num mono">{_fmt(c.get("current"), ".2f")}</td>
+  <td class="num mono">{_fmt(c.get("trigger"), ".2f")}</td>
+  <td class="num {pct_class}">{pct_display}</td>
+  <td class="num mono">{_fmt(c.get("stop_pending"), ".2f")}</td>
+  <td class="num mono">{_fmt(c.get("tp1_pending"), ".2f")}</td>
+  <td class="num mono {_piotroski_class(c.get("piotroski"))}">{_fmt(c.get("piotroski"))}</td>
+  <td>{sector_cell}</td>
+</tr>""")
+
+    return f"""
+<table class="candidates">
+  <thead>
+    <tr>
+      <th>Ticker</th>
+      <th class="num">Score</th>
+      <th class="num">RS</th>
+      <th class="num">Mom</th>
+      <th class="num">AccDays</th>
+      <th class="num">52W%</th>
+      <th class="num">Current</th>
+      <th class="num">Trigger</th>
+      <th class="num">% to Go</th>
+      <th class="num">Stop†</th>
+      <th class="num">TP1†</th>
+      <th class="num">Piotroski</th>
+      <th>Sector</th>
+    </tr>
+  </thead>
+  <tbody>{"".join(rows)}</tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  † Stop / TP are pending — they only become active once price breaks the Trigger level. Set an alert at the Trigger.
+  Mom = momentum confluence passes (RSI 50-75, ADX ≥ 20, Weekly MACD +, 52W pos ≥ 60%). AccDays = IBD-style accumulation days in last 25 sessions (close in upper 25% of day's range with above-average volume).
+</p>
+"""
+
+
+def _render_recent_quality_watchlist_table(candidates: list[dict], today_str: str) -> str:
+    """Historical quality watchlist — aggregated across the 90-day archive,
+    deduped per ticker (peak score wins), composite-ranked for stickiness."""
+    if not candidates:
+        return ('<div class="empty">No high-quality watchlist entries recorded yet. '
+                'This section fills in as the tool accumulates history.</div>')
+
+    rows = []
+    for c in candidates:
+        pick_date = c.get("best_score_date", "")
+        date_cell = (
+            f'<span class="streak">{escape(pick_date)}</span>'
+            if pick_date == today_str
+            else f'<span class="dim">{escape(pick_date)}</span>'
+        )
+        seen = int(c.get("appearances", 1))
+        seen_html = (
+            f'<span class="streak">×{seen}</span>' if seen >= 3
+            else (f'<span class="mono">×{seen}</span>' if seen >= 2
+                  else f'<span class="dim mono">×{seen}</span>')
+        )
+        rs_val = c.get("peak_rs_percentile")
+        rs_display = f'P{rs_val:.0f}' if rs_val is not None else '—'
+        sector_cell = _render_sector_cell(c.get("sector", ""), c.get("sector_rank"))
+        mom_passes = c.get("peak_momentum_passes", 0)
+        acc_days = c.get("peak_accumulation_days", 0)
+
+        rows.append(f"""
+<tr>
+  <td class="mono">{date_cell}</td>
+  <td class="ticker">{escape(c["ticker"])}</td>
+  <td class="num mono">{seen_html}</td>
+  <td class="{_score_class(c["best_score"])} num mono">{_fmt(c["best_score"], ".0f")}</td>
+  <td class="num mono {_rs_class(rs_val)}">{rs_display}</td>
+  <td class="num mono">{mom_passes}/4</td>
+  <td class="num mono">{acc_days}</td>
+  <td class="num mono">{_fmt(c.get("peak_current"), ".2f")}</td>
+  <td class="num mono">{_fmt(c.get("peak_trigger"), ".2f")}</td>
+  <td class="num mono">{_fmt(c.get("peak_stop_pending"), ".2f")}</td>
+  <td class="num mono">{_fmt(c.get("peak_tp1_pending"), ".2f")}</td>
+  <td class="num mono {_piotroski_class(c.get("piotroski"))}">{_fmt(c.get("piotroski"))}</td>
+  <td>{sector_cell}</td>
+</tr>""")
+
+    return f"""
+<table class="candidates">
+  <thead>
+    <tr>
+      <th>Pick Date</th>
+      <th>Ticker</th>
+      <th class="num">Seen</th>
+      <th class="num">Best Score</th>
+      <th class="num">RS</th>
+      <th class="num">Mom</th>
+      <th class="num">AccDays</th>
+      <th class="num">Current*</th>
+      <th class="num">Trigger*</th>
+      <th class="num">Stop*†</th>
+      <th class="num">TP1*†</th>
+      <th class="num">Piotroski</th>
+      <th>Sector</th>
+    </tr>
+  </thead>
+  <tbody>{"".join(rows)}</tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  * Levels from the pick date (ticker's peak-scoring day). Check current price before setting alerts.
+  † Pending levels — active only if price breaks the Trigger.
+</p>
+"""
+
+
 def _render_sector_breakdown(sector_counts: dict) -> str:
     if not sector_counts:
         return '<div class="dim">No signals to break down.</div>'
@@ -482,11 +625,14 @@ def _render_funnel(funnel: dict) -> str:
         ("Passed trend filter", funnel["trend_pass"]),
         ("Passed behavioral filter", funnel["behavioral_pass"]),
         ("Passed momentum confluence", funnel.get("momentum_pass", 0)),
-        ("Pattern triggered", funnel.get("pattern_pass", funnel.get("signals", 0))),
-        ("Dropped by RS gate", funnel.get("rs_gated", 0)),
-        ("Dropped by sector gate", funnel.get("sector_gated", 0)),
-        ("Final signals", funnel["signals"]),
-        (f"Scored ≥ {int(min_score)} (shown)", funnel["shown"]),
+        ("— Pattern triggered (→ breakouts)", funnel.get("pattern_pass", funnel.get("signals", 0))),
+        ("— No pattern yet (→ watchlist pool)", funnel.get("watchlist_raw", 0)),
+        ("Dropped by RS gate (breakouts)", funnel.get("rs_gated", 0)),
+        ("Dropped by sector gate (breakouts)", funnel.get("sector_gated", 0)),
+        ("Final breakout signals", funnel["signals"]),
+        (f"Breakouts scored ≥ {int(min_score)} (shown)", funnel["shown"]),
+        ("Final watchlist entries", funnel.get("watchlist_signals", 0)),
+        ("Watchlist shown (score ≥ 60)", funnel.get("watchlist_shown", 0)),
     ]
     items = "".join(
         f'<li><span class="step-name">{escape(name)}</span>'
@@ -616,6 +762,32 @@ def _render_methodology() -> str:
       <p><strong>Row data:</strong> the <strong>Pick Date</strong> is when the ticker's best score fired; <strong>Seen</strong> is total appearances in the archive; Entry / Stop / TPs are from that peak signal. Always sanity-check the current price against these — they can be days or weeks old.</p>
     </div>
   </details>
+
+  <details class="method-block">
+    <summary>How the Swing-Ready Watchlist is built and scored</summary>
+    <div class="method-body">
+      <p>The watchlist surfaces stocks that passed every quality gate (trend, behavioral, momentum confluence, RS percentile, sector regime) but <em>didn't</em> trigger any breakout pattern today. These are "stalking list" setups — quality candidates waiting for the trigger. Entering on the trigger (via buy-stop or alert) often gives better R:R than chasing a breakout already in motion.</p>
+      <p><strong>Watchlist score (0 to ~112):</strong></p>
+      <table class="method-table">
+        <thead><tr><th>Component</th><th class="num">Points</th></tr></thead>
+        <tbody>
+          <tr><td>RS strength (percentile vs eligible pool)</td><td class="num mono">rs_percentile ÷ 2, up to +50</td></tr>
+          <tr><td>Momentum confluence passes</td><td class="num mono">+5 per check (RSI, ADX, Weekly MACD, 52W pos), up to +20</td></tr>
+          <tr><td>Sector strength bonus</td><td class="num mono">+2 per sector rank above 7, up to +12</td></tr>
+          <tr><td>Accumulation days (IBD-style, last 25 sessions)</td><td class="num mono">+2 per day, cap at +20</td></tr>
+          <tr><td>52W range position bonus</td><td class="num mono">+10 if in top 25% of 52W range</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Pending Trigger / Stop / TPs:</strong> the Trigger is the nearest resistance (20-day high; 55-day as fallback). Stop and TPs are computed from the trigger using the same logic as a fired breakout (stop = tighter of 7% below trigger or 20-day swing low; TP1 = 2R, TP2 = 3R). These are inactive until price actually breaks the Trigger — set alerts and let the setup come to you.</p>
+      <p><strong>Recent Quality Watchlist (history)</strong> aggregates the past 90 days of watchlist entries. Only tickers whose peak watchlist score ever hit 70+ are eligible. Composite ranking (keep score) adds bonuses for recency, repeat appearances, and accumulation.</p>
+      <p><strong>What to look for:</strong></p>
+      <ul>
+        <li><strong>% to Go</strong> close to 0 (e.g., &lt; 3%): the trigger is imminent — prime alert candidate</li>
+        <li><strong>AccDays ≥ 7:</strong> clear institutional accumulation under the surface</li>
+        <li><strong>Repeat appearances</strong> on the history view: setup has been building for weeks</li>
+      </ul>
+    </div>
+  </details>
 </section>
 """
 
@@ -630,12 +802,17 @@ def render(
     generated_at_utc: str,
     breadth: dict,
     candidates: list[dict],
+    watchlist: list[dict] | None = None,
     recent_quality: list[dict],
+    recent_quality_watchlist: list[dict] | None = None,
     sector_counts: dict,
     funnel: dict,
     eligible_refreshed_at: str,
 ) -> str:
     """Assemble the full HTML report."""
+    watchlist = watchlist or []
+    recent_quality_watchlist = recent_quality_watchlist or []
+
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -660,11 +837,17 @@ def render(
     {_render_breadth_panel(breadth)}
   </header>
 
-  <h2 class="section">Today's Breakouts</h2>
+  <h2 class="section">Today's Breakouts <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(pattern triggered + all confluence gates passed)</span></h2>
   {_render_candidates_table(candidates)}
+
+  <h2 class="section">Today's Swing-Ready Watchlist <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(quality setups waiting for a trigger)</span></h2>
+  {_render_watchlist_table(watchlist)}
 
   <h2 class="section">Recent Quality Breakouts <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(top 10 by conviction, appearances, volume, and recency)</span></h2>
   {_render_recent_quality_table(recent_quality, date_str)}
+
+  <h2 class="section">Recent Quality Watchlist <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(top 10 past watchlist entries by composite ranking)</span></h2>
+  {_render_recent_quality_watchlist_table(recent_quality_watchlist, date_str)}
 
   <div class="secondary">
     <div>
