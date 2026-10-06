@@ -81,7 +81,78 @@ SCORING = {
     "trend_context_bonus":    10,      # if 200 SMA rising AND close within 15% of 52w high
     "streak_per_day":         5,
     "streak_cap":             15,
+    "rs_elite_bonus":         10,      # if ticker RS percentile >= 90
+    "sector_top3_bonus":      5,       # if ticker's sector ranks top 3 of 11
+    "momentum_full_bonus":    5,       # if all 4 momentum confluence checks pass
     "min_show_score":         40,
+    "min_show_score_adverse": 75,      # raised bar when market breadth is Adverse
+}
+
+# ----------------------------------------------------------------------------
+# Confluence layer thresholds
+# ----------------------------------------------------------------------------
+
+# Momentum confluence: RSI in-range, ADX trending, weekly MACD positive,
+# price in upper 40% of 52W range. Require this many of 4 to pass.
+MOMENTUM_MIN_PASS           = 3
+MOMENTUM_RSI_MIN            = 50
+MOMENTUM_RSI_MAX            = 75
+MOMENTUM_ADX_MIN            = 20
+MOMENTUM_RANGE_POSITION_MIN = 0.60  # top 40% of 52w range
+
+# Relative strength percentile gate (vs eligible pool, 12-week return)
+RS_LOOKBACK_WEEKS      = 12
+RS_PERCENTILE_MIN      = 75   # top 25% of universe
+RS_PERCENTILE_ELITE    = 90   # top 10% gets scoring bonus
+
+# Sector regime gating via Sector SPDR ETFs
+SECTOR_GATING_ENABLED  = True
+SECTOR_RS_LOOKBACK_DAYS = 60
+SECTOR_MAX_RANK        = 6   # only tickers in top 6 of 11 sectors
+SECTOR_TOP_RANK        = 3   # top 3 sectors get scoring bonus
+
+# Market regime gate (uses weekly breadth score)
+BREADTH_ADVERSE_THRESHOLD = 4.0
+
+# Sector SPDR ETFs — one per GICS sector
+SECTOR_ETFS = {
+    "XLK":  "Technology",
+    "XLV":  "Health Care",
+    "XLF":  "Financials",
+    "XLY":  "Consumer Discretionary",
+    "XLP":  "Consumer Staples",
+    "XLI":  "Industrials",
+    "XLE":  "Energy",
+    "XLU":  "Utilities",
+    "XLB":  "Materials",
+    "XLRE": "Real Estate",
+    "XLC":  "Communication Services",
+}
+
+# Map screener sector labels → ETF ticker. Covers common variants from
+# Finviz, Stockanalysis, GICS. Lowercase match.
+SECTOR_TO_ETF = {
+    "technology": "XLK",
+    "information technology": "XLK",
+    "tech": "XLK",
+    "health care": "XLV",
+    "healthcare": "XLV",
+    "financial": "XLF",
+    "financials": "XLF",
+    "financial services": "XLF",
+    "consumer discretionary": "XLY",
+    "consumer cyclical": "XLY",
+    "consumer staples": "XLP",
+    "consumer defensive": "XLP",
+    "industrials": "XLI",
+    "industrial": "XLI",
+    "energy": "XLE",
+    "utilities": "XLU",
+    "basic materials": "XLB",
+    "materials": "XLB",
+    "real estate": "XLRE",
+    "communication services": "XLC",
+    "communications": "XLC",
 }
 
 # Stops and targets
@@ -211,6 +282,138 @@ def passes_behavioral_filter(prices: pd.DataFrame, ticker: str) -> tuple[bool, d
 
 
 # ============================================================================
+# Confluence layer: momentum, relative strength, sector regime
+# ============================================================================
+
+def passes_momentum_confluence(prices: pd.DataFrame) -> tuple[bool, dict]:
+    """4-check momentum confluence. Returns (bool, dict of per-check results).
+
+    Pass requires >= MOMENTUM_MIN_PASS of 4:
+      1. RSI(14) in [50, 75] range (strong but not extended)
+      2. ADX(14) >= 20 (actually trending)
+      3. Weekly MACD histogram > 0 (higher-timeframe alignment)
+      4. Price in top 40% of 52-week range (already in strength)
+    """
+    checks = {"rsi": False, "adx": False, "weekly_macd": False, "range_pos": False}
+
+    # RSI
+    try:
+        rsi_series = patterns.rsi(prices["Close"], 14)
+        rsi_val = float(rsi_series.iloc[-1])
+        checks["rsi"] = MOMENTUM_RSI_MIN <= rsi_val <= MOMENTUM_RSI_MAX
+    except Exception:
+        rsi_val = None
+
+    # ADX
+    try:
+        adx_series = patterns.adx(prices, 14)
+        adx_val = float(adx_series.iloc[-1])
+        checks["adx"] = adx_val >= MOMENTUM_ADX_MIN
+    except Exception:
+        adx_val = None
+
+    # Weekly MACD histogram
+    try:
+        weekly_closes = prices["Close"].resample("W").last().dropna()
+        if len(weekly_closes) >= 30:
+            _, _, hist = patterns.macd(weekly_closes)
+            hist_val = float(hist.iloc[-1])
+            checks["weekly_macd"] = hist_val > 0
+        else:
+            hist_val = None
+    except Exception:
+        hist_val = None
+
+    # 52-week range position
+    range_pos = patterns.range_position_52w(prices)
+    checks["range_pos"] = (range_pos is not None and range_pos >= MOMENTUM_RANGE_POSITION_MIN)
+
+    pass_count = sum(checks.values())
+    ctx = {
+        "checks": checks,
+        "pass_count": pass_count,
+        "rsi_14": round(rsi_val, 2) if rsi_val is not None else None,
+        "adx_14": round(adx_val, 2) if adx_val is not None else None,
+        "weekly_macd_hist": round(hist_val, 4) if hist_val is not None else None,
+        "range_position_52w": round(range_pos, 3) if range_pos is not None else None,
+    }
+    return pass_count >= MOMENTUM_MIN_PASS, ctx
+
+
+def compute_ticker_rs(stock: pd.DataFrame, spy: pd.DataFrame) -> float | None:
+    """Stock total return minus SPY total return over RS_LOOKBACK_WEEKS."""
+    sessions = RS_LOOKBACK_WEEKS * 5
+    if len(stock) < sessions + 1 or len(spy) < sessions + 1:
+        return None
+    stock_ret = float(stock["Close"].iloc[-1] / stock["Close"].iloc[-(sessions + 1)] - 1)
+    spy_ret = float(spy["Close"].iloc[-1] / spy["Close"].iloc[-(sessions + 1)] - 1)
+    return (stock_ret - spy_ret) * 100
+
+
+def compute_rs_percentiles(ticker_rs: dict[str, float]) -> dict[str, float]:
+    """Convert raw RS values to percentile ranks (0-100) across the universe."""
+    valid = {t: v for t, v in ticker_rs.items() if v is not None}
+    if not valid:
+        return {}
+    sorted_items = sorted(valid.items(), key=lambda kv: kv[1])
+    n = len(sorted_items)
+    if n == 1:
+        return {sorted_items[0][0]: 50.0}
+    return {t: round(100.0 * i / (n - 1), 1) for i, (t, _) in enumerate(sorted_items)}
+
+
+def fetch_sector_etfs() -> dict[str, pd.DataFrame]:
+    """Fetch prices for all 11 Sector SPDR ETFs."""
+    etfs: dict[str, pd.DataFrame] = {}
+    for ticker in SECTOR_ETFS:
+        prices = fetch_prices(ticker, period="6mo")
+        if prices is not None:
+            etfs[ticker] = prices
+        time.sleep(YFINANCE_DELAY_SECONDS)
+    return etfs
+
+
+def compute_sector_rs(sector_etfs: dict[str, pd.DataFrame], spy: pd.DataFrame) -> dict[str, float]:
+    """Return {etf_ticker: 60-day return minus SPY 60-day return} in percent."""
+    if spy is None or len(spy) < SECTOR_RS_LOOKBACK_DAYS + 1:
+        return {}
+    spy_ret = float(spy["Close"].iloc[-1] / spy["Close"].iloc[-(SECTOR_RS_LOOKBACK_DAYS + 1)] - 1)
+    out: dict[str, float] = {}
+    for etf, prices in sector_etfs.items():
+        if prices is None or len(prices) < SECTOR_RS_LOOKBACK_DAYS + 1:
+            continue
+        etf_ret = float(prices["Close"].iloc[-1] / prices["Close"].iloc[-(SECTOR_RS_LOOKBACK_DAYS + 1)] - 1)
+        out[etf] = round((etf_ret - spy_ret) * 100, 2)
+    return out
+
+
+def rank_sectors(sector_rs: dict[str, float]) -> dict[str, int]:
+    """Rank ETFs 1 (strongest) to N (weakest) by RS."""
+    if not sector_rs:
+        return {}
+    sorted_etfs = sorted(sector_rs.items(), key=lambda kv: kv[1], reverse=True)
+    return {etf: rank + 1 for rank, (etf, _) in enumerate(sorted_etfs)}
+
+
+def sector_etf_for(sector_label: str) -> str | None:
+    """Map a free-text sector label (from the CSV) to an ETF ticker. None if unknown."""
+    if not sector_label:
+        return None
+    return SECTOR_TO_ETF.get(sector_label.strip().lower())
+
+
+def passes_sector_gate(sector_label: str, sector_ranks: dict[str, int]) -> tuple[bool, int | None]:
+    """True if ticker's sector ranks <= SECTOR_MAX_RANK. Unmapped sectors pass."""
+    etf = sector_etf_for(sector_label)
+    if etf is None:
+        return True, None  # don't gate what we can't measure
+    rank = sector_ranks.get(etf)
+    if rank is None:
+        return True, None
+    return rank <= SECTOR_MAX_RANK, rank
+
+
+# ============================================================================
 # Setup scoring
 # ============================================================================
 
@@ -220,8 +423,12 @@ def compute_score(
     trend_ctx: dict,
     days_in_consolidation: int,
     days_on_report: int,
+    *,
+    rs_percentile: float | None = None,
+    sector_rank: int | None = None,
+    momentum_pass_count: int = 0,
 ) -> tuple[float, dict]:
-    """Composite 0-100+ score. Returns (score, breakdown)."""
+    """Composite 0-100+ score with confluence bonuses. Returns (score, breakdown)."""
     breakdown = {}
     total = 0.0
 
@@ -268,6 +475,17 @@ def compute_score(
         streak_bonus = min((days_on_report - 1) * SCORING["streak_per_day"], SCORING["streak_cap"])
         breakdown["streak_bonus"] = streak_bonus
         total += streak_bonus
+
+    # Confluence bonuses
+    if rs_percentile is not None and rs_percentile >= RS_PERCENTILE_ELITE:
+        breakdown["rs_elite_bonus"] = SCORING["rs_elite_bonus"]
+        total += SCORING["rs_elite_bonus"]
+    if sector_rank is not None and sector_rank <= SECTOR_TOP_RANK:
+        breakdown["sector_top3_bonus"] = SCORING["sector_top3_bonus"]
+        total += SCORING["sector_top3_bonus"]
+    if momentum_pass_count >= 4:
+        breakdown["momentum_full_bonus"] = SCORING["momentum_full_bonus"]
+        total += SCORING["momentum_full_bonus"]
 
     return round(total, 1), breakdown
 
@@ -665,13 +883,30 @@ def main() -> None:
     if spy is None or vix is None:
         sys.exit("ERROR: could not fetch SPY or VIX; aborting scan.")
 
-    # Iterate through eligible pool
-    log(f"Scanning {len(eligible)} eligible tickers...")
+    # Fetch sector SPDR ETFs and compute sector ranks
+    sector_ranks: dict[str, int] = {}
+    sector_rs: dict[str, float] = {}
+    if SECTOR_GATING_ENABLED:
+        log(f"Fetching {len(SECTOR_ETFS)} sector ETFs...")
+        sector_etf_data = fetch_sector_etfs()
+        sector_rs = compute_sector_rs(sector_etf_data, spy)
+        sector_ranks = rank_sectors(sector_rs)
+        ranked_display = ", ".join(
+            f"{etf}#{r} ({sector_rs.get(etf, 0):+.1f}%)"
+            for etf, r in sorted(sector_ranks.items(), key=lambda kv: kv[1])
+        )
+        log(f"Sector ranks (strongest first): {ranked_display}")
+
+    # ---- Pass 1: pre-confluence filters + pattern detection ----
+    log(f"Pass 1 — scanning {len(eligible)} eligible tickers...")
     price_cache: dict[str, pd.DataFrame] = {}
     no_data = 0
     trend_pass = 0
     behavioral_pass = 0
-    signals: list[dict] = []
+    momentum_pass = 0
+    pattern_pass = 0
+    raw_candidates: list[dict] = []
+    ticker_rs: dict[str, float] = {}
 
     for i, entry in enumerate(eligible):
         ticker = entry["ticker"]
@@ -680,63 +915,119 @@ def main() -> None:
         if prices is None:
             no_data += 1
             if (i + 1) % 50 == 0:
-                log(f"  {i+1}/{len(eligible)} scanned, {len(signals)} signals, {no_data} skipped")
+                log(f"  {i+1}/{len(eligible)} scanned, {len(raw_candidates)} candidates, {no_data} skipped")
             continue
         price_cache[ticker] = prices
 
-        # Layer 4: trend context
+        # Trend filter (Layer 4)
         trend_ok, trend_ctx = passes_trend_filter(prices, spy)
         if not trend_ok:
             if (i + 1) % 50 == 0:
-                log(f"  {i+1}/{len(eligible)} scanned, {len(signals)} signals")
+                log(f"  {i+1}/{len(eligible)} scanned, {len(raw_candidates)} candidates")
             continue
         trend_pass += 1
 
-        # Layer 5: behavioral
+        # Behavioral filter (Layer 5)
         beh_ok, beh_ctx = passes_behavioral_filter(prices, ticker)
         if not beh_ok:
-            if (i + 1) % 50 == 0:
-                log(f"  {i+1}/{len(eligible)} scanned, {len(signals)} signals")
             continue
         behavioral_pass += 1
+
+        # Momentum confluence (NEW — Confluence gate 1)
+        mom_ok, mom_ctx = passes_momentum_confluence(prices)
+        if not mom_ok:
+            continue
+        momentum_pass += 1
 
         # Pattern detection
         p_result = patterns.scan_all_patterns(prices)
         if not patterns.any_triggered(p_result):
-            if (i + 1) % 50 == 0:
-                log(f"  {i+1}/{len(eligible)} scanned, {len(signals)} signals")
+            continue
+        pattern_pass += 1
+
+        # Compute RS vs SPY (will be percentile-ranked after loop)
+        rs_val = compute_ticker_rs(prices, spy)
+        if rs_val is not None:
+            ticker_rs[ticker] = rs_val
+
+        raw_candidates.append({
+            "ticker": ticker,
+            "entry": entry,
+            "trend_ctx": trend_ctx,
+            "beh_ctx": beh_ctx,
+            "momentum_ctx": mom_ctx,
+            "p_result": p_result,
+            "rs_raw": rs_val,
+        })
+
+        if (i + 1) % 50 == 0:
+            log(f"  {i+1}/{len(eligible)} scanned, {len(raw_candidates)} candidates")
+
+    log(f"Pass 1 complete: {no_data} skipped, {trend_pass} trend, "
+        f"{behavioral_pass} behavioral, {momentum_pass} momentum, "
+        f"{pattern_pass} patterns → {len(raw_candidates)} raw candidates.")
+
+    # ---- Confluence gates: RS percentile + sector regime ----
+    rs_percentiles = compute_rs_percentiles(ticker_rs)
+
+    # ---- Pass 2: apply RS + sector gates, finalize scoring ----
+    log("Pass 2 — applying confluence gates and finalizing scores...")
+    signals: list[dict] = []
+    rs_gated = 0
+    sector_gated = 0
+
+    for cand in raw_candidates:
+        ticker = cand["ticker"]
+        entry = cand["entry"]
+        prices = price_cache[ticker]
+        rs_pct = rs_percentiles.get(ticker)
+        sector_label = entry.get("sector", "Unknown")
+
+        # Confluence gate 2: RS percentile
+        if rs_pct is None or rs_pct < RS_PERCENTILE_MIN:
+            rs_gated += 1
             continue
 
-        # Compute score inputs
+        # Confluence gate 3: sector regime
+        sector_ok, sector_rank = passes_sector_gate(sector_label, sector_ranks)
+        if not sector_ok:
+            sector_gated += 1
+            continue
+
+        # Score with confluence bonuses
         days_in_cons = patterns.days_since_prior_high(prices)
         streak = days_on_report(history, ticker)
+        momentum_pass_count = cand["momentum_ctx"].get("pass_count", 0)
         score, score_breakdown = compute_score(
-            p_result, entry.get("piotroski_f_score"), trend_ctx, days_in_cons, streak
+            cand["p_result"], entry.get("piotroski_f_score"), cand["trend_ctx"],
+            days_in_cons, streak,
+            rs_percentile=rs_pct, sector_rank=sector_rank,
+            momentum_pass_count=momentum_pass_count,
         )
-        stops = compute_stop_and_targets(prices, p_result)
+        stops = compute_stop_and_targets(prices, cand["p_result"])
 
         signals.append({
             "ticker": ticker,
             "name": entry["name"],
-            "sector": entry["sector"],
+            "sector": sector_label,
+            "sector_rank": sector_rank,
             "score": score,
             "score_breakdown": score_breakdown,
-            "patterns": p_result,
-            "pattern_labels": patterns.pattern_labels(p_result),
-            "trend_context": trend_ctx,
-            "behavioral": beh_ctx,
+            "patterns": cand["p_result"],
+            "pattern_labels": patterns.pattern_labels(cand["p_result"]),
+            "trend_context": cand["trend_ctx"],
+            "behavioral": cand["beh_ctx"],
+            "momentum_context": cand["momentum_ctx"],
+            "rs_percentile": rs_pct,
+            "rs_raw": cand["rs_raw"],
             "days_in_consolidation": days_in_cons,
             "days_on_report": streak,
             "piotroski": entry.get("piotroski_f_score"),
             **stops,
         })
 
-        if (i + 1) % 50 == 0:
-            log(f"  {i+1}/{len(eligible)} scanned, {len(signals)} signals")
-
-    log(f"Scan complete: {no_data} skipped (no yfinance data), "
-        f"{trend_pass} passed trend, "
-        f"{behavioral_pass} passed behavioral, {len(signals)} signals.")
+    log(f"Pass 2 complete: {rs_gated} dropped by RS<{RS_PERCENTILE_MIN}, "
+        f"{sector_gated} dropped by sector gate → {len(signals)} final signals.")
 
     # Update history with today's signals BEFORE breadth (breadth stores _breadth entry)
     update_history(history, [s["ticker"] for s in signals])
@@ -748,8 +1039,15 @@ def main() -> None:
     # Persist history (now includes breadth entry)
     save_history(history)
 
+    # Market regime adjustment: raise minimum shown score when breadth is Adverse
+    adaptive_min_score = SCORING["min_show_score"]
+    if breadth["weekly_score"] < BREADTH_ADVERSE_THRESHOLD:
+        adaptive_min_score = SCORING["min_show_score_adverse"]
+        log(f"Market regime: Adverse (weekly breadth {breadth['weekly_score']:.1f}). "
+            f"Raising min show score {SCORING['min_show_score']} -> {adaptive_min_score}.")
+
     # Filter and rank signals for display
-    shown = [s for s in signals if s["score"] >= SCORING["min_show_score"]]
+    shown = [s for s in signals if s["score"] >= adaptive_min_score]
     shown.sort(key=lambda s: s["score"], reverse=True)
 
     # Sector breakdown across all signals (not just shown)
@@ -762,8 +1060,13 @@ def main() -> None:
         "no_data": no_data,
         "trend_pass": trend_pass,
         "behavioral_pass": behavioral_pass,
+        "momentum_pass": momentum_pass,
+        "pattern_pass": pattern_pass,
+        "rs_gated": rs_gated,
+        "sector_gated": sector_gated,
         "signals": len(signals),
         "shown": len(shown),
+        "min_show_score_used": adaptive_min_score,
     }
 
     # Render report

@@ -110,6 +110,184 @@ def worst_recent_gap_down_pct(prices: pd.DataFrame, lookback: int = 20) -> float
 
 
 # ============================================================================
+# Momentum confluence indicators (RSI, ADX, Weekly MACD, 52W range position)
+# ============================================================================
+
+def rsi(close: pd.Series, period: int = 14) -> pd.Series:
+    """Classic Wilder RSI."""
+    delta = close.diff()
+    gains = delta.where(delta > 0, 0.0)
+    losses = -delta.where(delta < 0, 0.0)
+    avg_gain = gains.ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
+    avg_loss = losses.ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
+    rs = avg_gain / avg_loss.replace(0, np.nan)
+    return 100 - (100 / (1 + rs))
+
+
+def adx(prices: pd.DataFrame, period: int = 14) -> pd.Series:
+    """Average Directional Index (Wilder). Measures trend strength regardless
+    of direction. ADX ≥ 20 = trending; < 20 = choppy / ranging."""
+    high = prices["High"]
+    low = prices["Low"]
+    close = prices["Close"]
+    prev_close = close.shift(1)
+
+    tr = pd.concat([
+        high - low,
+        (high - prev_close).abs(),
+        (low - prev_close).abs(),
+    ], axis=1).max(axis=1)
+
+    up_move = high.diff()
+    down_move = -low.diff()
+    plus_dm = pd.Series(
+        np.where((up_move > down_move) & (up_move > 0), up_move, 0.0),
+        index=high.index,
+    )
+    minus_dm = pd.Series(
+        np.where((down_move > up_move) & (down_move > 0), down_move, 0.0),
+        index=high.index,
+    )
+
+    atr_series = tr.ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
+    atr_safe = atr_series.replace(0, np.nan)
+    plus_di = 100 * plus_dm.ewm(alpha=1 / period, adjust=False, min_periods=period).mean() / atr_safe
+    minus_di = 100 * minus_dm.ewm(alpha=1 / period, adjust=False, min_periods=period).mean() / atr_safe
+
+    denom = (plus_di + minus_di).replace(0, np.nan)
+    dx = 100 * (plus_di - minus_di).abs() / denom
+    return dx.ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
+
+
+def weekly_macd_histogram_positive(close: pd.Series) -> bool:
+    """True if the latest weekly MACD(12,26,9) histogram is positive.
+    Weekly MACD lagging-but-reliable confirmation of medium-term trend."""
+    if len(close) < 150:  # need enough daily bars for 30+ weekly bars
+        return False
+    weekly = close.resample("W").last().dropna()
+    if len(weekly) < 30:
+        return False
+    ema12 = weekly.ewm(span=12, adjust=False).mean()
+    ema26 = weekly.ewm(span=26, adjust=False).mean()
+    macd = ema12 - ema26
+    signal = macd.ewm(span=9, adjust=False).mean()
+    histogram = macd - signal
+    last = histogram.iloc[-1]
+    return bool(pd.notna(last) and float(last) > 0)
+
+
+def range_52w_position(prices: pd.DataFrame) -> float | None:
+    """Where current close sits in the 52-week range. 0 = at low, 1 = at high.
+    Returns None if insufficient data."""
+    if len(prices) < 252:
+        return None
+    window = prices.iloc[-252:]
+    hi = float(window["High"].max())
+    lo = float(window["Low"].min())
+    cur = float(prices["Close"].iloc[-1])
+    if hi <= lo:
+        return None
+    return (cur - lo) / (hi - lo)
+
+
+def check_momentum_confluence(prices: pd.DataFrame) -> dict:
+    """Four momentum/trend-quality checks. Returns per-check results plus total
+    passed count. Caller decides minimum threshold (e.g., 3 of 4 required).
+
+    Checks:
+      - RSI(14) in 50-70 range (uptrending without being extended)
+      - ADX(14) >= 20 (actually trending, not chopping)
+      - Weekly MACD histogram positive (medium-term trend confirmed)
+      - Price position in 52W range >= 60% (stock is in strength)
+    """
+    close = prices["Close"]
+    rsi_val = float(rsi(close, 14).iloc[-1]) if len(close) >= 15 else None
+    adx_val = float(adx(prices, 14).iloc[-1]) if len(prices) >= 28 else None
+    weekly_macd_ok = weekly_macd_histogram_positive(close)
+    range_pos = range_52w_position(prices)
+
+    checks = {
+        "rsi_50_70": rsi_val is not None and 50 <= rsi_val <= 70,
+        "adx_20_plus": adx_val is not None and adx_val >= 20,
+        "weekly_macd_positive": weekly_macd_ok,
+        "range_pos_60_plus": range_pos is not None and range_pos >= 0.60,
+    }
+    passed = sum(checks.values())
+    return {
+        "checks": checks,
+        "passed": passed,
+        "total": 4,
+        "rsi": round(rsi_val, 1) if rsi_val is not None and not pd.isna(rsi_val) else None,
+        "adx": round(adx_val, 1) if adx_val is not None and not pd.isna(adx_val) else None,
+        "range_pos_pct": round(range_pos * 100, 1) if range_pos is not None else None,
+    }
+
+
+# ============================================================================
+# Momentum indicators (for the confluence filter)
+# ============================================================================
+
+def rsi(series: pd.Series, period: int = 14) -> pd.Series:
+    """Wilder-smoothed Relative Strength Index."""
+    delta = series.diff()
+    gain = delta.clip(lower=0)
+    loss = -delta.clip(upper=0)
+    avg_gain = gain.ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
+    avg_loss = loss.ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
+    rs_val = avg_gain / avg_loss.replace(0, np.nan)
+    return 100 - (100 / (1 + rs_val))
+
+
+def adx(prices: pd.DataFrame, period: int = 14) -> pd.Series:
+    """Average Directional Index (Wilder). High ADX = strong trend; low = chop."""
+    high = prices["High"]
+    low = prices["Low"]
+    close = prices["Close"]
+
+    tr = pd.concat([
+        high - low,
+        (high - close.shift(1)).abs(),
+        (low - close.shift(1)).abs(),
+    ], axis=1).max(axis=1)
+    atr_val = tr.ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
+
+    up_move = high.diff()
+    down_move = -low.diff()
+    plus_dm = ((up_move > down_move) & (up_move > 0)).astype(float) * up_move.clip(lower=0)
+    minus_dm = ((down_move > up_move) & (down_move > 0)).astype(float) * down_move.clip(lower=0)
+
+    plus_di = 100 * plus_dm.ewm(alpha=1 / period, adjust=False, min_periods=period).mean() / atr_val
+    minus_di = 100 * minus_dm.ewm(alpha=1 / period, adjust=False, min_periods=period).mean() / atr_val
+
+    di_sum = (plus_di + minus_di).replace(0, np.nan)
+    dx = 100 * (plus_di - minus_di).abs() / di_sum
+    return dx.ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
+
+
+def macd(series: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9):
+    """MACD line, signal line, histogram. Returns tuple of three Series."""
+    ema_fast = series.ewm(span=fast, adjust=False).mean()
+    ema_slow = series.ewm(span=slow, adjust=False).mean()
+    macd_line = ema_fast - ema_slow
+    signal_line = macd_line.ewm(span=signal, adjust=False).mean()
+    hist = macd_line - signal_line
+    return macd_line, signal_line, hist
+
+
+def range_position_52w(prices: pd.DataFrame) -> float | None:
+    """Current close as fraction of 52-week range (0 = at low, 1 = at high)."""
+    if len(prices) < 60:
+        return None
+    lookback = min(252, len(prices))
+    hi = float(prices["High"].iloc[-lookback:].max())
+    lo = float(prices["Low"].iloc[-lookback:].min())
+    if hi <= lo:
+        return None
+    close_now = float(prices["Close"].iloc[-1])
+    return (close_now - lo) / (hi - lo)
+
+
+# ============================================================================
 # Days-in-consolidation heuristic
 # ============================================================================
 

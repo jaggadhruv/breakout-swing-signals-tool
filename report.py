@@ -299,9 +299,26 @@ def _render_breadth_panel(breadth: dict) -> str:
 """
 
 
+def _rs_class(rs: float | None) -> str:
+    if rs is None: return "dim"
+    if rs >= 90: return "piotroski-hi"       # reuse green
+    if rs >= 75: return "mono"
+    return "dim"
+
+
+def _render_sector_cell(sector: str, rank: int | None) -> str:
+    if not sector:
+        return '<span class="dim">—</span>'
+    label = escape(sector)
+    if rank is None:
+        return f'<span class="dim">{label}</span>'
+    rank_class = "streak" if rank <= 3 else ("mono" if rank <= 6 else "dim")
+    return f'<span class="dim">{label}</span> <span class="{rank_class} mono">#{rank}</span>'
+
+
 def _render_candidates_table(candidates: list[dict]) -> str:
     if not candidates:
-        return '<div class="empty">No breakout signals with setup score ≥ 40 today.</div>'
+        return '<div class="empty">No breakout signals passing all confluence gates today.</div>'
 
     rows = []
     for c in candidates:
@@ -314,6 +331,9 @@ def _render_candidates_table(candidates: list[dict]) -> str:
             else str(c["days_on_report"])
         )
         rr = (c["tp1"] - c["entry"]) / (c["entry"] - c["stop"]) if c["entry"] > c["stop"] else 0
+        rs_val = c.get("rs_percentile")
+        rs_display = f'P{rs_val:.0f}' if rs_val is not None else '—'
+        sector_cell = _render_sector_cell(c.get("sector", ""), c.get("sector_rank"))
 
         rows.append(f"""
 <tr>
@@ -325,9 +345,10 @@ def _render_candidates_table(candidates: list[dict]) -> str:
   <td class="num mono">{_fmt(c["tp1"], ".2f")}</td>
   <td class="num mono">{_fmt(c["tp2"], ".2f")}</td>
   <td class="num mono">{_fmt(rr, ".1f")}R</td>
+  <td class="num mono {_rs_class(rs_val)}">{rs_display}</td>
   <td class="num mono {_piotroski_class(c["piotroski"])}">{_fmt(c["piotroski"])}</td>
   <td class="num mono">{streak_html}</td>
-  <td class="dim">{escape(c["sector"])}</td>
+  <td>{sector_cell}</td>
 </tr>""")
 
     return f"""
@@ -342,6 +363,7 @@ def _render_candidates_table(candidates: list[dict]) -> str:
       <th class="num">TP1</th>
       <th class="num">TP2</th>
       <th class="num">R:R</th>
+      <th class="num">RS</th>
       <th class="num">Piotroski</th>
       <th class="num">Streak</th>
       <th>Sector</th>
@@ -453,13 +475,18 @@ def _render_sector_breakdown(sector_counts: dict) -> str:
 
 
 def _render_funnel(funnel: dict) -> str:
+    min_score = funnel.get("min_show_score_used", 40)
     steps = [
         ("Eligible pool", funnel["eligible"]),
         ("Skipped (no data)", funnel.get("no_data", 0)),
         ("Passed trend filter", funnel["trend_pass"]),
         ("Passed behavioral filter", funnel["behavioral_pass"]),
-        ("Breakout signals", funnel["signals"]),
-        ("Scored ≥ 40 (shown)", funnel["shown"]),
+        ("Passed momentum confluence", funnel.get("momentum_pass", 0)),
+        ("Pattern triggered", funnel.get("pattern_pass", funnel.get("signals", 0))),
+        ("Dropped by RS gate", funnel.get("rs_gated", 0)),
+        ("Dropped by sector gate", funnel.get("sector_gated", 0)),
+        ("Final signals", funnel["signals"]),
+        (f"Scored ≥ {int(min_score)} (shown)", funnel["shown"]),
     ]
     items = "".join(
         f'<li><span class="step-name">{escape(name)}</span>'
@@ -544,6 +571,24 @@ def _render_methodology() -> str:
         <li><strong>Streak.</strong> Number of consecutive days this stock has appeared on the report. "×3" means today is the third consecutive appearance. Higher = more confirmation.</li>
         <li><strong>Sector.</strong> From your screener CSV, or "Unknown" if the column wasn't included.</li>
       </ul>
+    </div>
+  </details>
+
+  <details class="method-block">
+    <summary>Confluence layer (gates applied before any signal reaches the report)</summary>
+    <div class="method-body">
+      <p>Every signal must survive three independent gates in addition to the pattern checks. The idea is to filter out breakouts that lack supporting context — momentum, relative strength, or sector tailwinds.</p>
+      <p><strong>Gate 1 — Momentum confluence.</strong> At least 3 of 4 must hold:</p>
+      <ul>
+        <li><strong>RSI(14) in 50–75</strong> — strong but not extended</li>
+        <li><strong>ADX(14) ≥ 20</strong> — stock is actually trending, not chopping</li>
+        <li><strong>Weekly MACD histogram positive</strong> — higher-timeframe alignment</li>
+        <li><strong>Price in top 40% of 52-week range</strong> — already in a strength regime</li>
+      </ul>
+      <p><strong>Gate 2 — Relative Strength percentile.</strong> Each stock's 12-week return minus SPY's 12-week return is percentile-ranked across the eligible pool. Only tickers in the top 25% (RS ≥ 75) pass. Tickers in the top 10% (RS ≥ 90) get a <strong>+10 scoring bonus</strong>. This is the single most predictive filter for breakout follow-through.</p>
+      <p><strong>Gate 3 — Sector regime.</strong> The 11 Sector SPDR ETFs (XLK, XLV, XLF, …) are ranked by 60-day return vs SPY. Only tickers whose sector ranks in the top 6 of 11 pass. Top-3 sectors award a <strong>+5 scoring bonus</strong>. Unmapped sectors (e.g., "Unknown") pass by default.</p>
+      <p><strong>Market regime adjustment.</strong> When weekly breadth is Adverse (&lt; 4), the minimum shown score is raised from 40 to 75 — only the strongest setups surface during broad weakness.</p>
+      <p><strong>Hidden bonus.</strong> If all 4 momentum checks pass (not just 3), the setup earns an additional <strong>+5 scoring bonus</strong>.</p>
     </div>
   </details>
 
