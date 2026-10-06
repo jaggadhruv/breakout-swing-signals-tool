@@ -619,6 +619,8 @@ def _render_sector_breakdown(sector_counts: dict) -> str:
 
 def _render_funnel(funnel: dict) -> str:
     min_score = funnel.get("min_show_score_used", 40)
+    bo_cap = funnel.get("max_breakouts_cap", 5)
+    wl_cap = funnel.get("max_watchlist_cap", 8)
     steps = [
         ("Eligible pool", funnel["eligible"]),
         ("Skipped (no data)", funnel.get("no_data", 0)),
@@ -629,10 +631,12 @@ def _render_funnel(funnel: dict) -> str:
         ("— No pattern yet (→ watchlist pool)", funnel.get("watchlist_raw", 0)),
         ("Dropped by RS gate (breakouts)", funnel.get("rs_gated", 0)),
         ("Dropped by sector gate (breakouts)", funnel.get("sector_gated", 0)),
-        ("Final breakout signals", funnel["signals"]),
-        (f"Breakouts scored ≥ {int(min_score)} (shown)", funnel["shown"]),
-        ("Final watchlist entries", funnel.get("watchlist_signals", 0)),
-        ("Watchlist shown (score ≥ 60)", funnel.get("watchlist_shown", 0)),
+        ("Final breakout signals (archived)", funnel["signals"]),
+        ("Final watchlist entries (archived)", funnel.get("watchlist_signals", 0)),
+        ("Elite breakouts qualified", funnel.get("elite_breakouts", 0)),
+        ("Elite watchlist qualified", funnel.get("elite_watchlist", 0)),
+        (f"Breakouts shown (top {bo_cap})", funnel["shown"]),
+        (f"Watchlist shown (top {wl_cap})", funnel.get("watchlist_shown", 0)),
     ]
     items = "".join(
         f'<li><span class="step-name">{escape(name)}</span>'
@@ -764,6 +768,27 @@ def _render_methodology() -> str:
   </details>
 
   <details class="method-block">
+    <summary>How "today's" sections are curated (elite filter + caps)</summary>
+    <div class="method-body">
+      <p>The two "today" sections (Breakouts and Watchlist) are deliberately kept small so you can review in minutes, not hours. Every candidate that passes the base gates still gets archived — but only elite ones display today.</p>
+      <p><strong>Elite filter — must pass ALL to display today:</strong></p>
+      <table class="method-table">
+        <thead><tr><th>Criterion</th><th>Threshold</th></tr></thead>
+        <tbody>
+          <tr><td>RS percentile</td><td class="mono">≥ 85 (top 15%, vs base gate 75)</td></tr>
+          <tr><td>Momentum confluence passes</td><td class="mono">4 of 4 (vs base gate 3)</td></tr>
+          <tr><td>Sector rank</td><td class="mono">≤ 4 (top 4 sectors, vs base gate 6)</td></tr>
+          <tr><td>Accumulation days (watchlist only)</td><td class="mono">≥ 5</td></tr>
+          <tr><td>Base score threshold</td><td class="mono">unchanged (40 or 75 in Adverse)</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Display caps:</strong> Breakouts max 5 rows, Watchlist max 8 rows. If more candidates qualify, the top ones by score win. If none qualify (common in weak markets), the section is empty and you fall back to the Recent Quality sections for broader context.</p>
+      <p><strong>What this fixes:</strong> too many names to review wasted time and encouraged skimming. 5 breakouts and 8 watchlist entries is small enough to study each one properly, understand its chart, and make a real trade/no-trade decision. Everything below elite still accrues in the 90-day archives — nothing is lost, just not surfaced for daily review.</p>
+      <p><strong>If this feels too strict:</strong> on a strong market day, 8-10 names may deserve attention. Loosen one gate at a time in <code>daily_scan.py</code>: drop <code>ELITE_RS_PERCENTILE_MIN</code> to 80, or <code>ELITE_MOMENTUM_PASSES_MIN</code> to 3. If too loose, tighten them. Watch the Funnel section — "Elite qualified" counts tell you how much headroom the filter has.</p>
+    </div>
+  </details>
+
+  <details class="method-block">
     <summary>How the Swing-Ready Watchlist is built and scored</summary>
     <div class="method-body">
       <p>The watchlist surfaces stocks that passed every quality gate (trend, behavioral, momentum confluence, RS percentile, sector regime) but <em>didn't</em> trigger any breakout pattern today. These are "stalking list" setups — quality candidates waiting for the trigger. Entering on the trigger (via buy-stop or alert) often gives better R:R than chasing a breakout already in motion.</p>
@@ -837,10 +862,10 @@ def render(
     {_render_breadth_panel(breadth)}
   </header>
 
-  <h2 class="section">Today's Breakouts <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(pattern triggered + all confluence gates passed)</span></h2>
+  <h2 class="section">Today's Breakouts <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(elite-filtered, top {funnel.get("max_breakouts_cap", 5)} max)</span></h2>
   {_render_candidates_table(candidates)}
 
-  <h2 class="section">Today's Swing-Ready Watchlist <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(quality setups waiting for a trigger)</span></h2>
+  <h2 class="section">Today's Swing-Ready Watchlist <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(elite-filtered, top {funnel.get("max_watchlist_cap", 8)} max)</span></h2>
   {_render_watchlist_table(watchlist)}
 
   <h2 class="section">Recent Quality Breakouts <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(top 10 by conviction, appearances, volume, and recency)</span></h2>

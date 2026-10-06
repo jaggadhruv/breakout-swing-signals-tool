@@ -60,6 +60,23 @@ WATCHLIST_QUALITY_THRESHOLD = 70    # bar for inclusion in Recent Quality Watchl
 WATCHLIST_RECENT_TOP_N = 10
 ACCUMULATION_LOOKBACK_DAYS = 25     # IBD-style accumulation day count window
 
+# ----------------------------------------------------------------------------
+# Elite display filter — strict curation of "today" sections
+# ----------------------------------------------------------------------------
+# Both archives (signals + watchlist) still record EVERYTHING that passes the
+# base gates, so Recent Quality sections keep building 90 days of history.
+# The elite filter only applies to the two "today" sections on each report.
+# Rationale: avoid reviewing 20+ names daily; focus on the highest-confluence
+# handful. Historical quality lists let you still see broader context.
+
+MAX_BREAKOUTS_SHOWN         = 5     # hard cap on Today's Breakouts rows
+MAX_WATCHLIST_SHOWN         = 8     # hard cap on Today's Watchlist rows
+
+ELITE_RS_PERCENTILE_MIN     = 85    # top 15% of universe (vs base gate of 75)
+ELITE_MOMENTUM_PASSES_MIN   = 4     # all 4 momentum checks (vs base gate of 3)
+ELITE_SECTOR_RANK_MAX       = 4     # top 4 sectors only (vs base gate of 6)
+ELITE_WATCHLIST_MIN_ACC_DAYS = 5    # watchlist entries need 5+ accumulation days
+
 # Layer 4: trend context filter — a stock passes if all four hold
 TREND_ABOVE_50_SMA = True
 TREND_ABOVE_200_SMA = True
@@ -1356,13 +1373,43 @@ def main() -> None:
         log(f"Market regime: Adverse (weekly breadth {breadth['weekly_score']:.1f}). "
             f"Raising min show score {SCORING['min_show_score']} -> {adaptive_min_score}.")
 
-    # Filter and rank BREAKOUT signals for display
-    shown = [s for s in signals if s["score"] >= adaptive_min_score]
-    shown.sort(key=lambda s: s["score"], reverse=True)
+    # ---- Elite display filter: curate "today" sections to a small set ----
+    # Archives retain everything above base gates; only displayed set is strict.
 
-    # Filter and rank WATCHLIST entries for display
-    watchlist_shown = [w for w in watchlist if w["watchlist_score"] >= WATCHLIST_MIN_SHOW_SCORE]
-    watchlist_shown.sort(key=lambda w: w["watchlist_score"], reverse=True)
+    def is_elite_breakout(s: dict) -> bool:
+        rs_pct = s.get("rs_percentile") or 0
+        mom_passes = s.get("momentum_context", {}).get("pass_count", 0)
+        sector_rank = s.get("sector_rank") or 99
+        return (
+            s["score"] >= adaptive_min_score
+            and rs_pct >= ELITE_RS_PERCENTILE_MIN
+            and mom_passes >= ELITE_MOMENTUM_PASSES_MIN
+            and sector_rank <= ELITE_SECTOR_RANK_MAX
+        )
+
+    def is_elite_watchlist(w: dict) -> bool:
+        rs_pct = w.get("rs_percentile") or 0
+        mom_passes = w.get("momentum_passes", 0)
+        sector_rank = w.get("sector_rank") or 99
+        acc_days = w.get("accumulation_days", 0)
+        return (
+            w["watchlist_score"] >= WATCHLIST_MIN_SHOW_SCORE
+            and rs_pct >= ELITE_RS_PERCENTILE_MIN
+            and mom_passes >= ELITE_MOMENTUM_PASSES_MIN
+            and sector_rank <= ELITE_SECTOR_RANK_MAX
+            and acc_days >= ELITE_WATCHLIST_MIN_ACC_DAYS
+        )
+
+    elite_breakouts = [s for s in signals if is_elite_breakout(s)]
+    elite_breakouts.sort(key=lambda s: s["score"], reverse=True)
+    shown = elite_breakouts[:MAX_BREAKOUTS_SHOWN]
+
+    elite_watchlist = [w for w in watchlist if is_elite_watchlist(w)]
+    elite_watchlist.sort(key=lambda w: w["watchlist_score"], reverse=True)
+    watchlist_shown = elite_watchlist[:MAX_WATCHLIST_SHOWN]
+
+    log(f"Elite filter: {len(elite_breakouts)} breakouts qualified → top {len(shown)} shown; "
+        f"{len(elite_watchlist)} watchlist qualified → top {len(watchlist_shown)} shown.")
 
     # Sector breakdown across all signals (not just shown)
     sector_counts: dict = {}
@@ -1379,10 +1426,14 @@ def main() -> None:
         "rs_gated": rs_gated,
         "sector_gated": sector_gated,
         "signals": len(signals),
+        "elite_breakouts": len(elite_breakouts),
         "shown": len(shown),
         "watchlist_raw": len(raw_watchlist),
         "watchlist_signals": len(watchlist),
+        "elite_watchlist": len(elite_watchlist),
         "watchlist_shown": len(watchlist_shown),
+        "max_breakouts_cap": MAX_BREAKOUTS_SHOWN,
+        "max_watchlist_cap": MAX_WATCHLIST_SHOWN,
         "min_show_score_used": adaptive_min_score,
     }
 
