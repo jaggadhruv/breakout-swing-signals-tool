@@ -67,6 +67,110 @@
       "piotroski": null,
       "days_on_report": 1,
       "volume_multiple": 1.5
+    },
+    {
+      "date": "2026-10-06",
+      "ticker": "EXPD",
+      "name": "EXPD",
+      "sector": "Unknown",
+      "score": 37.8,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 194.12,
+      "stop": 183.36,
+      "tp1": 215.64,
+      "tp2": 226.4,
+      "piotroski": null,
+      "days_on_report": 1,
+      "volume_multiple": 1.52
+    },
+    {
+      "date": "2026-10-06",
+      "ticker": "FORM",
+      "name": "FORM",
+      "sector": "Unknown",
+      "score": 50.4,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 147.99,
+      "stop": 123.8,
+      "tp1": 196.37,
+      "tp2": 220.56,
+      "piotroski": null,
+      "days_on_report": 1,
+      "volume_multiple": 10.86
+    },
+    {
+      "date": "2026-10-06",
+      "ticker": "PBR",
+      "name": "PBR",
+      "sector": "Unknown",
+      "score": 82.6,
+      "pattern_labels": [
+        "55D High",
+        "Resistance Break"
+      ],
+      "entry": 24.14,
+      "stop": 20.45,
+      "tp1": 31.52,
+      "tp2": 35.21,
+      "piotroski": null,
+      "days_on_report": 1,
+      "volume_multiple": 3.34
+    },
+    {
+      "date": "2026-10-06",
+      "ticker": "PBR-A",
+      "name": "PBR-A",
+      "sector": "Unknown",
+      "score": 80.0,
+      "pattern_labels": [
+        "55D High",
+        "Resistance Break"
+      ],
+      "entry": 22.12,
+      "stop": 18.36,
+      "tp1": 29.64,
+      "tp2": 33.4,
+      "piotroski": null,
+      "days_on_report": 1,
+      "volume_multiple": 5.44
+    },
+    {
+      "date": "2026-10-06",
+      "ticker": "TS",
+      "name": "TS",
+      "sector": "Unknown",
+      "score": 32.8,
+      "pattern_labels": [
+        "20D High"
+      ],
+      "entry": 58.46,
+      "stop": 54.29,
+      "tp1": 66.8,
+      "tp2": 70.97,
+      "piotroski": null,
+      "days_on_report": 1,
+      "volume_multiple": 1.78
+    },
+    {
+      "date": "2026-10-06",
+      "ticker": "TWLO",
+      "name": "TWLO",
+      "sector": "Unknown",
+      "score": 55.2,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 300.91,
+      "stop": 268.38,
+      "tp1": 365.97,
+      "tp2": 398.5,
+      "piotroski": null,
+      "days_on_report": 2,
+      "volume_multiple": 12.98
     }
   ]
 }
