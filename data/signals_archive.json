@@ -67,6 +67,41 @@
       "piotroski": null,
       "days_on_report": 1,
       "volume_multiple": 1.5
+    },
+    {
+      "date": "2026-10-07",
+      "ticker": "MRVL",
+      "name": "MRVL",
+      "sector": "Unknown",
+      "score": 84.8,
+      "pattern_labels": [
+        "55D High",
+        "Resistance Break"
+      ],
+      "entry": 287.01,
+      "stop": 260.4,
+      "tp1": 340.23,
+      "tp2": 366.84,
+      "piotroski": null,
+      "days_on_report": 1,
+      "volume_multiple": 2.96
+    },
+    {
+      "date": "2026-10-07",
+      "ticker": "PBR",
+      "name": "PBR",
+      "sector": "Unknown",
+      "score": 46.6,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 23.8,
+      "stop": 20.2,
+      "tp1": 31.0,
+      "tp2": 34.6,
+      "piotroski": null,
+      "days_on_report": 2,
+      "volume_multiple": 1.66
     }
   ]
 }
