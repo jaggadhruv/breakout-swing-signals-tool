@@ -606,6 +606,143 @@ def _render_recent_quality_watchlist_table(candidates: list[dict], today_str: st
 """
 
 
+def _render_supertrend_table(candidates: list[dict]) -> str:
+    """Today's Supertrend-long candidates. Each row is a trend-following entry
+    opportunity with a built-in trailing stop (the Supertrend line)."""
+    if not candidates:
+        return ('<div class="empty">No Supertrend-long candidates passed the elite filter today. '
+                'Check Recent Quality Supertrend for recent high-quality flips.</div>')
+
+    rows = []
+    for c in candidates:
+        rs_val = c.get("rs_percentile")
+        rs_display = f'P{rs_val:.0f}' if rs_val is not None else '—'
+        sector_cell = _render_sector_cell(c.get("sector", ""), c.get("sector_rank"))
+        mom_passes = c.get("momentum_passes", 0)
+        acc_days = c.get("accumulation_days", 0)
+        acc_class = "piotroski-hi" if acc_days >= 7 else ("piotroski-mid" if acc_days >= 4 else "dim")
+
+        flip_age = c.get("days_since_flip", 0)
+        # Fresh flips get accent highlight
+        if flip_age <= 1:
+            flip_display = f'<span class="streak">{flip_age}d</span>'
+        elif flip_age <= 7:
+            flip_display = f'<span class="mono">{flip_age}d</span>'
+        else:
+            flip_display = f'<span class="dim mono">{flip_age}d</span>'
+
+        stop_dist = c.get("stop_distance_pct")
+        stop_dist_display = f'{stop_dist:+.1f}%' if stop_dist is not None else '—'
+
+        rows.append(f"""
+<tr>
+  <td class="ticker">{escape(c["ticker"])}</td>
+  <td class="{_score_class(c["supertrend_score"])} num mono">{_fmt(c["supertrend_score"], ".0f")}</td>
+  <td class="num">{flip_display}</td>
+  <td class="num mono {_rs_class(rs_val)}">{rs_display}</td>
+  <td class="num mono">{mom_passes}/4</td>
+  <td class="num mono {acc_class}">{acc_days}</td>
+  <td class="num mono">{_fmt(c.get("close"), ".2f")}</td>
+  <td class="num mono">{_fmt(c.get("supertrend_level"), ".2f")}</td>
+  <td class="num mono">{stop_dist_display}</td>
+  <td class="num mono {_piotroski_class(c.get("piotroski"))}">{_fmt(c.get("piotroski"))}</td>
+  <td>{sector_cell}</td>
+</tr>""")
+
+    return f"""
+<table class="candidates">
+  <thead>
+    <tr>
+      <th>Ticker</th>
+      <th class="num">Score</th>
+      <th class="num">Flip Age</th>
+      <th class="num">RS</th>
+      <th class="num">Mom</th>
+      <th class="num">AccDays</th>
+      <th class="num">Current</th>
+      <th class="num">ST Stop</th>
+      <th class="num">% Above Stop</th>
+      <th class="num">Piotroski</th>
+      <th>Sector</th>
+    </tr>
+  </thead>
+  <tbody>{"".join(rows)}</tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  Supertrend (ATR 10, mult 2.5) matches TradingView free tier and your Positional Trading Tool. The ST Stop line trails upward as the trend continues — exit when price closes below it. Flip Age in days since the long signal fired; fresher flips (≤ 3 days) are typically the best risk/reward entries.
+</p>
+"""
+
+
+def _render_recent_quality_supertrend_table(candidates: list[dict], today_str: str) -> str:
+    """Historical quality Supertrend-long entries aggregated across the 90-day archive."""
+    if not candidates:
+        return ('<div class="empty">No high-quality Supertrend entries recorded yet. '
+                'This section fills in as the tool accumulates history.</div>')
+
+    rows = []
+    for c in candidates:
+        pick_date = c.get("best_score_date", "")
+        date_cell = (
+            f'<span class="streak">{escape(pick_date)}</span>'
+            if pick_date == today_str
+            else f'<span class="dim">{escape(pick_date)}</span>'
+        )
+        seen = int(c.get("appearances", 1))
+        seen_html = (
+            f'<span class="streak">×{seen}</span>' if seen >= 3
+            else (f'<span class="mono">×{seen}</span>' if seen >= 2
+                  else f'<span class="dim mono">×{seen}</span>')
+        )
+        rs_val = c.get("peak_rs_percentile")
+        rs_display = f'P{rs_val:.0f}' if rs_val is not None else '—'
+        sector_cell = _render_sector_cell(c.get("sector", ""), c.get("sector_rank"))
+        mom_passes = c.get("peak_momentum_passes", 0)
+        acc_days = c.get("peak_accumulation_days", 0)
+        flip_age = c.get("peak_days_since_flip", 0)
+
+        rows.append(f"""
+<tr>
+  <td class="mono">{date_cell}</td>
+  <td class="ticker">{escape(c["ticker"])}</td>
+  <td class="num mono">{seen_html}</td>
+  <td class="{_score_class(c["best_score"])} num mono">{_fmt(c["best_score"], ".0f")}</td>
+  <td class="num mono">{flip_age}d</td>
+  <td class="num mono {_rs_class(rs_val)}">{rs_display}</td>
+  <td class="num mono">{mom_passes}/4</td>
+  <td class="num mono">{acc_days}</td>
+  <td class="num mono">{_fmt(c.get("peak_close"), ".2f")}</td>
+  <td class="num mono">{_fmt(c.get("peak_supertrend_level"), ".2f")}</td>
+  <td class="num mono {_piotroski_class(c.get("piotroski"))}">{_fmt(c.get("piotroski"))}</td>
+  <td>{sector_cell}</td>
+</tr>""")
+
+    return f"""
+<table class="candidates">
+  <thead>
+    <tr>
+      <th>Pick Date</th>
+      <th>Ticker</th>
+      <th class="num">Seen</th>
+      <th class="num">Best Score</th>
+      <th class="num">Flip Age*</th>
+      <th class="num">RS</th>
+      <th class="num">Mom</th>
+      <th class="num">AccDays</th>
+      <th class="num">Current*</th>
+      <th class="num">ST Stop*</th>
+      <th class="num">Piotroski</th>
+      <th>Sector</th>
+    </tr>
+  </thead>
+  <tbody>{"".join(rows)}</tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  * Values from the pick date (ticker's peak-scoring day). Re-check today's chart before acting — the Supertrend trailing stop will have moved since.
+</p>
+"""
+
+
 def _render_sector_breakdown(sector_counts: dict) -> str:
     if not sector_counts:
         return '<div class="dim">No signals to break down.</div>'
@@ -621,6 +758,7 @@ def _render_funnel(funnel: dict) -> str:
     min_score = funnel.get("min_show_score_used", 40)
     bo_cap = funnel.get("max_breakouts_cap", 5)
     wl_cap = funnel.get("max_watchlist_cap", 8)
+    st_cap = funnel.get("max_supertrend_cap", 6)
     steps = [
         ("Eligible pool", funnel["eligible"]),
         ("Skipped (no data)", funnel.get("no_data", 0)),
@@ -629,14 +767,18 @@ def _render_funnel(funnel: dict) -> str:
         ("Passed momentum confluence", funnel.get("momentum_pass", 0)),
         ("— Pattern triggered (→ breakouts)", funnel.get("pattern_pass", funnel.get("signals", 0))),
         ("— No pattern yet (→ watchlist pool)", funnel.get("watchlist_raw", 0)),
+        ("— Supertrend long state (→ supertrend pool)", funnel.get("supertrend_raw", 0)),
         ("Dropped by RS gate (breakouts)", funnel.get("rs_gated", 0)),
         ("Dropped by sector gate (breakouts)", funnel.get("sector_gated", 0)),
         ("Final breakout signals (archived)", funnel["signals"]),
         ("Final watchlist entries (archived)", funnel.get("watchlist_signals", 0)),
+        ("Final supertrend entries (archived)", funnel.get("supertrend_signals", 0)),
         ("Elite breakouts qualified", funnel.get("elite_breakouts", 0)),
         ("Elite watchlist qualified", funnel.get("elite_watchlist", 0)),
+        ("Elite supertrend qualified", funnel.get("elite_supertrend", 0)),
         (f"Breakouts shown (top {bo_cap})", funnel["shown"]),
         (f"Watchlist shown (top {wl_cap})", funnel.get("watchlist_shown", 0)),
+        (f"Supertrend shown (top {st_cap})", funnel.get("supertrend_shown", 0)),
     ]
     items = "".join(
         f'<li><span class="step-name">{escape(name)}</span>'
@@ -789,6 +931,40 @@ def _render_methodology() -> str:
   </details>
 
   <details class="method-block">
+    <summary>How Supertrend Longs is built and scored</summary>
+    <div class="method-body">
+      <p>The Supertrend-long section surfaces tickers in a trend-following long state on the daily chart. Supertrend is a trailing-stop indicator: when price is above the line, the trend is long and the line itself is your exit level. Uses the same parameters as the Positional Trading Tool: <strong>ATR period 10, multiplier 2.5</strong> (matches TradingView free tier).</p>
+      <p>A ticker enters the pool when (a) it passed trend + behavioral + momentum confluence gates in Pass 1, and (b) Supertrend direction is currently long. Same RS + sector gates apply as for breakouts and watchlist.</p>
+      <p><strong>Supertrend score (0 to ~122):</strong></p>
+      <table class="method-table">
+        <thead><tr><th>Component</th><th class="num">Points</th></tr></thead>
+        <tbody>
+          <tr><td>Flip recency (bars since direction change)</td><td class="num mono">+30 if today, +25 if 1-3d, +15 if 4-7d, +5 if 8-15d</td></tr>
+          <tr><td>RS strength (percentile vs eligible pool)</td><td class="num mono">rs_percentile ÷ 2, up to +50</td></tr>
+          <tr><td>Momentum confluence passes</td><td class="num mono">+5 per check, up to +20</td></tr>
+          <tr><td>Sector strength bonus</td><td class="num mono">+2 per sector rank above 7, up to +12</td></tr>
+          <tr><td>Accumulation days (last 25 sessions)</td><td class="num mono">+1 per day, up to +10</td></tr>
+        </tbody>
+      </table>
+      <p><strong>How to read the row:</strong></p>
+      <ul>
+        <li><strong>Flip Age</strong> — bars since the long signal fired. 0d = flipped today, 1-3d = fresh entry zone, &gt; 15d = mature trend (good for riding, worse for entry)</li>
+        <li><strong>Current</strong> — today's close</li>
+        <li><strong>ST Stop</strong> — the Supertrend trailing-stop line. Exit if price closes below this.</li>
+        <li><strong>% Above Stop</strong> — how far current price sits above the stop. Smaller = tighter risk, bigger = more room to breathe but also more at risk if stop is hit</li>
+      </ul>
+      <p><strong>Why this complements breakouts and watchlist:</strong></p>
+      <ul>
+        <li>Breakouts = specific chart pattern just fired (point-in-time trigger)</li>
+        <li>Watchlist = quality setup building, waiting for trigger (pre-trigger)</li>
+        <li>Supertrend = already in a trend, trailing-stop managed (continuation)</li>
+      </ul>
+      <p>A ticker appearing in multiple sections (e.g., both Breakouts and Supertrend) is confluence — multiple signal types confirming the same name. Those are often the best setups.</p>
+      <p><strong>Recent Quality Supertrend (history)</strong> aggregates the past 90 days of Supertrend-long entries. Only tickers whose peak Supertrend score ever hit 70+ are eligible. Keep score adds recency, repeat appearances, and accumulation bonuses.</p>
+    </div>
+  </details>
+
+  <details class="method-block">
     <summary>How the Swing-Ready Watchlist is built and scored</summary>
     <div class="method-body">
       <p>The watchlist surfaces stocks that passed every quality gate (trend, behavioral, momentum confluence, RS percentile, sector regime) but <em>didn't</em> trigger any breakout pattern today. These are "stalking list" setups — quality candidates waiting for the trigger. Entering on the trigger (via buy-stop or alert) often gives better R:R than chasing a breakout already in motion.</p>
@@ -828,15 +1004,19 @@ def render(
     breadth: dict,
     candidates: list[dict],
     watchlist: list[dict] | None = None,
+    supertrend: list[dict] | None = None,
     recent_quality: list[dict],
     recent_quality_watchlist: list[dict] | None = None,
+    recent_quality_supertrend: list[dict] | None = None,
     sector_counts: dict,
     funnel: dict,
     eligible_refreshed_at: str,
 ) -> str:
     """Assemble the full HTML report."""
     watchlist = watchlist or []
+    supertrend = supertrend or []
     recent_quality_watchlist = recent_quality_watchlist or []
+    recent_quality_supertrend = recent_quality_supertrend or []
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -868,11 +1048,17 @@ def render(
   <h2 class="section">Today's Swing-Ready Watchlist <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(elite-filtered, top {funnel.get("max_watchlist_cap", 8)} max)</span></h2>
   {_render_watchlist_table(watchlist)}
 
+  <h2 class="section">Today's Supertrend Longs <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(daily chart ATR 10 × 2.5, elite-filtered, top {funnel.get("max_supertrend_cap", 6)} max)</span></h2>
+  {_render_supertrend_table(supertrend)}
+
   <h2 class="section">Recent Quality Breakouts <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(top 10 by conviction, appearances, volume, and recency)</span></h2>
   {_render_recent_quality_table(recent_quality, date_str)}
 
   <h2 class="section">Recent Quality Watchlist <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(top 10 past watchlist entries by composite ranking)</span></h2>
   {_render_recent_quality_watchlist_table(recent_quality_watchlist, date_str)}
+
+  <h2 class="section">Recent Quality Supertrend <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(top 10 past Supertrend-long entries by composite ranking)</span></h2>
+  {_render_recent_quality_supertrend_table(recent_quality_supertrend, date_str)}
 
   <div class="secondary">
     <div>

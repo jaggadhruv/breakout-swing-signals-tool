@@ -190,6 +190,109 @@ def range_52w_position(prices: pd.DataFrame) -> float | None:
     return (cur - lo) / (hi - lo)
 
 
+def supertrend_state(
+    prices: pd.DataFrame, atr_period: int = 10, multiplier: float = 2.5
+) -> dict | None:
+    """Compute Supertrend state matching TradingView free tier (ATR 10, mult 2.5).
+
+    Returns {
+      direction: +1 (long) or -1 (short)
+      level: current trailing stop value (= Supertrend line)
+      days_since_flip: bars since last direction change (0 = flipped today)
+      stop_distance_pct: how far current close sits above the stop, as %
+    }
+    Or None if insufficient data.
+    """
+    if len(prices) < atr_period + 20:
+        return None
+
+    high = prices["High"]
+    low = prices["Low"]
+    close = prices["Close"]
+    prev_close = close.shift(1)
+
+    tr = pd.concat([
+        high - low,
+        (high - prev_close).abs(),
+        (low - prev_close).abs(),
+    ], axis=1).max(axis=1)
+    atr_series = tr.ewm(alpha=1 / atr_period, adjust=False, min_periods=atr_period).mean()
+
+    hl2 = (high + low) / 2
+    basic_upper = hl2 + multiplier * atr_series
+    basic_lower = hl2 - multiplier * atr_series
+
+    n = len(prices)
+    final_upper = basic_upper.to_numpy().copy()
+    final_lower = basic_lower.to_numpy().copy()
+    supertrend = np.empty(n)
+    direction = np.empty(n, dtype=int)
+
+    # Iteratively compute final bands and direction state
+    for i in range(n):
+        if i == 0 or np.isnan(final_upper[i]) or np.isnan(final_lower[i]):
+            supertrend[i] = final_upper[i] if not np.isnan(final_upper[i]) else np.nan
+            direction[i] = -1
+            continue
+
+        # Carry final upper band forward unless invalidated
+        if basic_upper.iloc[i] >= final_upper[i - 1] and close.iloc[i - 1] <= final_upper[i - 1]:
+            final_upper[i] = final_upper[i - 1]
+        # (otherwise use basic_upper as-is, already assigned)
+
+        # Carry final lower band forward unless invalidated
+        if basic_lower.iloc[i] <= final_lower[i - 1] and close.iloc[i - 1] >= final_lower[i - 1]:
+            final_lower[i] = final_lower[i - 1]
+
+        prev_st = supertrend[i - 1]
+        prev_dir = direction[i - 1]
+
+        # State transition (TradingView-standard)
+        if prev_dir == -1:
+            # Previously short — flip to long if close breaks above upper
+            if close.iloc[i] > final_upper[i]:
+                supertrend[i] = final_lower[i]
+                direction[i] = 1
+            else:
+                supertrend[i] = final_upper[i]
+                direction[i] = -1
+        else:
+            # Previously long — flip to short if close breaks below lower
+            if close.iloc[i] < final_lower[i]:
+                supertrend[i] = final_upper[i]
+                direction[i] = -1
+            else:
+                supertrend[i] = final_lower[i]
+                direction[i] = 1
+
+    # Count bars since last direction change
+    current_dir = int(direction[-1])
+    days_since_flip = 0
+    for i in range(n - 2, -1, -1):
+        if direction[i] != current_dir:
+            break
+        days_since_flip += 1
+
+    current_close = float(close.iloc[-1])
+    current_level = float(supertrend[-1])
+    if np.isnan(current_level):
+        return None
+
+    # Distance from stop as positive % when long, negative when short
+    if current_dir == 1:
+        stop_distance_pct = (current_close - current_level) / current_level * 100
+    else:
+        stop_distance_pct = (current_close - current_level) / current_level * 100  # will be negative
+
+    return {
+        "direction": current_dir,
+        "level": round(current_level, 2),
+        "days_since_flip": int(days_since_flip),
+        "stop_distance_pct": round(float(stop_distance_pct), 2),
+        "close": round(current_close, 2),
+    }
+
+
 def accumulation_day_count(prices: pd.DataFrame, lookback: int = 25, vol_avg_window: int = 20) -> int:
     """Count accumulation days in the last `lookback` sessions.
 

@@ -42,6 +42,7 @@ ELIGIBLE_UNIVERSE_PATH = Path("eligible_universe.json")
 HISTORY_PATH = Path("data/report_history.json")
 SIGNALS_ARCHIVE_PATH = Path("data/signals_archive.json")
 WATCHLIST_ARCHIVE_PATH = Path("data/watchlist_archive.json")
+SUPERTREND_ARCHIVE_PATH = Path("data/supertrend_archive.json")
 REPORTS_DIR = Path("reports")
 
 YFINANCE_DELAY_SECONDS = 0.3
@@ -76,6 +77,17 @@ ELITE_RS_PERCENTILE_MIN     = 85    # top 15% of universe (vs base gate of 75)
 ELITE_MOMENTUM_PASSES_MIN   = 4     # all 4 momentum checks (vs base gate of 3)
 ELITE_SECTOR_RANK_MAX       = 4     # top 4 sectors only (vs base gate of 6)
 ELITE_WATCHLIST_MIN_ACC_DAYS = 5    # watchlist entries need 5+ accumulation days
+
+# ----------------------------------------------------------------------------
+# Supertrend (daily chart) — trend-following signal, parameters match the
+# weekly Positional Trading Tool so the two stay consistent.
+# ----------------------------------------------------------------------------
+SUPERTREND_ATR_PERIOD        = 10   # matches TradingView free tier
+SUPERTREND_MULTIPLIER        = 2.5  # matches TradingView free tier
+SUPERTREND_MIN_SHOW_SCORE    = 60   # minimum composite to display
+SUPERTREND_QUALITY_THRESHOLD = 70   # bar for history inclusion
+SUPERTREND_RECENT_TOP_N      = 10   # top N in Recent Quality Supertrend
+MAX_SUPERTREND_SHOWN         = 6    # hard cap on today's section
 
 # Layer 4: trend context filter — a stock passes if all four hold
 TREND_ABOVE_50_SMA = True
@@ -785,6 +797,191 @@ def compute_recent_quality_watchlist(archive: list[dict], n: int = WATCHLIST_REC
 
 
 # ============================================================================
+# Supertrend — daily chart, long state detection + scoring + archive
+# ============================================================================
+
+def compute_supertrend_score(
+    *,
+    st_state: dict,
+    rs_percentile: float | None,
+    momentum_passes: int,
+    sector_rank: int | None,
+    accumulation_days: int,
+) -> tuple[float, dict]:
+    """Composite Supertrend-long quality score (0 to ~122).
+
+    Fresher flips are worth more (recent entries have the longest runway).
+    Weights:
+      Flip recency           up to 30 (today=30, 1-3d=25, 4-7d=15, 8-15d=5)
+      RS strength            up to 50 (rs_percentile ÷ 2)
+      Momentum confluence    up to 20 (5 per check passed)
+      Sector strength        up to 12 (based on rank 1-7)
+      Accumulation days      up to 10 (1 per day, cap at 10)
+    """
+    breakdown: dict = {}
+    total = 0.0
+
+    days_since = st_state.get("days_since_flip", 999)
+    if days_since <= 1:
+        recency = 30
+    elif days_since <= 3:
+        recency = 25
+    elif days_since <= 7:
+        recency = 15
+    elif days_since <= 15:
+        recency = 5
+    else:
+        recency = 0
+    breakdown["flip_recency"] = recency
+    total += recency
+
+    if rs_percentile is not None:
+        pts = round(rs_percentile / 2, 1)
+        breakdown["rs_strength"] = pts
+        total += pts
+
+    mom_pts = momentum_passes * 5
+    breakdown["momentum"] = mom_pts
+    total += mom_pts
+
+    if sector_rank is not None and sector_rank <= 7:
+        sec_pts = (8 - sector_rank) * 2
+        sec_pts = min(sec_pts, 12)
+        breakdown["sector_strength"] = sec_pts
+        total += sec_pts
+
+    acc_pts = min(accumulation_days, 10)
+    breakdown["accumulation"] = acc_pts
+    total += acc_pts
+
+    return round(total, 1), breakdown
+
+
+def load_supertrend_archive() -> list[dict]:
+    if not SUPERTREND_ARCHIVE_PATH.exists():
+        return []
+    try:
+        data = json.loads(SUPERTREND_ARCHIVE_PATH.read_text())
+        return data.get("supertrend", []) if isinstance(data, dict) else []
+    except Exception:
+        return []
+
+
+def save_supertrend_archive(archive: list[dict]) -> None:
+    SUPERTREND_ARCHIVE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SUPERTREND_ARCHIVE_PATH.write_text(json.dumps({"supertrend": archive}, indent=2))
+
+
+def update_supertrend_archive(
+    archive: list[dict], todays_entries: list[dict], today_str: str
+) -> list[dict]:
+    cutoff = (
+        datetime.utcnow() - timedelta(days=ARCHIVE_RETENTION_DAYS)
+    ).strftime("%Y-%m-%d")
+    archive = [
+        s for s in archive
+        if s.get("date", "") >= cutoff and s.get("date") != today_str
+    ]
+    for e in todays_entries:
+        archive.append({
+            "date": today_str,
+            "ticker": e["ticker"],
+            "name": e.get("name", ""),
+            "sector": e.get("sector", "Unknown"),
+            "sector_rank": e.get("sector_rank"),
+            "supertrend_score": e["supertrend_score"],
+            "rs_percentile": e.get("rs_percentile"),
+            "momentum_passes": e.get("momentum_passes", 0),
+            "accumulation_days": e.get("accumulation_days", 0),
+            "close": e.get("close"),
+            "supertrend_level": e.get("supertrend_level"),
+            "stop_distance_pct": e.get("stop_distance_pct"),
+            "days_since_flip": e.get("days_since_flip"),
+            "piotroski": e.get("piotroski"),
+        })
+    return archive
+
+
+def compute_recent_quality_supertrend(archive: list[dict], n: int = SUPERTREND_RECENT_TOP_N) -> list[dict]:
+    """Composite-ranked top N unique Supertrend-long tickers from the archive.
+
+    Only tickers whose peak supertrend_score ever met SUPERTREND_QUALITY_THRESHOLD
+    are eligible. Keep score adds recency, appearance, and accumulation bonuses.
+    """
+    if not archive:
+        return []
+
+    today = datetime.utcnow().date()
+    by_ticker: dict[str, dict] = {}
+    for s in archive:
+        t = s.get("ticker")
+        if not t:
+            continue
+        score = float(s.get("supertrend_score", 0))
+        date_str = s.get("date", "")
+
+        if t not in by_ticker:
+            by_ticker[t] = {
+                "ticker": t,
+                "name": s.get("name", ""),
+                "sector": s.get("sector", "Unknown"),
+                "sector_rank": s.get("sector_rank"),
+                "best_score": score,
+                "best_score_date": date_str,
+                "peak_close": s.get("close"),
+                "peak_supertrend_level": s.get("supertrend_level"),
+                "peak_stop_distance_pct": s.get("stop_distance_pct"),
+                "peak_days_since_flip": s.get("days_since_flip"),
+                "peak_rs_percentile": s.get("rs_percentile"),
+                "peak_momentum_passes": s.get("momentum_passes", 0),
+                "peak_accumulation_days": s.get("accumulation_days", 0),
+                "piotroski": s.get("piotroski"),
+                "appearances": 1,
+                "latest_date": date_str,
+            }
+        else:
+            agg = by_ticker[t]
+            agg["appearances"] += 1
+            if date_str > agg["latest_date"]:
+                agg["latest_date"] = date_str
+            if score > agg["best_score"]:
+                agg["best_score"] = score
+                agg["best_score_date"] = date_str
+                agg["peak_close"] = s.get("close")
+                agg["peak_supertrend_level"] = s.get("supertrend_level")
+                agg["peak_stop_distance_pct"] = s.get("stop_distance_pct")
+                agg["peak_days_since_flip"] = s.get("days_since_flip")
+                agg["peak_rs_percentile"] = s.get("rs_percentile")
+                agg["peak_momentum_passes"] = s.get("momentum_passes", 0)
+                agg["peak_accumulation_days"] = s.get("accumulation_days", 0)
+                if s.get("piotroski") is not None:
+                    agg["piotroski"] = s.get("piotroski")
+
+    eligible = [c for c in by_ticker.values() if c["best_score"] >= SUPERTREND_QUALITY_THRESHOLD]
+
+    for c in eligible:
+        try:
+            latest = datetime.strptime(c["latest_date"], "%Y-%m-%d").date()
+            days_since = (today - latest).days
+        except (ValueError, TypeError):
+            days_since = 999
+
+        if days_since <= 7:
+            recency = 15
+        elif days_since <= 21:
+            recency = 5
+        else:
+            recency = 0
+
+        appearance_bonus = min(c["appearances"] * 2, 15)
+        acc_bonus = min(c["peak_accumulation_days"], 10)
+        c["keep_score"] = round(c["best_score"] + recency + appearance_bonus + acc_bonus, 1)
+
+    eligible.sort(key=lambda c: c["keep_score"], reverse=True)
+    return eligible[:n]
+
+
+# ============================================================================
 # Market breadth
 # ============================================================================
 
@@ -1157,6 +1354,7 @@ def main() -> None:
     pattern_pass = 0
     raw_candidates: list[dict] = []
     raw_watchlist: list[dict] = []
+    raw_supertrend: list[dict] = []
     ticker_rs: dict[str, float] = {}
 
     for i, entry in enumerate(eligible):
@@ -1191,11 +1389,31 @@ def main() -> None:
         momentum_pass += 1
 
         # Compute RS vs SPY (will be percentile-ranked after loop); do this
-        # BEFORE pattern branching so both breakouts AND watchlist tickers
-        # share the same percentile ranking pool.
+        # BEFORE pattern branching so breakouts, watchlist, AND supertrend
+        # all share the same percentile ranking pool.
         rs_val = compute_ticker_rs(prices, spy)
         if rs_val is not None:
             ticker_rs[ticker] = rs_val
+
+        # Supertrend check — orthogonal to breakout/watchlist. A ticker in a
+        # strong Supertrend-long state is a candidate regardless of whether
+        # any breakout pattern also fired. Same ticker CAN appear in multiple
+        # sections (that's useful confluence).
+        st_state = patterns.supertrend_state(
+            prices, SUPERTREND_ATR_PERIOD, SUPERTREND_MULTIPLIER
+        )
+        if st_state and st_state["direction"] == 1:
+            acc_days_st = patterns.accumulation_day_count(prices, ACCUMULATION_LOOKBACK_DAYS)
+            raw_supertrend.append({
+                "ticker": ticker,
+                "entry": entry,
+                "trend_ctx": trend_ctx,
+                "beh_ctx": beh_ctx,
+                "momentum_ctx": mom_ctx,
+                "rs_raw": rs_val,
+                "st_state": st_state,
+                "accumulation_days": acc_days_st,
+            })
 
         # Pattern detection: pattern fired → breakout candidate; else → watchlist
         p_result = patterns.scan_all_patterns(prices)
@@ -1355,9 +1573,59 @@ def main() -> None:
     log(f"Pass 2b (watchlist) complete: {wl_rs_gated} dropped by RS, "
         f"{wl_sector_gated} dropped by sector → {len(watchlist)} watchlist entries.")
 
-    # Update history with today's signals (both breakouts and watchlist) BEFORE breadth
+    # ---- Pass 2c: Supertrend longs — same RS + sector gates ----
+    log("Pass 2c — scoring Supertrend-long candidates...")
+    supertrend_list: list[dict] = []
+    st_rs_gated = 0
+    st_sector_gated = 0
+
+    for cand in raw_supertrend:
+        ticker = cand["ticker"]
+        entry = cand["entry"]
+        rs_pct = rs_percentiles.get(ticker)
+        sector_label = entry.get("sector", "Unknown")
+
+        if rs_pct is None or rs_pct < RS_PERCENTILE_MIN:
+            st_rs_gated += 1
+            continue
+        sector_ok, sector_rank = passes_sector_gate(sector_label, sector_ranks)
+        if not sector_ok:
+            st_sector_gated += 1
+            continue
+
+        mom_passes = cand["momentum_ctx"].get("pass_count", 0)
+        st_score, st_breakdown = compute_supertrend_score(
+            st_state=cand["st_state"],
+            rs_percentile=rs_pct,
+            momentum_passes=mom_passes,
+            sector_rank=sector_rank,
+            accumulation_days=cand["accumulation_days"],
+        )
+
+        supertrend_list.append({
+            "ticker": ticker,
+            "name": entry["name"],
+            "sector": sector_label,
+            "sector_rank": sector_rank,
+            "supertrend_score": st_score,
+            "supertrend_breakdown": st_breakdown,
+            "rs_percentile": rs_pct,
+            "momentum_passes": mom_passes,
+            "accumulation_days": cand["accumulation_days"],
+            "piotroski": entry.get("piotroski_f_score"),
+            "close": cand["st_state"]["close"],
+            "supertrend_level": cand["st_state"]["level"],
+            "stop_distance_pct": cand["st_state"]["stop_distance_pct"],
+            "days_since_flip": cand["st_state"]["days_since_flip"],
+        })
+
+    log(f"Pass 2c (supertrend) complete: {st_rs_gated} dropped by RS, "
+        f"{st_sector_gated} dropped by sector → {len(supertrend_list)} supertrend longs.")
+
+    # Update history with today's signals (breakouts, watchlist, supertrend) BEFORE breadth
     update_history(history, [s["ticker"] for s in signals])
     update_history(history, [w["ticker"] for w in watchlist])
+    update_history(history, [s["ticker"] for s in supertrend_list])
 
     # Compute market breadth
     log("Computing market breadth...")
@@ -1408,8 +1676,24 @@ def main() -> None:
     elite_watchlist.sort(key=lambda w: w["watchlist_score"], reverse=True)
     watchlist_shown = elite_watchlist[:MAX_WATCHLIST_SHOWN]
 
+    def is_elite_supertrend(s: dict) -> bool:
+        rs_pct = s.get("rs_percentile") or 0
+        mom_passes = s.get("momentum_passes", 0)
+        sector_rank = s.get("sector_rank") or 99
+        return (
+            s["supertrend_score"] >= SUPERTREND_MIN_SHOW_SCORE
+            and rs_pct >= ELITE_RS_PERCENTILE_MIN
+            and mom_passes >= ELITE_MOMENTUM_PASSES_MIN
+            and sector_rank <= ELITE_SECTOR_RANK_MAX
+        )
+
+    elite_supertrend = [s for s in supertrend_list if is_elite_supertrend(s)]
+    elite_supertrend.sort(key=lambda s: s["supertrend_score"], reverse=True)
+    supertrend_shown = elite_supertrend[:MAX_SUPERTREND_SHOWN]
+
     log(f"Elite filter: {len(elite_breakouts)} breakouts qualified → top {len(shown)} shown; "
-        f"{len(elite_watchlist)} watchlist qualified → top {len(watchlist_shown)} shown.")
+        f"{len(elite_watchlist)} watchlist qualified → top {len(watchlist_shown)} shown; "
+        f"{len(elite_supertrend)} supertrend qualified → top {len(supertrend_shown)} shown.")
 
     # Sector breakdown across all signals (not just shown)
     sector_counts: dict = {}
@@ -1432,8 +1716,13 @@ def main() -> None:
         "watchlist_signals": len(watchlist),
         "elite_watchlist": len(elite_watchlist),
         "watchlist_shown": len(watchlist_shown),
+        "supertrend_raw": len(raw_supertrend),
+        "supertrend_signals": len(supertrend_list),
+        "elite_supertrend": len(elite_supertrend),
+        "supertrend_shown": len(supertrend_shown),
         "max_breakouts_cap": MAX_BREAKOUTS_SHOWN,
         "max_watchlist_cap": MAX_WATCHLIST_SHOWN,
+        "max_supertrend_cap": MAX_SUPERTREND_SHOWN,
         "min_show_score_used": adaptive_min_score,
     }
 
@@ -1459,14 +1748,26 @@ def main() -> None:
         f"{len(recent_quality_watchlist)} recent-quality watchlist tickers "
         f"(score ≥ {WATCHLIST_QUALITY_THRESHOLD}).")
 
+    # Update rolling SUPERTREND archive and compute Recent Quality Supertrend
+    log("Updating supertrend archive...")
+    st_archive = load_supertrend_archive()
+    st_archive = update_supertrend_archive(st_archive, supertrend_list, today_str)
+    save_supertrend_archive(st_archive)
+    recent_quality_supertrend = compute_recent_quality_supertrend(st_archive, n=SUPERTREND_RECENT_TOP_N)
+    log(f"Supertrend archive: {len(st_archive)} entries in last {ARCHIVE_RETENTION_DAYS} days; "
+        f"{len(recent_quality_supertrend)} recent-quality supertrend tickers "
+        f"(score ≥ {SUPERTREND_QUALITY_THRESHOLD}).")
+
     html = report.render(
         date_str=today_str,
         generated_at_utc=generated_at,
         breadth=breadth,
         candidates=shown,
         watchlist=watchlist_shown,
+        supertrend=supertrend_shown,
         recent_quality=recent_quality,
         recent_quality_watchlist=recent_quality_watchlist,
+        recent_quality_supertrend=recent_quality_supertrend,
         sector_counts=sector_counts,
         funnel=funnel,
         eligible_refreshed_at=universe["refreshed_at"][:10],
