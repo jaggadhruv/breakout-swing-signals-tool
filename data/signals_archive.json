@@ -137,6 +137,24 @@
       "piotroski": null,
       "days_on_report": 3,
       "volume_multiple": 1.91
+    },
+    {
+      "date": "2026-10-10",
+      "ticker": "PLTR",
+      "name": "PLTR",
+      "sector": "Unknown",
+      "score": 91.3,
+      "pattern_labels": [
+        "55D High",
+        "Resistance Break"
+      ],
+      "entry": 209.05,
+      "stop": 190.13,
+      "tp1": 246.89,
+      "tp2": 265.81,
+      "piotroski": null,
+      "days_on_report": 4,
+      "volume_multiple": 1.63
     }
   ]
 }
