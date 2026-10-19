@@ -43,13 +43,15 @@ HISTORY_PATH = Path("data/report_history.json")
 SIGNALS_ARCHIVE_PATH = Path("data/signals_archive.json")
 WATCHLIST_ARCHIVE_PATH = Path("data/watchlist_archive.json")
 SUPERTREND_ARCHIVE_PATH = Path("data/supertrend_archive.json")
+RECOVERY_ARCHIVE_PATH = Path("data/recovery_archive.json")
 REPORTS_DIR = Path("reports")
 
 YFINANCE_DELAY_SECONDS = 0.3
 PRICE_HISTORY_PERIOD = "1y"
 
-# Recent-quality section: rolling archive of past signals, filtered by score
-ARCHIVE_RETENTION_DAYS = 90
+# Recent-quality section: rolling 1-week archive of past signals (same rollover
+# cadence as the Positional Trading Tool — each run drops entries > 7 days old).
+ARCHIVE_RETENTION_DAYS = 7
 HIGH_QUALITY_THRESHOLD = 60
 RECENT_TOP_N = 10
 
@@ -65,7 +67,7 @@ ACCUMULATION_LOOKBACK_DAYS = 25     # IBD-style accumulation day count window
 # Elite display filter — strict curation of "today" sections
 # ----------------------------------------------------------------------------
 # Both archives (signals + watchlist) still record EVERYTHING that passes the
-# base gates, so Recent Quality sections keep building 90 days of history.
+# base gates, so Recent Quality sections keep building a rolling 7-day history.
 # The elite filter only applies to the two "today" sections on each report.
 # Rationale: avoid reviewing 20+ names daily; focus on the highest-confluence
 # handful. Historical quality lists let you still see broader context.
@@ -88,6 +90,25 @@ SUPERTREND_MIN_SHOW_SCORE    = 60   # minimum composite to display
 SUPERTREND_QUALITY_THRESHOLD = 70   # bar for history inclusion
 SUPERTREND_RECENT_TOP_N      = 10   # top N in Recent Quality Supertrend
 MAX_SUPERTREND_SHOWN         = 6    # hard cap on today's section
+SUPERTREND_MAX_FLIP_AGE_DAYS = 20   # hide stale flips — only recent (fresh signal) ones
+
+# ----------------------------------------------------------------------------
+# Recovery (20 EMA crossing above 200 EMA from below) — "coming out of correction"
+# ----------------------------------------------------------------------------
+# Looser gates than elite because recovery stocks by definition had recent
+# weakness, so RS is still rebuilding. Still gated on momentum improving + sector.
+RECOVERY_SHORT_EMA_PERIOD    = 20   # 20 EMA
+RECOVERY_LONG_EMA_PERIOD     = 200  # 200 EMA
+RECOVERY_MAX_DISTANCE_PCT    = 10.0 # 20 EMA max 10% above 200 EMA (else too extended)
+RECOVERY_CROSSOVER_LOOKBACK  = 30   # crossover must have happened within last 30 bars
+RECOVERY_RISING_LOOKBACK     = 5    # 20 EMA must be rising vs 5 bars ago
+RECOVERY_RS_MIN              = 60   # looser than base RS gate (75) and elite (85)
+RECOVERY_SECTOR_RANK_MAX     = 7    # looser than elite (4)
+RECOVERY_MOMENTUM_PASSES_MIN = 3    # at least 3/4 momentum checks
+RECOVERY_MIN_SHOW_SCORE      = 55   # modest display bar given looser gates
+RECOVERY_QUALITY_THRESHOLD   = 65   # bar for history inclusion
+RECOVERY_RECENT_TOP_N        = 10
+MAX_RECOVERY_SHOWN           = 6
 
 # Layer 4: trend context filter — a stock passes if all four hold
 TREND_ABOVE_50_SMA = True
@@ -982,6 +1003,187 @@ def compute_recent_quality_supertrend(archive: list[dict], n: int = SUPERTREND_R
 
 
 # ============================================================================
+# Recovery — 20 EMA crossing above 200 EMA from below, within distance window
+# ============================================================================
+
+def compute_recovery_score(
+    *,
+    recovery_state: dict,
+    rs_percentile: float | None,
+    momentum_passes: int,
+    sector_rank: int | None,
+    accumulation_days: int,
+) -> tuple[float, dict]:
+    """Composite recovery quality score (0 to ~142).
+
+    Freshness and closeness to the 200 EMA weigh heavily — the whole point of
+    this section is "stock just recovered, not yet extended".
+    """
+    breakdown: dict = {}
+    total = 0.0
+
+    days_since = recovery_state.get("days_since_cross", 999)
+    if days_since <= 5:
+        freshness = 30
+    elif days_since <= 10:
+        freshness = 25
+    elif days_since <= 20:
+        freshness = 15
+    elif days_since <= 30:
+        freshness = 5
+    else:
+        freshness = 0
+    breakdown["freshness"] = freshness
+    total += freshness
+
+    dist = recovery_state.get("distance_pct", 999)
+    if dist <= 3:
+        closeness = 20
+    elif dist <= 5:
+        closeness = 15
+    elif dist <= 7:
+        closeness = 10
+    elif dist <= 10:
+        closeness = 5
+    else:
+        closeness = 0
+    breakdown["closeness"] = closeness
+    total += closeness
+
+    if rs_percentile is not None:
+        pts = round(rs_percentile / 2, 1)
+        breakdown["rs_strength"] = pts
+        total += pts
+
+    mom_pts = momentum_passes * 5
+    breakdown["momentum"] = mom_pts
+    total += mom_pts
+
+    if sector_rank is not None and sector_rank <= 7:
+        sec_pts = (8 - sector_rank) * 2
+        sec_pts = min(sec_pts, 12)
+        breakdown["sector_strength"] = sec_pts
+        total += sec_pts
+
+    acc_pts = min(accumulation_days, 10)
+    breakdown["accumulation"] = acc_pts
+    total += acc_pts
+
+    return round(total, 1), breakdown
+
+
+def load_recovery_archive() -> list[dict]:
+    if not RECOVERY_ARCHIVE_PATH.exists():
+        return []
+    try:
+        data = json.loads(RECOVERY_ARCHIVE_PATH.read_text())
+        return data.get("recovery", []) if isinstance(data, dict) else []
+    except Exception:
+        return []
+
+
+def save_recovery_archive(archive: list[dict]) -> None:
+    RECOVERY_ARCHIVE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    RECOVERY_ARCHIVE_PATH.write_text(json.dumps({"recovery": archive}, indent=2))
+
+
+def update_recovery_archive(
+    archive: list[dict], todays_entries: list[dict], today_str: str
+) -> list[dict]:
+    cutoff = (datetime.utcnow() - timedelta(days=ARCHIVE_RETENTION_DAYS)).strftime("%Y-%m-%d")
+    archive = [s for s in archive if s.get("date", "") >= cutoff and s.get("date") != today_str]
+    for e in todays_entries:
+        archive.append({
+            "date": today_str,
+            "ticker": e["ticker"],
+            "name": e.get("name", ""),
+            "sector": e.get("sector", "Unknown"),
+            "sector_rank": e.get("sector_rank"),
+            "recovery_score": e["recovery_score"],
+            "rs_percentile": e.get("rs_percentile"),
+            "momentum_passes": e.get("momentum_passes", 0),
+            "accumulation_days": e.get("accumulation_days", 0),
+            "close": e.get("close"),
+            "short_ema": e.get("short_ema"),
+            "long_ema": e.get("long_ema"),
+            "distance_pct": e.get("distance_pct"),
+            "days_since_cross": e.get("days_since_cross"),
+            "piotroski": e.get("piotroski"),
+        })
+    return archive
+
+
+def compute_recent_quality_recovery(archive: list[dict], n: int = RECOVERY_RECENT_TOP_N) -> list[dict]:
+    """Composite-ranked top N unique recovery tickers from the 7-day archive."""
+    if not archive:
+        return []
+
+    today = datetime.utcnow().date()
+    by_ticker: dict[str, dict] = {}
+    for s in archive:
+        t = s.get("ticker")
+        if not t:
+            continue
+        score = float(s.get("recovery_score", 0))
+        date_str = s.get("date", "")
+
+        if t not in by_ticker:
+            by_ticker[t] = {
+                "ticker": t,
+                "name": s.get("name", ""),
+                "sector": s.get("sector", "Unknown"),
+                "sector_rank": s.get("sector_rank"),
+                "best_score": score,
+                "best_score_date": date_str,
+                "peak_close": s.get("close"),
+                "peak_short_ema": s.get("short_ema"),
+                "peak_long_ema": s.get("long_ema"),
+                "peak_distance_pct": s.get("distance_pct"),
+                "peak_days_since_cross": s.get("days_since_cross"),
+                "peak_rs_percentile": s.get("rs_percentile"),
+                "peak_momentum_passes": s.get("momentum_passes", 0),
+                "peak_accumulation_days": s.get("accumulation_days", 0),
+                "piotroski": s.get("piotroski"),
+                "appearances": 1,
+                "latest_date": date_str,
+            }
+        else:
+            agg = by_ticker[t]
+            agg["appearances"] += 1
+            if date_str > agg["latest_date"]:
+                agg["latest_date"] = date_str
+            if score > agg["best_score"]:
+                agg["best_score"] = score
+                agg["best_score_date"] = date_str
+                agg["peak_close"] = s.get("close")
+                agg["peak_short_ema"] = s.get("short_ema")
+                agg["peak_long_ema"] = s.get("long_ema")
+                agg["peak_distance_pct"] = s.get("distance_pct")
+                agg["peak_days_since_cross"] = s.get("days_since_cross")
+                agg["peak_rs_percentile"] = s.get("rs_percentile")
+                agg["peak_momentum_passes"] = s.get("momentum_passes", 0)
+                agg["peak_accumulation_days"] = s.get("accumulation_days", 0)
+                if s.get("piotroski") is not None:
+                    agg["piotroski"] = s.get("piotroski")
+
+    eligible = [c for c in by_ticker.values() if c["best_score"] >= RECOVERY_QUALITY_THRESHOLD]
+
+    for c in eligible:
+        try:
+            latest = datetime.strptime(c["latest_date"], "%Y-%m-%d").date()
+            days_since = (today - latest).days
+        except (ValueError, TypeError):
+            days_since = 999
+        recency = 15 if days_since <= 7 else (5 if days_since <= 21 else 0)
+        appearance_bonus = min(c["appearances"] * 2, 15)
+        acc_bonus = min(c["peak_accumulation_days"], 10)
+        c["keep_score"] = round(c["best_score"] + recency + appearance_bonus + acc_bonus, 1)
+
+    eligible.sort(key=lambda c: c["keep_score"], reverse=True)
+    return eligible[:n]
+
+
+# ============================================================================
 # Market breadth
 # ============================================================================
 
@@ -1143,7 +1345,7 @@ def update_history(history: dict, todays_tickers: list[str]) -> None:
 
 
 # ============================================================================
-# Signals archive (rolling 90-day store for the Recent Quality Breakouts section)
+# Signals archive (rolling 7-day store for the Recent Quality Breakouts section)
 # ============================================================================
 
 def load_signals_archive() -> list[dict]:
@@ -1355,6 +1557,7 @@ def main() -> None:
     raw_candidates: list[dict] = []
     raw_watchlist: list[dict] = []
     raw_supertrend: list[dict] = []
+    raw_recovery: list[dict] = []
     ticker_rs: dict[str, float] = {}
 
     for i, entry in enumerate(eligible):
@@ -1462,7 +1665,67 @@ def main() -> None:
     log(f"Pass 1 complete: {no_data} skipped, {trend_pass} trend, "
         f"{behavioral_pass} behavioral, {momentum_pass} momentum, "
         f"{pattern_pass} patterns → {len(raw_candidates)} breakouts, "
-        f"{len(raw_watchlist)} watchlist.")
+        f"{len(raw_watchlist)} watchlist, {len(raw_supertrend)} supertrend.")
+
+    # ---- Pass 1b: Recovery scan (independent of trend filter) ----
+    # Recovery stocks have been WEAK recently (crossed below 200 EMA, now recovering)
+    # so they typically fail the main trend filter (close within 25% of 52W high).
+    # We run a dedicated pass that only requires behavioral filter + momentum ≥ 3/4.
+    log("Pass 1b — scanning for 20/200 EMA recovery setups (coming out of correction)...")
+    recovery_scanned = 0
+    recovery_behavioral_pass = 0
+    recovery_cross_pass = 0
+    recovery_momentum_pass = 0
+
+    for ticker, prices in price_cache.items():
+        entry_info = eligible_lookup.get(ticker)
+        if not entry_info:
+            continue
+        recovery_scanned += 1
+
+        beh_ok, _ = passes_behavioral_filter(prices, ticker)
+        if not beh_ok:
+            continue
+        recovery_behavioral_pass += 1
+
+        recovery_state = patterns.golden_cross_recovery(
+            prices,
+            short_period=RECOVERY_SHORT_EMA_PERIOD,
+            long_period=RECOVERY_LONG_EMA_PERIOD,
+            max_distance_pct=RECOVERY_MAX_DISTANCE_PCT,
+            crossover_lookback_days=RECOVERY_CROSSOVER_LOOKBACK,
+            rising_lookback_days=RECOVERY_RISING_LOOKBACK,
+        )
+        if recovery_state is None:
+            continue
+        recovery_cross_pass += 1
+
+        mom_ctx = patterns.check_momentum_confluence(prices)
+        if mom_ctx["pass_count"] < RECOVERY_MOMENTUM_PASSES_MIN:
+            continue
+        recovery_momentum_pass += 1
+
+        # Compute RS if not already (recovery tickers may not have passed main trend filter)
+        rs_val = ticker_rs.get(ticker)
+        if rs_val is None:
+            rs_val = compute_ticker_rs(prices, spy)
+            if rs_val is not None:
+                ticker_rs[ticker] = rs_val
+
+        acc_days = patterns.accumulation_day_count(prices, ACCUMULATION_LOOKBACK_DAYS)
+
+        raw_recovery.append({
+            "ticker": ticker,
+            "entry": entry_info,
+            "mom_ctx": mom_ctx,
+            "rs_raw": rs_val,
+            "recovery_state": recovery_state,
+            "accumulation_days": acc_days,
+        })
+
+    log(f"Pass 1b complete: {recovery_scanned} scanned → {recovery_behavioral_pass} behavioral → "
+        f"{recovery_cross_pass} valid crossovers → {recovery_momentum_pass} momentum-OK "
+        f"→ {len(raw_recovery)} recovery candidates.")
 
     # ---- Confluence gates: RS percentile + sector regime ----
     rs_percentiles = compute_rs_percentiles(ticker_rs)
@@ -1622,10 +1885,63 @@ def main() -> None:
     log(f"Pass 2c (supertrend) complete: {st_rs_gated} dropped by RS, "
         f"{st_sector_gated} dropped by sector → {len(supertrend_list)} supertrend longs.")
 
-    # Update history with today's signals (breakouts, watchlist, supertrend) BEFORE breadth
+    # ---- Pass 2d: Recovery — looser RS (60) + sector (top 7) gates ----
+    log("Pass 2d — scoring recovery candidates (looser gates than elite)...")
+    recovery_list: list[dict] = []
+    rec_rs_gated = 0
+    rec_sector_gated = 0
+
+    for cand in raw_recovery:
+        ticker = cand["ticker"]
+        entry = cand["entry"]
+        rs_pct = rs_percentiles.get(ticker)
+        sector_label = entry.get("sector", "Unknown")
+
+        if rs_pct is None or rs_pct < RECOVERY_RS_MIN:
+            rec_rs_gated += 1
+            continue
+
+        # Recovery accepts top 7 sectors (vs top 6 for main gates)
+        rank = sector_ranks.get(sector_label)
+        if rank is None or rank > RECOVERY_SECTOR_RANK_MAX:
+            rec_sector_gated += 1
+            continue
+
+        mom_passes = cand["mom_ctx"].get("pass_count", 0)
+        rec_score, rec_breakdown = compute_recovery_score(
+            recovery_state=cand["recovery_state"],
+            rs_percentile=rs_pct,
+            momentum_passes=mom_passes,
+            sector_rank=rank,
+            accumulation_days=cand["accumulation_days"],
+        )
+
+        recovery_list.append({
+            "ticker": ticker,
+            "name": entry["name"],
+            "sector": sector_label,
+            "sector_rank": rank,
+            "recovery_score": rec_score,
+            "recovery_breakdown": rec_breakdown,
+            "rs_percentile": rs_pct,
+            "momentum_passes": mom_passes,
+            "accumulation_days": cand["accumulation_days"],
+            "piotroski": entry.get("piotroski_f_score"),
+            "close": cand["recovery_state"]["close"],
+            "short_ema": cand["recovery_state"]["short_ema"],
+            "long_ema": cand["recovery_state"]["long_ema"],
+            "distance_pct": cand["recovery_state"]["distance_pct"],
+            "days_since_cross": cand["recovery_state"]["days_since_cross"],
+        })
+
+    log(f"Pass 2d (recovery) complete: {rec_rs_gated} dropped by RS<{RECOVERY_RS_MIN}, "
+        f"{rec_sector_gated} dropped by sector → {len(recovery_list)} recovery entries.")
+
+    # Update history with today's signals (all four pipelines) BEFORE breadth
     update_history(history, [s["ticker"] for s in signals])
     update_history(history, [w["ticker"] for w in watchlist])
     update_history(history, [s["ticker"] for s in supertrend_list])
+    update_history(history, [r["ticker"] for r in recovery_list])
 
     # Compute market breadth
     log("Computing market breadth...")
@@ -1680,20 +1996,29 @@ def main() -> None:
         rs_pct = s.get("rs_percentile") or 0
         mom_passes = s.get("momentum_passes", 0)
         sector_rank = s.get("sector_rank") or 99
+        flip_age = s.get("days_since_flip", 999)
         return (
             s["supertrend_score"] >= SUPERTREND_MIN_SHOW_SCORE
             and rs_pct >= ELITE_RS_PERCENTILE_MIN
             and mom_passes >= ELITE_MOMENTUM_PASSES_MIN
             and sector_rank <= ELITE_SECTOR_RANK_MAX
+            and flip_age <= SUPERTREND_MAX_FLIP_AGE_DAYS   # fresh flips only
         )
 
     elite_supertrend = [s for s in supertrend_list if is_elite_supertrend(s)]
     elite_supertrend.sort(key=lambda s: s["supertrend_score"], reverse=True)
     supertrend_shown = elite_supertrend[:MAX_SUPERTREND_SHOWN]
 
+    # Recovery has its OWN display criteria — looser than elite, because
+    # recovery stocks have had recent weakness and won't yet have RS≥85 etc.
+    qualified_recovery = [r for r in recovery_list if r["recovery_score"] >= RECOVERY_MIN_SHOW_SCORE]
+    qualified_recovery.sort(key=lambda r: r["recovery_score"], reverse=True)
+    recovery_shown = qualified_recovery[:MAX_RECOVERY_SHOWN]
+
     log(f"Elite filter: {len(elite_breakouts)} breakouts qualified → top {len(shown)} shown; "
         f"{len(elite_watchlist)} watchlist qualified → top {len(watchlist_shown)} shown; "
-        f"{len(elite_supertrend)} supertrend qualified → top {len(supertrend_shown)} shown.")
+        f"{len(elite_supertrend)} supertrend qualified → top {len(supertrend_shown)} shown; "
+        f"{len(qualified_recovery)} recovery qualified → top {len(recovery_shown)} shown.")
 
     # Sector breakdown across all signals (not just shown)
     sector_counts: dict = {}
@@ -1720,9 +2045,15 @@ def main() -> None:
         "supertrend_signals": len(supertrend_list),
         "elite_supertrend": len(elite_supertrend),
         "supertrend_shown": len(supertrend_shown),
+        "recovery_raw": len(raw_recovery),
+        "recovery_signals": len(recovery_list),
+        "qualified_recovery": len(qualified_recovery),
+        "recovery_shown": len(recovery_shown),
         "max_breakouts_cap": MAX_BREAKOUTS_SHOWN,
         "max_watchlist_cap": MAX_WATCHLIST_SHOWN,
         "max_supertrend_cap": MAX_SUPERTREND_SHOWN,
+        "max_recovery_cap": MAX_RECOVERY_SHOWN,
+        "supertrend_max_flip_age_days": SUPERTREND_MAX_FLIP_AGE_DAYS,
         "min_show_score_used": adaptive_min_score,
     }
 
@@ -1758,6 +2089,16 @@ def main() -> None:
         f"{len(recent_quality_supertrend)} recent-quality supertrend tickers "
         f"(score ≥ {SUPERTREND_QUALITY_THRESHOLD}).")
 
+    # Update rolling RECOVERY archive and compute Recent Quality Recovery
+    log("Updating recovery archive...")
+    rec_archive = load_recovery_archive()
+    rec_archive = update_recovery_archive(rec_archive, recovery_list, today_str)
+    save_recovery_archive(rec_archive)
+    recent_quality_recovery = compute_recent_quality_recovery(rec_archive, n=RECOVERY_RECENT_TOP_N)
+    log(f"Recovery archive: {len(rec_archive)} entries in last {ARCHIVE_RETENTION_DAYS} days; "
+        f"{len(recent_quality_recovery)} recent-quality recovery tickers "
+        f"(score ≥ {RECOVERY_QUALITY_THRESHOLD}).")
+
     html = report.render(
         date_str=today_str,
         generated_at_utc=generated_at,
@@ -1765,9 +2106,11 @@ def main() -> None:
         candidates=shown,
         watchlist=watchlist_shown,
         supertrend=supertrend_shown,
+        recovery=recovery_shown,
         recent_quality=recent_quality,
         recent_quality_watchlist=recent_quality_watchlist,
         recent_quality_supertrend=recent_quality_supertrend,
+        recent_quality_recovery=recent_quality_recovery,
         sector_counts=sector_counts,
         funnel=funnel,
         eligible_refreshed_at=universe["refreshed_at"][:10],

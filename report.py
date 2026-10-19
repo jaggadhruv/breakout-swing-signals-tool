@@ -108,11 +108,30 @@ h1.title { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: -0.01em
 .subindicators {
   margin-top: 12px; padding-top: 12px;
   border-top: 1px solid var(--rule);
-  display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;
   font-size: 12px;
 }
-.subindicator .name { color: var(--muted); }
-.subindicator .val { margin-top: 2px; font-weight: 500; }
+.subindicator {
+  padding: 10px 12px;
+  background: var(--panel);
+  border-radius: 4px;
+  border-left: 3px solid var(--rule);
+}
+.subindicator.sub-strong { border-left-color: var(--sig-pos); }
+.subindicator.sub-mid    { border-left-color: var(--sig-warn); }
+.subindicator.sub-weak   { border-left-color: var(--sig-neg); }
+.subindicator .name { color: var(--muted); font-size: 11px; }
+.subindicator .val { margin-top: 4px; font-weight: 600; font-size: 15px; }
+.subindicator .val.sub-strong { color: var(--sig-pos); }
+.subindicator .val.sub-mid    { color: var(--sig-warn); }
+.subindicator .val.sub-weak   { color: var(--sig-neg); }
+.subindicator .interp {
+  margin-top: 4px; font-size: 11px; color: var(--muted);
+  font-style: italic; line-height: 1.35;
+}
+@media (max-width: 900px) {
+  .subindicators { grid-template-columns: repeat(2, 1fr); }
+}
 
 /* Section headings */
 h2.section {
@@ -260,17 +279,77 @@ def _piotroski_class(p) -> str:
     return "piotroski-lo"
 
 
+def _sub_score_tier(value: float | None) -> str:
+    """Return CSS tier class based on 0-10 sub-indicator score.
+    Strong (≥7) = green, Mid (4-7) = amber, Weak (<4) = red."""
+    if value is None:
+        return "sub-mid"
+    if value >= 7.0:
+        return "sub-strong"
+    if value >= 4.0:
+        return "sub-mid"
+    return "sub-weak"
+
+
+# One-line, score-tier-aware interpretation for each breadth sub-indicator.
+# Keyed on the exact label used in daily_scan.compute_market_breadth so the
+# lookup is reliable; falls back to a generic message if the label is unknown.
+_SUB_INTERPRETATIONS: dict[str, dict[str, str]] = {
+    "% eligible above 200 SMA": {
+        "sub-strong": "Broad uptrend — most stocks healthy above long-term trend.",
+        "sub-mid":    "Mixed — about half the universe above long-term trend.",
+        "sub-weak":   "Broad weakness — most stocks below long-term trend; corrective regime.",
+    },
+    "% eligible above 50 SMA": {
+        "sub-strong": "Short-term momentum is broad — most stocks above 50-day.",
+        "sub-mid":    "Mixed short-term participation.",
+        "sub-weak":   "Broad short-term pullback — most stocks below 50-day.",
+    },
+    "New 52W highs vs lows": {
+        "sub-strong": "Leadership strong — new highs dominate; risk-on.",
+        "sub-mid":    "Balanced highs and lows — no clear leadership tape.",
+        "sub-weak":   "Weak tape — more new lows than highs; distribution.",
+    },
+    "SPY 14-day rate of change": {
+        "sub-strong": "SPY posting solid 2-week gains — trend intact.",
+        "sub-mid":    "SPY grinding sideways or small gain — no strong direction.",
+        "sub-weak":   "SPY in recent decline — momentum has rolled over.",
+    },
+    "VIX (inverted)": {
+        "sub-strong": "Low volatility — market calm (sometimes complacent).",
+        "sub-mid":    "Normal volatility — some caution, nothing extreme.",
+        "sub-weak":   "Elevated volatility — market stressed; wider stops, size down.",
+    },
+}
+
+
+def _sub_interpretation(label: str, value: float | None) -> str:
+    tier = _sub_score_tier(value)
+    bucket = _SUB_INTERPRETATIONS.get(label)
+    if not bucket:
+        return ""
+    return bucket.get(tier, "")
+
+
 def _render_breadth_panel(breadth: dict) -> str:
     weekly = breadth["weekly_score"]
     monthly = breadth["monthly_score"]
     verdict = verdict_from_score(weekly)
     verdict_bg = verdict_color(verdict)
 
-    subs_html = "".join(
-        f'<div class="subindicator"><div class="name">{escape(sub["label"])}</div>'
-        f'<div class="val mono">{_fmt(sub["value"], ".1f")}<span class="dim"> / 10</span></div></div>'
-        for sub in breadth["subindicators"]
-    )
+    sub_cells = []
+    for sub in breadth["subindicators"]:
+        tier = _sub_score_tier(sub["value"])
+        interp = _sub_interpretation(sub["label"], sub["value"])
+        sub_cells.append(
+            f'<div class="subindicator {tier}">'
+            f'<div class="name">{escape(sub["label"])}</div>'
+            f'<div class="val mono {tier}">{_fmt(sub["value"], ".1f")}'
+            f'<span class="dim" style="font-weight:400;font-size:11px;"> / 10</span></div>'
+            f'<div class="interp">{escape(interp)}</div>'
+            f'</div>'
+        )
+    subs_html = "".join(sub_cells)
 
     return f"""
 <section class="breadth">
@@ -535,7 +614,7 @@ def _render_watchlist_table(candidates: list[dict]) -> str:
 
 
 def _render_recent_quality_watchlist_table(candidates: list[dict], today_str: str) -> str:
-    """Historical quality watchlist — aggregated across the 90-day archive,
+    """Historical quality watchlist — aggregated across the 7-day rolling archive,
     deduped per ticker (peak score wins), composite-ranked for stickiness."""
     if not candidates:
         return ('<div class="empty">No high-quality watchlist entries recorded yet. '
@@ -675,7 +754,7 @@ def _render_supertrend_table(candidates: list[dict]) -> str:
 
 
 def _render_recent_quality_supertrend_table(candidates: list[dict], today_str: str) -> str:
-    """Historical quality Supertrend-long entries aggregated across the 90-day archive."""
+    """Historical quality Supertrend-long entries aggregated across the 7-day rolling archive."""
     if not candidates:
         return ('<div class="empty">No high-quality Supertrend entries recorded yet. '
                 'This section fills in as the tool accumulates history.</div>')
@@ -743,6 +822,152 @@ def _render_recent_quality_supertrend_table(candidates: list[dict], today_str: s
 """
 
 
+def _render_recovery_table(candidates: list[dict]) -> str:
+    """Today's recovery candidates — 20 EMA crossed above 200 EMA from below,
+    still within 10% distance (not yet extended), 20 EMA rising."""
+    if not candidates:
+        return ('<div class="empty">No stocks currently meeting the recovery criteria. '
+                'Either no recent 20/200 EMA crossovers, or all recent crossers already moved too far above the 200 EMA.</div>')
+
+    rows = []
+    for c in candidates:
+        rs_val = c.get("rs_percentile")
+        rs_display = f'P{rs_val:.0f}' if rs_val is not None else '—'
+        sector_cell = _render_sector_cell(c.get("sector", ""), c.get("sector_rank"))
+        mom_passes = c.get("momentum_passes", 0)
+        acc_days = c.get("accumulation_days", 0)
+        acc_class = "piotroski-hi" if acc_days >= 7 else ("piotroski-mid" if acc_days >= 4 else "dim")
+
+        days_since = c.get("days_since_cross", 999)
+        if days_since <= 5:
+            cross_display = f'<span class="streak">{days_since}d ago</span>'
+        elif days_since <= 15:
+            cross_display = f'<span class="mono">{days_since}d ago</span>'
+        else:
+            cross_display = f'<span class="dim mono">{days_since}d ago</span>'
+
+        dist = c.get("distance_pct", 0)
+        if dist <= 3:
+            dist_display = f'<span class="streak">{dist:+.1f}%</span>'
+        elif dist <= 7:
+            dist_display = f'<span class="mono">{dist:+.1f}%</span>'
+        else:
+            dist_display = f'<span class="dim mono">{dist:+.1f}%</span>'
+
+        rows.append(f"""
+<tr>
+  <td class="ticker">{escape(c["ticker"])}</td>
+  <td class="{_score_class(c["recovery_score"])} num mono">{_fmt(c["recovery_score"], ".0f")}</td>
+  <td class="num">{cross_display}</td>
+  <td class="num">{dist_display}</td>
+  <td class="num mono {_rs_class(rs_val)}">{rs_display}</td>
+  <td class="num mono">{mom_passes}/4</td>
+  <td class="num mono {acc_class}">{acc_days}</td>
+  <td class="num mono">{_fmt(c.get("close"), ".2f")}</td>
+  <td class="num mono">{_fmt(c.get("short_ema"), ".2f")}</td>
+  <td class="num mono">{_fmt(c.get("long_ema"), ".2f")}</td>
+  <td class="num mono {_piotroski_class(c.get("piotroski"))}">{_fmt(c.get("piotroski"))}</td>
+  <td>{sector_cell}</td>
+</tr>""")
+
+    return f"""
+<table class="candidates">
+  <thead>
+    <tr>
+      <th>Ticker</th>
+      <th class="num">Score</th>
+      <th class="num">Cross Age</th>
+      <th class="num">EMA Gap</th>
+      <th class="num">RS</th>
+      <th class="num">Mom</th>
+      <th class="num">AccDays</th>
+      <th class="num">Current</th>
+      <th class="num">20 EMA</th>
+      <th class="num">200 EMA</th>
+      <th class="num">Piotroski</th>
+      <th>Sector</th>
+    </tr>
+  </thead>
+  <tbody>{"".join(rows)}</tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  "Coming out of correction" — 20 EMA just crossed above 200 EMA from below. Looser gates than other sections (RS ≥ 60, sector top 7) because recovery stocks had recent weakness and RS is still rebuilding. Prefer rows with Cross Age ≤ 10 days and EMA Gap ≤ 5% — the stock is still close to the inflection, not yet extended.
+</p>
+"""
+
+
+def _render_recent_quality_recovery_table(candidates: list[dict], today_str: str) -> str:
+    """Historical quality recovery entries aggregated across the 7-day rolling archive."""
+    if not candidates:
+        return ('<div class="empty">No high-quality recovery entries recorded yet. '
+                'This section fills in as the tool accumulates history.</div>')
+
+    rows = []
+    for c in candidates:
+        pick_date = c.get("best_score_date", "")
+        date_cell = (
+            f'<span class="streak">{escape(pick_date)}</span>'
+            if pick_date == today_str
+            else f'<span class="dim">{escape(pick_date)}</span>'
+        )
+        seen = int(c.get("appearances", 1))
+        seen_html = (
+            f'<span class="streak">×{seen}</span>' if seen >= 3
+            else (f'<span class="mono">×{seen}</span>' if seen >= 2
+                  else f'<span class="dim mono">×{seen}</span>')
+        )
+        rs_val = c.get("peak_rs_percentile")
+        rs_display = f'P{rs_val:.0f}' if rs_val is not None else '—'
+        sector_cell = _render_sector_cell(c.get("sector", ""), c.get("sector_rank"))
+        mom_passes = c.get("peak_momentum_passes", 0)
+        acc_days = c.get("peak_accumulation_days", 0)
+        cross_age = c.get("peak_days_since_cross", 0)
+        dist = c.get("peak_distance_pct", 0)
+
+        rows.append(f"""
+<tr>
+  <td class="mono">{date_cell}</td>
+  <td class="ticker">{escape(c["ticker"])}</td>
+  <td class="num mono">{seen_html}</td>
+  <td class="{_score_class(c["best_score"])} num mono">{_fmt(c["best_score"], ".0f")}</td>
+  <td class="num mono">{cross_age}d</td>
+  <td class="num mono">{dist:+.1f}%</td>
+  <td class="num mono {_rs_class(rs_val)}">{rs_display}</td>
+  <td class="num mono">{mom_passes}/4</td>
+  <td class="num mono">{acc_days}</td>
+  <td class="num mono">{_fmt(c.get("peak_close"), ".2f")}</td>
+  <td class="num mono">{_fmt(c.get("peak_short_ema"), ".2f")}</td>
+  <td class="num mono {_piotroski_class(c.get("piotroski"))}">{_fmt(c.get("piotroski"))}</td>
+  <td>{sector_cell}</td>
+</tr>""")
+
+    return f"""
+<table class="candidates">
+  <thead>
+    <tr>
+      <th>Pick Date</th>
+      <th>Ticker</th>
+      <th class="num">Seen</th>
+      <th class="num">Best Score</th>
+      <th class="num">Cross Age*</th>
+      <th class="num">EMA Gap*</th>
+      <th class="num">RS</th>
+      <th class="num">Mom</th>
+      <th class="num">AccDays</th>
+      <th class="num">Current*</th>
+      <th class="num">20 EMA*</th>
+      <th class="num">Piotroski</th>
+      <th>Sector</th>
+    </tr>
+  </thead>
+  <tbody>{"".join(rows)}</tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  * Values from the pick date (ticker's peak-scoring day). Re-check today's chart — the 20 EMA will have moved since.
+</p>
+"""
+
+
 def _render_sector_breakdown(sector_counts: dict) -> str:
     if not sector_counts:
         return '<div class="dim">No signals to break down.</div>'
@@ -768,17 +993,21 @@ def _render_funnel(funnel: dict) -> str:
         ("— Pattern triggered (→ breakouts)", funnel.get("pattern_pass", funnel.get("signals", 0))),
         ("— No pattern yet (→ watchlist pool)", funnel.get("watchlist_raw", 0)),
         ("— Supertrend long state (→ supertrend pool)", funnel.get("supertrend_raw", 0)),
+        ("— 20/200 EMA recovery (→ recovery pool)", funnel.get("recovery_raw", 0)),
         ("Dropped by RS gate (breakouts)", funnel.get("rs_gated", 0)),
         ("Dropped by sector gate (breakouts)", funnel.get("sector_gated", 0)),
         ("Final breakout signals (archived)", funnel["signals"]),
         ("Final watchlist entries (archived)", funnel.get("watchlist_signals", 0)),
         ("Final supertrend entries (archived)", funnel.get("supertrend_signals", 0)),
+        ("Final recovery entries (archived)", funnel.get("recovery_signals", 0)),
         ("Elite breakouts qualified", funnel.get("elite_breakouts", 0)),
         ("Elite watchlist qualified", funnel.get("elite_watchlist", 0)),
-        ("Elite supertrend qualified", funnel.get("elite_supertrend", 0)),
+        ("Elite supertrend qualified (fresh ≤ {}d flip)".format(funnel.get("supertrend_max_flip_age_days", 20)), funnel.get("elite_supertrend", 0)),
+        ("Recovery qualified (looser gates: RS≥60, sec≤7)", funnel.get("qualified_recovery", 0)),
         (f"Breakouts shown (top {bo_cap})", funnel["shown"]),
         (f"Watchlist shown (top {wl_cap})", funnel.get("watchlist_shown", 0)),
         (f"Supertrend shown (top {st_cap})", funnel.get("supertrend_shown", 0)),
+        (f"Recovery shown (top {funnel.get('max_recovery_cap', 6)})", funnel.get("recovery_shown", 0)),
     ]
     items = "".join(
         f'<li><span class="step-name">{escape(name)}</span>'
@@ -887,7 +1116,7 @@ def _render_methodology() -> str:
   <details class="method-block">
     <summary>How Recent Quality Breakouts is ranked</summary>
     <div class="method-body">
-      <p>The Recent Quality Breakouts section aggregates every signal from the past 90 days, then picks the top 10 by a composite <strong>keep score</strong>:</p>
+      <p>The Recent Quality Breakouts section aggregates every signal from the past 7 days (rolling week, same rollover cadence as the Positional Trading Tool), then picks the top 10 by a composite <strong>keep score</strong>:</p>
       <table class="method-table">
         <thead><tr><th>Component</th><th class="num">Contribution</th></tr></thead>
         <tbody>
@@ -925,7 +1154,7 @@ def _render_methodology() -> str:
         </tbody>
       </table>
       <p><strong>Display caps:</strong> Breakouts max 5 rows, Watchlist max 8 rows. If more candidates qualify, the top ones by score win. If none qualify (common in weak markets), the section is empty and you fall back to the Recent Quality sections for broader context.</p>
-      <p><strong>What this fixes:</strong> too many names to review wasted time and encouraged skimming. 5 breakouts and 8 watchlist entries is small enough to study each one properly, understand its chart, and make a real trade/no-trade decision. Everything below elite still accrues in the 90-day archives — nothing is lost, just not surfaced for daily review.</p>
+      <p><strong>What this fixes:</strong> too many names to review wasted time and encouraged skimming. 5 breakouts and 8 watchlist entries is small enough to study each one properly, understand its chart, and make a real trade/no-trade decision. Everything below elite still accrues in the 7-day rolling archives — nothing is lost from this week, just not surfaced for daily review.</p>
       <p><strong>If this feels too strict:</strong> on a strong market day, 8-10 names may deserve attention. Loosen one gate at a time in <code>daily_scan.py</code>: drop <code>ELITE_RS_PERCENTILE_MIN</code> to 80, or <code>ELITE_MOMENTUM_PASSES_MIN</code> to 3. If too loose, tighten them. Watch the Funnel section — "Elite qualified" counts tell you how much headroom the filter has.</p>
     </div>
   </details>
@@ -933,8 +1162,9 @@ def _render_methodology() -> str:
   <details class="method-block">
     <summary>How Supertrend Longs is built and scored</summary>
     <div class="method-body">
-      <p>The Supertrend-long section surfaces tickers in a trend-following long state on the daily chart. Supertrend is a trailing-stop indicator: when price is above the line, the trend is long and the line itself is your exit level. Uses the same parameters as the Positional Trading Tool: <strong>ATR period 10, multiplier 2.5</strong> (matches TradingView free tier).</p>
-      <p>A ticker enters the pool when (a) it passed trend + behavioral + momentum confluence gates in Pass 1, and (b) Supertrend direction is currently long. Same RS + sector gates apply as for breakouts and watchlist.</p>
+      <p>The Supertrend-long section surfaces tickers where a <strong>fresh</strong> long flip has fired on the daily chart within the last <code>SUPERTREND_MAX_FLIP_AGE_DAYS</code> trading days (default 20). Supertrend is a trailing-stop indicator: when price is above the line, the trend is long and the line itself is your exit level. Uses the same parameters as the Positional Trading Tool: <strong>ATR period 10, multiplier 2.5</strong> (matches TradingView free tier).</p>
+      <p><strong>Why the flip-age gate matters:</strong> without it, every sustained long trend keeps appearing day after day. The point of this section is "new signals I didn't see yesterday," not "every stock currently in a trend." Stale but still-strong trends live in the Recent Quality Supertrend history section instead.</p>
+      <p>A ticker enters the pool when (a) it passed trend + behavioral + momentum confluence gates in Pass 1, (b) Supertrend direction is currently long, and (c) flip age ≤ 20 days. Same RS + sector gates apply as for breakouts and watchlist.</p>
       <p><strong>Supertrend score (0 to ~122):</strong></p>
       <table class="method-table">
         <thead><tr><th>Component</th><th class="num">Points</th></tr></thead>
@@ -960,7 +1190,43 @@ def _render_methodology() -> str:
         <li>Supertrend = already in a trend, trailing-stop managed (continuation)</li>
       </ul>
       <p>A ticker appearing in multiple sections (e.g., both Breakouts and Supertrend) is confluence — multiple signal types confirming the same name. Those are often the best setups.</p>
-      <p><strong>Recent Quality Supertrend (history)</strong> aggregates the past 90 days of Supertrend-long entries. Only tickers whose peak Supertrend score ever hit 70+ are eligible. Keep score adds recency, repeat appearances, and accumulation bonuses.</p>
+      <p><strong>Recent Quality Supertrend (history)</strong> aggregates the past 7 days (rolling week) of Supertrend-long entries. Only tickers whose peak Supertrend score ever hit 70+ in that window are eligible. Keep score adds recency, repeat appearances, and accumulation bonuses.</p>
+    </div>
+  </details>
+
+  <details class="method-block">
+    <summary>How Recovery Setups are built and scored</summary>
+    <div class="method-body">
+      <p>Recovery surfaces stocks "coming out of correction" — the 20 EMA has recently crossed above the 200 EMA from below and the 20 EMA is still close to the 200 EMA (not yet extended). These are classic turnaround setups: a stock went through a correction, found a bottom, and is now rebuilding its uptrend.</p>
+      <p><strong>Entry conditions (all must hold):</strong></p>
+      <ul>
+        <li>20 EMA currently above 200 EMA</li>
+        <li>20 EMA within 10% above 200 EMA (not yet extended)</li>
+        <li>Crossover from below happened within the last 30 trading days</li>
+        <li>20 EMA is rising (compared to 5 bars ago)</li>
+        <li>No -10% gap-down in last 20 sessions (behavioral filter)</li>
+        <li>Momentum confluence ≥ 3 of 4</li>
+      </ul>
+      <p><strong>Looser gates than other sections:</strong> Recovery accepts <strong>RS ≥ 60</strong> (not 85) and <strong>sector top 7</strong> (not 4). Why: a stock that just emerged from a correction has not yet rebuilt its relative strength — if we required RS ≥ 85, we'd never catch the turnaround at the inflection point, only after it had already run.</p>
+      <p><strong>Recovery score (0 to ~142):</strong></p>
+      <table class="method-table">
+        <thead><tr><th>Component</th><th class="num">Points</th></tr></thead>
+        <tbody>
+          <tr><td>Freshness (days since cross)</td><td class="num mono">+30 if ≤ 5d, +25 if ≤ 10d, +15 if ≤ 20d, +5 if ≤ 30d</td></tr>
+          <tr><td>Closeness (gap between EMAs)</td><td class="num mono">+20 if ≤ 3%, +15 if ≤ 5%, +10 if ≤ 7%, +5 if ≤ 10%</td></tr>
+          <tr><td>RS strength</td><td class="num mono">rs_percentile ÷ 2, up to +50</td></tr>
+          <tr><td>Momentum confluence passes</td><td class="num mono">+5 per check, up to +20</td></tr>
+          <tr><td>Sector strength bonus</td><td class="num mono">+2 per rank above 7, up to +12</td></tr>
+          <tr><td>Accumulation days</td><td class="num mono">+1 per day, up to +10</td></tr>
+        </tbody>
+      </table>
+      <p><strong>How to read the row:</strong></p>
+      <ul>
+        <li><strong>Cross Age</strong> — days since 20 EMA crossed 200 EMA. Smaller = fresher = better. Highlighted green if ≤ 5 days.</li>
+        <li><strong>EMA Gap</strong> — how far 20 EMA sits above 200 EMA. Smaller = closer to inflection point = better. Highlighted green if ≤ 3%.</li>
+        <li><strong>Trade entry mechanics:</strong> look for the first pullback into the 20 EMA, or wait for a close above the recent swing high. Stop below the 200 EMA (or below recent swing low). Target: measured move from the correction depth, or trail with the 20 EMA.</li>
+      </ul>
+      <p><strong>Why this fills a gap:</strong> Breakouts and Supertrend both require strength (recent highs, trending long). Recovery catches names BEFORE they get strong — the turnaround phase. These setups can have outsized reward if the recovery continues, but have higher failure rates than confirmed breakouts, so size smaller.</p>
     </div>
   </details>
 
@@ -980,7 +1246,7 @@ def _render_methodology() -> str:
         </tbody>
       </table>
       <p><strong>Pending Trigger / Stop / TPs:</strong> the Trigger is the nearest resistance (20-day high; 55-day as fallback). Stop and TPs are computed from the trigger using the same logic as a fired breakout (stop = tighter of 7% below trigger or 20-day swing low; TP1 = 2R, TP2 = 3R). These are inactive until price actually breaks the Trigger — set alerts and let the setup come to you.</p>
-      <p><strong>Recent Quality Watchlist (history)</strong> aggregates the past 90 days of watchlist entries. Only tickers whose peak watchlist score ever hit 70+ are eligible. Composite ranking (keep score) adds bonuses for recency, repeat appearances, and accumulation.</p>
+      <p><strong>Recent Quality Watchlist (history)</strong> aggregates the past 7 days (rolling week) of watchlist entries. Only tickers whose peak watchlist score ever hit 70+ in that window are eligible. Composite ranking (keep score) adds bonuses for recency, repeat appearances, and accumulation.</p>
       <p><strong>What to look for:</strong></p>
       <ul>
         <li><strong>% to Go</strong> close to 0 (e.g., &lt; 3%): the trigger is imminent — prime alert candidate</li>
@@ -1005,9 +1271,11 @@ def render(
     candidates: list[dict],
     watchlist: list[dict] | None = None,
     supertrend: list[dict] | None = None,
+    recovery: list[dict] | None = None,
     recent_quality: list[dict],
     recent_quality_watchlist: list[dict] | None = None,
     recent_quality_supertrend: list[dict] | None = None,
+    recent_quality_recovery: list[dict] | None = None,
     sector_counts: dict,
     funnel: dict,
     eligible_refreshed_at: str,
@@ -1015,8 +1283,10 @@ def render(
     """Assemble the full HTML report."""
     watchlist = watchlist or []
     supertrend = supertrend or []
+    recovery = recovery or []
     recent_quality_watchlist = recent_quality_watchlist or []
     recent_quality_supertrend = recent_quality_supertrend or []
+    recent_quality_recovery = recent_quality_recovery or []
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -1048,8 +1318,11 @@ def render(
   <h2 class="section">Today's Swing-Ready Watchlist <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(elite-filtered, top {funnel.get("max_watchlist_cap", 8)} max)</span></h2>
   {_render_watchlist_table(watchlist)}
 
-  <h2 class="section">Today's Supertrend Longs <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(daily chart ATR 10 × 2.5, elite-filtered, top {funnel.get("max_supertrend_cap", 6)} max)</span></h2>
+  <h2 class="section">Today's Supertrend Longs <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(daily chart ATR 10 × 2.5, fresh flips ≤ {funnel.get("supertrend_max_flip_age_days", 20)}d, elite-filtered, top {funnel.get("max_supertrend_cap", 6)} max)</span></h2>
   {_render_supertrend_table(supertrend)}
+
+  <h2 class="section">Today's Recovery Setups <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(20 EMA crossed above 200 EMA from below, within 10% distance, top {funnel.get("max_recovery_cap", 6)} max)</span></h2>
+  {_render_recovery_table(recovery)}
 
   <h2 class="section">Recent Quality Breakouts <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(top 10 by conviction, appearances, volume, and recency)</span></h2>
   {_render_recent_quality_table(recent_quality, date_str)}
@@ -1059,6 +1332,9 @@ def render(
 
   <h2 class="section">Recent Quality Supertrend <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(top 10 past Supertrend-long entries by composite ranking)</span></h2>
   {_render_recent_quality_supertrend_table(recent_quality_supertrend, date_str)}
+
+  <h2 class="section">Recent Quality Recovery <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(top 10 past recovery entries by composite ranking)</span></h2>
+  {_render_recent_quality_recovery_table(recent_quality_recovery, date_str)}
 
   <div class="secondary">
     <div>

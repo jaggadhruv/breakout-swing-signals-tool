@@ -293,6 +293,71 @@ def supertrend_state(
     }
 
 
+def golden_cross_recovery(
+    prices: pd.DataFrame,
+    short_period: int = 20,
+    long_period: int = 200,
+    max_distance_pct: float = 10.0,
+    crossover_lookback_days: int = 30,
+    rising_lookback_days: int = 5,
+) -> dict | None:
+    """Detect stocks "coming out of correction" via 20 EMA crossing above 200 EMA
+    from below, where the crossover is recent and the 20 EMA has not yet run too
+    far above the 200 EMA.
+
+    Returns dict with ema values, distance %, days since cross, rising flag.
+    Returns None if any condition fails (not above, too extended, no recent
+    crossover, or 20 EMA not rising).
+    """
+    required_bars = long_period + crossover_lookback_days
+    if len(prices) < required_bars:
+        return None
+
+    close = prices["Close"]
+    short_ema = close.ewm(span=short_period, adjust=False).mean()
+    long_ema = close.ewm(span=long_period, adjust=False).mean()
+
+    cur_short = float(short_ema.iloc[-1])
+    cur_long = float(long_ema.iloc[-1])
+
+    # Must be above (crossed up or in process)
+    if cur_short <= cur_long:
+        return None
+
+    distance_pct = (cur_short - cur_long) / cur_long * 100
+    if distance_pct > max_distance_pct:
+        return None  # too extended — no longer "coming out of correction"
+
+    # Confirm recent crossover: at least one bar in lookback window where short <= long
+    window_start = max(0, len(short_ema) - crossover_lookback_days)
+    lookback_short = short_ema.iloc[window_start:]
+    lookback_long = long_ema.iloc[window_start:]
+    if not (lookback_short <= lookback_long).any():
+        return None  # above for too long; this is a mature uptrend, not a recovery
+
+    # Count days since the most recent "below or equal" bar
+    days_since = 0
+    for i in range(len(short_ema) - 1, max(0, len(short_ema) - crossover_lookback_days * 2) - 1, -1):
+        if short_ema.iloc[i] <= long_ema.iloc[i]:
+            break
+        days_since += 1
+
+    # 20 EMA must be rising
+    if len(short_ema) < rising_lookback_days + 1:
+        return None
+    past_short = float(short_ema.iloc[-(rising_lookback_days + 1)])
+    if cur_short <= past_short:
+        return None
+
+    return {
+        "short_ema": round(cur_short, 2),
+        "long_ema": round(cur_long, 2),
+        "distance_pct": round(distance_pct, 2),
+        "days_since_cross": int(days_since),
+        "close": round(float(close.iloc[-1]), 2),
+    }
+
+
 def accumulation_day_count(prices: pd.DataFrame, lookback: int = 25, vol_avg_window: int = 20) -> int:
     """Count accumulation days in the last `lookback` sessions.
 
