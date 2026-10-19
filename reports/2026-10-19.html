@@ -68,11 +68,30 @@ h1.title { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: -0.01em
 .subindicators {
   margin-top: 12px; padding-top: 12px;
   border-top: 1px solid var(--rule);
-  display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;
   font-size: 12px;
 }
-.subindicator .name { color: var(--muted); }
-.subindicator .val { margin-top: 2px; font-weight: 500; }
+.subindicator {
+  padding: 10px 12px;
+  background: var(--panel);
+  border-radius: 4px;
+  border-left: 3px solid var(--rule);
+}
+.subindicator.sub-strong { border-left-color: var(--sig-pos); }
+.subindicator.sub-mid    { border-left-color: var(--sig-warn); }
+.subindicator.sub-weak   { border-left-color: var(--sig-neg); }
+.subindicator .name { color: var(--muted); font-size: 11px; }
+.subindicator .val { margin-top: 4px; font-weight: 600; font-size: 15px; }
+.subindicator .val.sub-strong { color: var(--sig-pos); }
+.subindicator .val.sub-mid    { color: var(--sig-warn); }
+.subindicator .val.sub-weak   { color: var(--sig-neg); }
+.subindicator .interp {
+  margin-top: 4px; font-size: 11px; color: var(--muted);
+  font-style: italic; line-height: 1.35;
+}
+@media (max-width: 900px) {
+  .subindicators { grid-template-columns: repeat(2, 1fr); }
+}
 
 /* Section headings */
 h2.section {
@@ -201,7 +220,7 @@ footer {
       </div>
       <div class="date-block">
         <div class="date-primary">2026-10-19</div>
-        <div class="date-secondary">Generated 2026-10-19 21:17 UTC</div>
+        <div class="date-secondary">Generated 2026-10-19 21:46 UTC</div>
       </div>
     </div>
     
@@ -224,7 +243,7 @@ footer {
 <section class="breadth" style="border-top:none; padding-top:0; padding-bottom:16px;">
   <div style="grid-column: 1 / -1;">
     <div class="subindicators">
-      <div class="subindicator"><div class="name">% eligible above 200 SMA</div><div class="val mono">4.8<span class="dim"> / 10</span></div></div><div class="subindicator"><div class="name">% eligible above 50 SMA</div><div class="val mono">3.9<span class="dim"> / 10</span></div></div><div class="subindicator"><div class="name">New 52W highs vs lows</div><div class="val mono">5.0<span class="dim"> / 10</span></div></div><div class="subindicator"><div class="name">SPY 14-day rate of change</div><div class="val mono">5.3<span class="dim"> / 10</span></div></div><div class="subindicator"><div class="name">VIX (inverted)</div><div class="val mono">7.2<span class="dim"> / 10</span></div></div>
+      <div class="subindicator sub-mid"><div class="name">% eligible above 200 SMA</div><div class="val mono sub-mid">4.8<span class="dim" style="font-weight:400;font-size:11px;"> / 10</span></div><div class="interp">Mixed — about half the universe above long-term trend.</div></div><div class="subindicator sub-weak"><div class="name">% eligible above 50 SMA</div><div class="val mono sub-weak">3.9<span class="dim" style="font-weight:400;font-size:11px;"> / 10</span></div><div class="interp">Broad short-term pullback — most stocks below 50-day.</div></div><div class="subindicator sub-mid"><div class="name">New 52W highs vs lows</div><div class="val mono sub-mid">5.0<span class="dim" style="font-weight:400;font-size:11px;"> / 10</span></div><div class="interp">Balanced highs and lows — no clear leadership tape.</div></div><div class="subindicator sub-mid"><div class="name">SPY 14-day rate of change</div><div class="val mono sub-mid">5.3<span class="dim" style="font-weight:400;font-size:11px;"> / 10</span></div><div class="interp">SPY grinding sideways or small gain — no strong direction.</div></div><div class="subindicator sub-strong"><div class="name">VIX (inverted)</div><div class="val mono sub-strong">7.2<span class="dim" style="font-weight:400;font-size:11px;"> / 10</span></div><div class="interp">Low volatility — market calm (sometimes complacent).</div></div>
     </div>
   </div>
 </section>
@@ -235,10 +254,262 @@ footer {
   <div class="empty">No breakout signals passing all confluence gates today.</div>
 
   <h2 class="section">Today's Swing-Ready Watchlist <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(elite-filtered, top 8 max)</span></h2>
-  <div class="empty">No swing-ready watchlist entries today. All quality-passing tickers either triggered a breakout or are too extended to stalk.</div>
+  
+<table class="candidates">
+  <thead>
+    <tr>
+      <th>Ticker</th>
+      <th class="num">Score</th>
+      <th class="num">RS</th>
+      <th class="num">Mom</th>
+      <th class="num">AccDays</th>
+      <th class="num">52W%</th>
+      <th class="num">Current</th>
+      <th class="num">Trigger</th>
+      <th class="num">% to Go</th>
+      <th class="num">Stop†</th>
+      <th class="num">TP1†</th>
+      <th class="num">Piotroski</th>
+      <th>Sector</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+  <td class="ticker">PAYS</td>
+  <td class="score score-hi num mono">84</td>
+  <td class="num mono piotroski-hi">P99</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono piotroski-hi">7</td>
+  <td class="num mono">—</td>
+  <td class="num mono">15.34</td>
+  <td class="num mono">15.80</td>
+  <td class="num streak">+3.0%</td>
+  <td class="num mono">14.69</td>
+  <td class="num mono">18.01</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">DT</td>
+  <td class="score score-hi num mono">79</td>
+  <td class="num mono mono">P90</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono piotroski-hi">7</td>
+  <td class="num mono">—</td>
+  <td class="num mono">61.54</td>
+  <td class="num mono">66.30</td>
+  <td class="num mono">+7.7%</td>
+  <td class="num mono">61.66</td>
+  <td class="num mono">75.58</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">VLO</td>
+  <td class="score score-hi num mono">76</td>
+  <td class="num mono mono">P85</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono piotroski-hi">7</td>
+  <td class="num mono">—</td>
+  <td class="num mono">433.31</td>
+  <td class="num mono">461.52</td>
+  <td class="num mono">+6.5%</td>
+  <td class="num mono">429.21</td>
+  <td class="num mono">526.13</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr></tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  † Stop / TP are pending — they only become active once price breaks the Trigger level. Set an alert at the Trigger.
+  Mom = momentum confluence passes (RSI 50-75, ADX ≥ 20, Weekly MACD +, 52W pos ≥ 60%). AccDays = IBD-style accumulation days in last 25 sessions (close in upper 25% of day's range with above-average volume).
+</p>
 
-  <h2 class="section">Today's Supertrend Longs <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(daily chart ATR 10 × 2.5, elite-filtered, top 6 max)</span></h2>
-  <div class="empty">No Supertrend-long candidates passed the elite filter today. Check Recent Quality Supertrend for recent high-quality flips.</div>
+
+  <h2 class="section">Today's Supertrend Longs <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(daily chart ATR 10 × 2.5, fresh flips ≤ 20d, elite-filtered, top 6 max)</span></h2>
+  
+<table class="candidates">
+  <thead>
+    <tr>
+      <th>Ticker</th>
+      <th class="num">Score</th>
+      <th class="num">Flip Age</th>
+      <th class="num">RS</th>
+      <th class="num">Mom</th>
+      <th class="num">AccDays</th>
+      <th class="num">Current</th>
+      <th class="num">ST Stop</th>
+      <th class="num">% Above Stop</th>
+      <th class="num">Piotroski</th>
+      <th>Sector</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+  <td class="ticker">ESTC</td>
+  <td class="score score-hi num mono">84</td>
+  <td class="num"><span class="mono">6d</span></td>
+  <td class="num mono piotroski-hi">P95</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono dim">1</td>
+  <td class="num mono">94.60</td>
+  <td class="num mono">88.91</td>
+  <td class="num mono">+6.4%</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">MANH</td>
+  <td class="score score-hi num mono">82</td>
+  <td class="num"><span class="mono">5d</span></td>
+  <td class="num mono piotroski-hi">P91</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono dim">2</td>
+  <td class="num mono">225.43</td>
+  <td class="num mono">207.01</td>
+  <td class="num mono">+8.9%</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">PAYS</td>
+  <td class="score score-hi num mono">82</td>
+  <td class="num"><span class="dim mono">12d</span></td>
+  <td class="num mono piotroski-hi">P99</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono piotroski-hi">7</td>
+  <td class="num mono">15.34</td>
+  <td class="num mono">13.66</td>
+  <td class="num mono">+12.3%</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">VLO</td>
+  <td class="score score-hi num mono">74</td>
+  <td class="num"><span class="dim mono">10d</span></td>
+  <td class="num mono mono">P85</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono piotroski-hi">7</td>
+  <td class="num mono">433.31</td>
+  <td class="num mono">415.46</td>
+  <td class="num mono">+4.3%</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">ELF</td>
+  <td class="score score-hi num mono">71</td>
+  <td class="num"><span class="dim mono">8d</span></td>
+  <td class="num mono mono">P87</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono dim">2</td>
+  <td class="num mono">113.48</td>
+  <td class="num mono">104.14</td>
+  <td class="num mono">+9.0%</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">ZBRA</td>
+  <td class="score score-mid num mono">63</td>
+  <td class="num"><span class="dim mono">18d</span></td>
+  <td class="num mono mono">P86</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono dim">0</td>
+  <td class="num mono">375.77</td>
+  <td class="num mono">363.35</td>
+  <td class="num mono">+3.4%</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr></tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  Supertrend (ATR 10, mult 2.5) matches TradingView free tier and your Positional Trading Tool. The ST Stop line trails upward as the trend continues — exit when price closes below it. Flip Age in days since the long signal fired; fresher flips (≤ 3 days) are typically the best risk/reward entries.
+</p>
+
+
+  <h2 class="section">Today's Recovery Setups <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(20 EMA crossed above 200 EMA from below, within 10% distance, top 6 max)</span></h2>
+  
+<table class="candidates">
+  <thead>
+    <tr>
+      <th>Ticker</th>
+      <th class="num">Score</th>
+      <th class="num">Cross Age</th>
+      <th class="num">EMA Gap</th>
+      <th class="num">RS</th>
+      <th class="num">Mom</th>
+      <th class="num">AccDays</th>
+      <th class="num">Current</th>
+      <th class="num">20 EMA</th>
+      <th class="num">200 EMA</th>
+      <th class="num">Piotroski</th>
+      <th>Sector</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+  <td class="ticker">ACN</td>
+  <td class="score score-hi num mono">108</td>
+  <td class="num"><span class="mono">7d ago</span></td>
+  <td class="num"><span class="mono">+6.9%</span></td>
+  <td class="num mono piotroski-hi">P94</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono piotroski-mid">6</td>
+  <td class="num mono">236.93</td>
+  <td class="num mono">206.47</td>
+  <td class="num mono">193.20</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">CTSH</td>
+  <td class="score score-hi num mono">107</td>
+  <td class="num"><span class="streak">5d ago</span></td>
+  <td class="num"><span class="mono">+3.2%</span></td>
+  <td class="num mono mono">P88</td>
+  <td class="num mono">3/4</td>
+  <td class="num mono dim">3</td>
+  <td class="num mono">66.79</td>
+  <td class="num mono">61.26</td>
+  <td class="num mono">59.35</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">ASO</td>
+  <td class="score score-hi num mono">98</td>
+  <td class="num"><span class="streak">5d ago</span></td>
+  <td class="num"><span class="mono">+4.6%</span></td>
+  <td class="num mono dim">P63</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono dim">1</td>
+  <td class="num mono">58.24</td>
+  <td class="num mono">53.20</td>
+  <td class="num mono">50.87</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">DSGX</td>
+  <td class="score score-mid num mono">64</td>
+  <td class="num"><span class="dim mono">26d ago</span></td>
+  <td class="num"><span class="mono">+5.9%</span></td>
+  <td class="num mono dim">P64</td>
+  <td class="num mono">3/4</td>
+  <td class="num mono dim">2</td>
+  <td class="num mono">86.66</td>
+  <td class="num mono">82.71</td>
+  <td class="num mono">78.10</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr></tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  "Coming out of correction" — 20 EMA just crossed above 200 EMA from below. Looser gates than other sections (RS ≥ 60, sector top 7) because recovery stocks had recent weakness and RS is still rebuilding. Prefer rows with Cross Age ≤ 10 days and EMA Gap ≤ 5% — the stock is still close to the inflection, not yet extended.
+</p>
+
 
   <h2 class="section">Recent Quality Breakouts <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(top 10 by conviction, appearances, volume, and recency)</span></h2>
   
@@ -263,41 +534,13 @@ footer {
 <tr>
   <td class="mono"><span class="dim">2026-10-13</span></td>
   <td class="ticker">FIGS</td>
-  <td class="num mono"><span class="mono">×2</span></td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
   <td class="score score-hi num mono">105 <span class="streak" title="Very high volume">▲▲</span></td>
   <td class="patterns"><span class="pattern-tag">55D High</span><span class="pattern-tag">Resistance Break</span></td>
   <td class="num mono">17.74</td>
   <td class="num mono">15.23</td>
   <td class="num mono">22.75</td>
   <td class="num mono">25.26</td>
-  <td class="num mono">2.0R</td>
-  <td class="num mono dim">—</td>
-  <td class="dim">Unknown</td>
-</tr>
-<tr>
-  <td class="mono"><span class="dim">2026-10-09</span></td>
-  <td class="ticker">PLTR</td>
-  <td class="num mono"><span class="mono">×2</span></td>
-  <td class="score score-hi num mono">94</td>
-  <td class="patterns"><span class="pattern-tag">55D High</span><span class="pattern-tag">Resistance Break</span></td>
-  <td class="num mono">198.78</td>
-  <td class="num mono">181.15</td>
-  <td class="num mono">234.05</td>
-  <td class="num mono">251.68</td>
-  <td class="num mono">2.0R</td>
-  <td class="num mono dim">—</td>
-  <td class="dim">Unknown</td>
-</tr>
-<tr>
-  <td class="mono"><span class="dim">2026-10-07</span></td>
-  <td class="ticker">MRVL</td>
-  <td class="num mono"><span class="dim mono">×1</span></td>
-  <td class="score score-hi num mono">85 <span class="dim" title="High volume">▲</span></td>
-  <td class="patterns"><span class="pattern-tag">55D High</span><span class="pattern-tag">Resistance Break</span></td>
-  <td class="num mono">287.01</td>
-  <td class="num mono">260.40</td>
-  <td class="num mono">340.23</td>
-  <td class="num mono">366.84</td>
   <td class="num mono">2.0R</td>
   <td class="num mono dim">—</td>
   <td class="dim">Unknown</td>
@@ -345,26 +588,11 @@ footer {
   </thead>
   <tbody>
 <tr>
-  <td class="mono"><span class="dim">2026-10-07</span></td>
-  <td class="ticker">VLO</td>
-  <td class="num mono"><span class="streak">×4</span></td>
-  <td class="score score-hi num mono">84</td>
-  <td class="num mono mono">P88</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono">11</td>
-  <td class="num mono">419.22</td>
-  <td class="num mono">421.98</td>
-  <td class="num mono">392.44</td>
-  <td class="num mono">481.06</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
   <td class="mono"><span class="streak">2026-10-19</span></td>
   <td class="ticker">P</td>
-  <td class="num mono"><span class="streak">×4</span></td>
+  <td class="num mono"><span class="mono">×2</span></td>
   <td class="score score-hi num mono">83</td>
-  <td class="num mono piotroski-hi">P96</td>
+  <td class="num mono piotroski-hi">P97</td>
   <td class="num mono">3/4</td>
   <td class="num mono">11</td>
   <td class="num mono">127.09</td>
@@ -377,8 +605,8 @@ footer {
 <tr>
   <td class="mono"><span class="streak">2026-10-19</span></td>
   <td class="ticker">PAYS</td>
-  <td class="num mono"><span class="streak">×5</span></td>
-  <td class="score score-hi num mono">83</td>
+  <td class="num mono"><span class="mono">×2</span></td>
+  <td class="score score-hi num mono">84</td>
   <td class="num mono piotroski-hi">P99</td>
   <td class="num mono">4/4</td>
   <td class="num mono">7</td>
@@ -392,7 +620,7 @@ footer {
 <tr>
   <td class="mono"><span class="streak">2026-10-19</span></td>
   <td class="ticker">FIGS</td>
-  <td class="num mono"><span class="streak">×4</span></td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
   <td class="score score-hi num mono">81</td>
   <td class="num mono piotroski-hi">P100</td>
   <td class="num mono">3/4</td>
@@ -405,56 +633,11 @@ footer {
   <td><span class="dim">Unknown</span></td>
 </tr>
 <tr>
-  <td class="mono"><span class="dim">2026-10-06</span></td>
-  <td class="ticker">OKTA</td>
-  <td class="num mono"><span class="streak">×5</span></td>
-  <td class="score score-hi num mono">79</td>
-  <td class="num mono piotroski-hi">P98</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono">5</td>
-  <td class="num mono">218.67</td>
-  <td class="num mono">219.68</td>
-  <td class="num mono">204.30</td>
-  <td class="num mono">250.44</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="mono"><span class="dim">2026-10-07</span></td>
-  <td class="ticker">PBR-A</td>
-  <td class="num mono"><span class="streak">×7</span></td>
-  <td class="score score-hi num mono">72</td>
-  <td class="num mono mono">P85</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono">5</td>
-  <td class="num mono">21.62</td>
-  <td class="num mono">22.72</td>
-  <td class="num mono">21.13</td>
-  <td class="num mono">25.90</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="mono"><span class="dim">2026-10-06</span></td>
-  <td class="ticker">LPG</td>
-  <td class="num mono"><span class="streak">×4</span></td>
-  <td class="score score-hi num mono">75</td>
-  <td class="num mono mono">P81</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono">7</td>
-  <td class="num mono">56.45</td>
-  <td class="num mono">59.97</td>
-  <td class="num mono">55.77</td>
-  <td class="num mono">68.37</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
   <td class="mono"><span class="streak">2026-10-19</span></td>
   <td class="ticker">DT</td>
   <td class="num mono"><span class="dim mono">×1</span></td>
   <td class="score score-hi num mono">79</td>
-  <td class="num mono piotroski-hi">P90</td>
+  <td class="num mono mono">P90</td>
   <td class="num mono">4/4</td>
   <td class="num mono">7</td>
   <td class="num mono">61.54</td>
@@ -466,31 +649,91 @@ footer {
 </tr>
 <tr>
   <td class="mono"><span class="streak">2026-10-19</span></td>
-  <td class="ticker">DINO</td>
-  <td class="num mono"><span class="streak">×4</span></td>
-  <td class="score score-hi num mono">73</td>
+  <td class="ticker">VLO</td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
+  <td class="score score-hi num mono">76</td>
   <td class="num mono mono">P85</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono">7</td>
+  <td class="num mono">433.31</td>
+  <td class="num mono">461.52</td>
+  <td class="num mono">429.21</td>
+  <td class="num mono">526.13</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="dim">2026-10-13</span></td>
+  <td class="ticker">TRMD</td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
+  <td class="score score-hi num mono">74</td>
+  <td class="num mono mono">P81</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono">7</td>
+  <td class="num mono">40.92</td>
+  <td class="num mono">41.54</td>
+  <td class="num mono">38.64</td>
+  <td class="num mono">47.36</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="dim">2026-10-13</span></td>
+  <td class="ticker">HPE</td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
+  <td class="score score-hi num mono">76</td>
+  <td class="num mono piotroski-hi">P92</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono">5</td>
+  <td class="num mono">70.33</td>
+  <td class="num mono">73.56</td>
+  <td class="num mono">68.41</td>
+  <td class="num mono">83.86</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="dim">2026-10-13</span></td>
+  <td class="ticker">OKTA</td>
+  <td class="num mono"><span class="mono">×2</span></td>
+  <td class="score score-hi num mono">73</td>
+  <td class="num mono mono">P90</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono">4</td>
+  <td class="num mono">227.08</td>
+  <td class="num mono">232.98</td>
+  <td class="num mono">216.67</td>
+  <td class="num mono">265.60</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-19</span></td>
+  <td class="ticker">PLTR</td>
+  <td class="num mono"><span class="mono">×2</span></td>
+  <td class="score score-hi num mono">72</td>
+  <td class="num mono piotroski-hi">P93</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono">3</td>
+  <td class="num mono">194.15</td>
+  <td class="num mono">212.94</td>
+  <td class="num mono">198.03</td>
+  <td class="num mono">242.75</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-19</span></td>
+  <td class="ticker">DINO</td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
+  <td class="score score-hi num mono">72</td>
+  <td class="num mono mono">P84</td>
   <td class="num mono">4/4</td>
   <td class="num mono">5</td>
   <td class="num mono">124.42</td>
   <td class="num mono">129.37</td>
   <td class="num mono">120.31</td>
   <td class="num mono">147.48</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="mono"><span class="dim">2026-10-09</span></td>
-  <td class="ticker">SSL</td>
-  <td class="num mono"><span class="mono">×2</span></td>
-  <td class="score score-hi num mono">80</td>
-  <td class="num mono mono">P81</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono">10</td>
-  <td class="num mono">15.14</td>
-  <td class="num mono">15.18</td>
-  <td class="num mono">14.12</td>
-  <td class="num mono">17.31</td>
   <td class="num mono dim">—</td>
   <td><span class="dim">Unknown</span></td>
 </tr></tbody>
@@ -522,86 +765,44 @@ footer {
   </thead>
   <tbody>
 <tr>
-  <td class="mono"><span class="dim">2026-10-08</span></td>
-  <td class="ticker">VLO</td>
-  <td class="num mono"><span class="streak">×4</span></td>
-  <td class="score score-hi num mono">98</td>
-  <td class="num mono">2d</td>
-  <td class="num mono mono">P85</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono">11</td>
-  <td class="num mono">424.10</td>
-  <td class="num mono">386.51</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="mono"><span class="dim">2026-10-10</span></td>
-  <td class="ticker">PAYS</td>
-  <td class="num mono"><span class="streak">×5</span></td>
-  <td class="score score-hi num mono">90</td>
-  <td class="num mono">6d</td>
-  <td class="num mono piotroski-hi">P99</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono">6</td>
-  <td class="num mono">15.37</td>
-  <td class="num mono">13.48</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="mono"><span class="dim">2026-10-09</span></td>
-  <td class="ticker">LPG</td>
-  <td class="num mono"><span class="mono">×2</span></td>
-  <td class="score score-hi num mono">95</td>
-  <td class="num mono">0d</td>
-  <td class="num mono mono">P78</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono">6</td>
-  <td class="num mono">58.23</td>
-  <td class="num mono">52.27</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="mono"><span class="dim">2026-10-10</span></td>
+  <td class="mono"><span class="dim">2026-10-13</span></td>
   <td class="ticker">ESTC</td>
-  <td class="num mono"><span class="streak">×3</span></td>
-  <td class="score score-hi num mono">99</td>
-  <td class="num mono">0d</td>
-  <td class="num mono piotroski-hi">P98</td>
+  <td class="num mono"><span class="mono">×2</span></td>
+  <td class="score score-hi num mono">97</td>
+  <td class="num mono">1d</td>
+  <td class="num mono piotroski-hi">P93</td>
   <td class="num mono">4/4</td>
   <td class="num mono">0</td>
-  <td class="num mono">98.23</td>
-  <td class="num mono">88.38</td>
+  <td class="num mono">95.52</td>
+  <td class="num mono">88.91</td>
   <td class="num mono dim">—</td>
   <td><span class="dim">Unknown</span></td>
 </tr>
 <tr>
-  <td class="mono"><span class="dim">2026-10-08</span></td>
-  <td class="ticker">FRO</td>
-  <td class="num mono"><span class="streak">×4</span></td>
-  <td class="score score-hi num mono">91</td>
-  <td class="num mono">3d</td>
-  <td class="num mono mono">P82</td>
+  <td class="mono"><span class="dim">2026-10-13</span></td>
+  <td class="ticker">PAYS</td>
+  <td class="num mono"><span class="mono">×2</span></td>
+  <td class="score score-hi num mono">90</td>
+  <td class="num mono">7d</td>
+  <td class="num mono piotroski-hi">P99</td>
   <td class="num mono">4/4</td>
   <td class="num mono">5</td>
-  <td class="num mono">53.06</td>
-  <td class="num mono">48.71</td>
+  <td class="num mono">15.17</td>
+  <td class="num mono">13.56</td>
   <td class="num mono dim">—</td>
   <td><span class="dim">Unknown</span></td>
 </tr>
 <tr>
-  <td class="mono"><span class="dim">2026-10-09</span></td>
-  <td class="ticker">PSX</td>
-  <td class="num mono"><span class="mono">×2</span></td>
-  <td class="score score-hi num mono">96</td>
-  <td class="num mono">0d</td>
-  <td class="num mono mono">P86</td>
+  <td class="mono"><span class="dim">2026-10-13</span></td>
+  <td class="ticker">LPG</td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
+  <td class="score score-hi num mono">89</td>
+  <td class="num mono">2d</td>
+  <td class="num mono mono">P78</td>
   <td class="num mono">4/4</td>
-  <td class="num mono">3</td>
-  <td class="num mono">281.60</td>
-  <td class="num mono">256.53</td>
+  <td class="num mono">5</td>
+  <td class="num mono">58.24</td>
+  <td class="num mono">53.42</td>
   <td class="num mono dim">—</td>
   <td><span class="dim">Unknown</span></td>
 </tr>
@@ -621,8 +822,50 @@ footer {
 </tr>
 <tr>
   <td class="mono"><span class="dim">2026-10-13</span></td>
+  <td class="ticker">FRO</td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
+  <td class="score score-hi num mono">85</td>
+  <td class="num mono">6d</td>
+  <td class="num mono piotroski-hi">P97</td>
+  <td class="num mono">3/4</td>
+  <td class="num mono">7</td>
+  <td class="num mono">59.19</td>
+  <td class="num mono">53.43</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-19</span></td>
+  <td class="ticker">FIGS</td>
+  <td class="num mono"><span class="mono">×2</span></td>
+  <td class="score score-hi num mono">78</td>
+  <td class="num mono">14d</td>
+  <td class="num mono piotroski-hi">P100</td>
+  <td class="num mono">3/4</td>
+  <td class="num mono">8</td>
+  <td class="num mono">19.45</td>
+  <td class="num mono">16.76</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="dim">2026-10-13</span></td>
+  <td class="ticker">DHT</td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
+  <td class="score score-hi num mono">80</td>
+  <td class="num mono">7d</td>
+  <td class="num mono mono">P89</td>
+  <td class="num mono">3/4</td>
+  <td class="num mono">6</td>
+  <td class="num mono">26.22</td>
+  <td class="num mono">23.47</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="dim">2026-10-13</span></td>
   <td class="ticker">P</td>
-  <td class="num mono"><span class="streak">×4</span></td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
   <td class="score score-hi num mono">78</td>
   <td class="num mono">15d</td>
   <td class="num mono piotroski-hi">P100</td>
@@ -634,36 +877,108 @@ footer {
   <td><span class="dim">Unknown</span></td>
 </tr>
 <tr>
-  <td class="mono"><span class="dim">2026-10-09</span></td>
-  <td class="ticker">DHT</td>
-  <td class="num mono"><span class="mono">×2</span></td>
-  <td class="score score-hi num mono">80</td>
-  <td class="num mono">5d</td>
-  <td class="num mono mono">P77</td>
+  <td class="mono"><span class="dim">2026-10-13</span></td>
+  <td class="ticker">TK</td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
+  <td class="score score-hi num mono">81</td>
+  <td class="num mono">6d</td>
+  <td class="num mono mono">P84</td>
   <td class="num mono">4/4</td>
-  <td class="num mono">7</td>
-  <td class="num mono">24.93</td>
-  <td class="num mono">22.29</td>
+  <td class="num mono">4</td>
+  <td class="num mono">15.56</td>
+  <td class="num mono">14.37</td>
   <td class="num mono dim">—</td>
   <td><span class="dim">Unknown</span></td>
 </tr>
 <tr>
-  <td class="mono"><span class="dim">2026-10-09</span></td>
-  <td class="ticker">FIGS</td>
-  <td class="num mono"><span class="streak">×5</span></td>
-  <td class="score score-hi num mono">79</td>
-  <td class="num mono">7d</td>
-  <td class="num mono piotroski-hi">P94</td>
-  <td class="num mono">3/4</td>
+  <td class="mono"><span class="streak">2026-10-19</span></td>
+  <td class="ticker">MANH</td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
+  <td class="score score-hi num mono">82</td>
+  <td class="num mono">5d</td>
+  <td class="num mono piotroski-hi">P91</td>
+  <td class="num mono">4/4</td>
   <td class="num mono">2</td>
-  <td class="num mono">14.98</td>
-  <td class="num mono">12.73</td>
+  <td class="num mono">225.43</td>
+  <td class="num mono">207.01</td>
   <td class="num mono dim">—</td>
   <td><span class="dim">Unknown</span></td>
 </tr></tbody>
 </table>
 <p class="dim" style="font-size:11px;margin-top:6px;">
   * Values from the pick date (ticker's peak-scoring day). Re-check today's chart before acting — the Supertrend trailing stop will have moved since.
+</p>
+
+
+  <h2 class="section">Recent Quality Recovery <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(top 10 past recovery entries by composite ranking)</span></h2>
+  
+<table class="candidates">
+  <thead>
+    <tr>
+      <th>Pick Date</th>
+      <th>Ticker</th>
+      <th class="num">Seen</th>
+      <th class="num">Best Score</th>
+      <th class="num">Cross Age*</th>
+      <th class="num">EMA Gap*</th>
+      <th class="num">RS</th>
+      <th class="num">Mom</th>
+      <th class="num">AccDays</th>
+      <th class="num">Current*</th>
+      <th class="num">20 EMA*</th>
+      <th class="num">Piotroski</th>
+      <th>Sector</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+  <td class="mono"><span class="streak">2026-10-19</span></td>
+  <td class="ticker">ACN</td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
+  <td class="score score-hi num mono">108</td>
+  <td class="num mono">7d</td>
+  <td class="num mono">+6.9%</td>
+  <td class="num mono piotroski-hi">P94</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono">6</td>
+  <td class="num mono">236.93</td>
+  <td class="num mono">206.47</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-19</span></td>
+  <td class="ticker">CTSH</td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
+  <td class="score score-hi num mono">107</td>
+  <td class="num mono">5d</td>
+  <td class="num mono">+3.2%</td>
+  <td class="num mono mono">P88</td>
+  <td class="num mono">3/4</td>
+  <td class="num mono">3</td>
+  <td class="num mono">66.79</td>
+  <td class="num mono">61.26</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-19</span></td>
+  <td class="ticker">ASO</td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
+  <td class="score score-hi num mono">98</td>
+  <td class="num mono">5d</td>
+  <td class="num mono">+4.6%</td>
+  <td class="num mono dim">P63</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono">1</td>
+  <td class="num mono">58.24</td>
+  <td class="num mono">53.20</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr></tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  * Values from the pick date (ticker's peak-scoring day). Re-check today's chart — the 20 EMA will have moved since.
 </p>
 
 
@@ -674,7 +989,7 @@ footer {
     </div>
     <div>
       <h2 class="section">Funnel</h2>
-      <ul class="funnel-list"><li><span class="step-name">Eligible pool</span><span class="step-count mono">491</span></li><li><span class="step-name">Skipped (no data)</span><span class="step-count mono">0</span></li><li><span class="step-name">Passed trend filter</span><span class="step-count mono">120</span></li><li><span class="step-name">Passed behavioral filter</span><span class="step-count mono">120</span></li><li><span class="step-name">Passed momentum confluence</span><span class="step-count mono">82</span></li><li><span class="step-name">— Pattern triggered (→ breakouts)</span><span class="step-count mono">0</span></li><li><span class="step-name">— No pattern yet (→ watchlist pool)</span><span class="step-count mono">74</span></li><li><span class="step-name">— Supertrend long state (→ supertrend pool)</span><span class="step-count mono">74</span></li><li><span class="step-name">Dropped by RS gate (breakouts)</span><span class="step-count mono">0</span></li><li><span class="step-name">Dropped by sector gate (breakouts)</span><span class="step-count mono">0</span></li><li><span class="step-name">Final breakout signals (archived)</span><span class="step-count mono">0</span></li><li><span class="step-name">Final watchlist entries (archived)</span><span class="step-count mono">20</span></li><li><span class="step-name">Final supertrend entries (archived)</span><span class="step-count mono">17</span></li><li><span class="step-name">Elite breakouts qualified</span><span class="step-count mono">0</span></li><li><span class="step-name">Elite watchlist qualified</span><span class="step-count mono">0</span></li><li><span class="step-name">Elite supertrend qualified</span><span class="step-count mono">0</span></li><li><span class="step-name">Breakouts shown (top 5)</span><span class="step-count mono">0</span></li><li><span class="step-name">Watchlist shown (top 8)</span><span class="step-count mono">0</span></li><li><span class="step-name">Supertrend shown (top 6)</span><span class="step-count mono">0</span></li></ul>
+      <ul class="funnel-list"><li><span class="step-name">Eligible pool</span><span class="step-count mono">491</span></li><li><span class="step-name">Skipped (no data)</span><span class="step-count mono">0</span></li><li><span class="step-name">Passed trend filter</span><span class="step-count mono">120</span></li><li><span class="step-name">Passed behavioral filter</span><span class="step-count mono">120</span></li><li><span class="step-name">Passed momentum confluence</span><span class="step-count mono">82</span></li><li><span class="step-name">— Pattern triggered (→ breakouts)</span><span class="step-count mono">0</span></li><li><span class="step-name">— No pattern yet (→ watchlist pool)</span><span class="step-count mono">74</span></li><li><span class="step-name">— Supertrend long state (→ supertrend pool)</span><span class="step-count mono">74</span></li><li><span class="step-name">— 20/200 EMA recovery (→ recovery pool)</span><span class="step-count mono">14</span></li><li><span class="step-name">Dropped by RS gate (breakouts)</span><span class="step-count mono">0</span></li><li><span class="step-name">Dropped by sector gate (breakouts)</span><span class="step-count mono">0</span></li><li><span class="step-name">Final breakout signals (archived)</span><span class="step-count mono">0</span></li><li><span class="step-name">Final watchlist entries (archived)</span><span class="step-count mono">19</span></li><li><span class="step-name">Final supertrend entries (archived)</span><span class="step-count mono">17</span></li><li><span class="step-name">Final recovery entries (archived)</span><span class="step-count mono">4</span></li><li><span class="step-name">Elite breakouts qualified</span><span class="step-count mono">0</span></li><li><span class="step-name">Elite watchlist qualified</span><span class="step-count mono">3</span></li><li><span class="step-name">Elite supertrend qualified (fresh ≤ 20d flip)</span><span class="step-count mono">6</span></li><li><span class="step-name">Recovery qualified (looser gates: RS≥60, sec≤7)</span><span class="step-count mono">4</span></li><li><span class="step-name">Breakouts shown (top 5)</span><span class="step-count mono">0</span></li><li><span class="step-name">Watchlist shown (top 8)</span><span class="step-count mono">3</span></li><li><span class="step-name">Supertrend shown (top 6)</span><span class="step-count mono">6</span></li><li><span class="step-name">Recovery shown (top 6)</span><span class="step-count mono">4</span></li></ul>
     </div>
   </div>
 
@@ -770,7 +1085,7 @@ footer {
   <details class="method-block">
     <summary>How Recent Quality Breakouts is ranked</summary>
     <div class="method-body">
-      <p>The Recent Quality Breakouts section aggregates every signal from the past 90 days, then picks the top 10 by a composite <strong>keep score</strong>:</p>
+      <p>The Recent Quality Breakouts section aggregates every signal from the past 7 days (rolling week, same rollover cadence as the Positional Trading Tool), then picks the top 10 by a composite <strong>keep score</strong>:</p>
       <table class="method-table">
         <thead><tr><th>Component</th><th class="num">Contribution</th></tr></thead>
         <tbody>
@@ -808,7 +1123,7 @@ footer {
         </tbody>
       </table>
       <p><strong>Display caps:</strong> Breakouts max 5 rows, Watchlist max 8 rows. If more candidates qualify, the top ones by score win. If none qualify (common in weak markets), the section is empty and you fall back to the Recent Quality sections for broader context.</p>
-      <p><strong>What this fixes:</strong> too many names to review wasted time and encouraged skimming. 5 breakouts and 8 watchlist entries is small enough to study each one properly, understand its chart, and make a real trade/no-trade decision. Everything below elite still accrues in the 90-day archives — nothing is lost, just not surfaced for daily review.</p>
+      <p><strong>What this fixes:</strong> too many names to review wasted time and encouraged skimming. 5 breakouts and 8 watchlist entries is small enough to study each one properly, understand its chart, and make a real trade/no-trade decision. Everything below elite still accrues in the 7-day rolling archives — nothing is lost from this week, just not surfaced for daily review.</p>
       <p><strong>If this feels too strict:</strong> on a strong market day, 8-10 names may deserve attention. Loosen one gate at a time in <code>daily_scan.py</code>: drop <code>ELITE_RS_PERCENTILE_MIN</code> to 80, or <code>ELITE_MOMENTUM_PASSES_MIN</code> to 3. If too loose, tighten them. Watch the Funnel section — "Elite qualified" counts tell you how much headroom the filter has.</p>
     </div>
   </details>
@@ -816,8 +1131,9 @@ footer {
   <details class="method-block">
     <summary>How Supertrend Longs is built and scored</summary>
     <div class="method-body">
-      <p>The Supertrend-long section surfaces tickers in a trend-following long state on the daily chart. Supertrend is a trailing-stop indicator: when price is above the line, the trend is long and the line itself is your exit level. Uses the same parameters as the Positional Trading Tool: <strong>ATR period 10, multiplier 2.5</strong> (matches TradingView free tier).</p>
-      <p>A ticker enters the pool when (a) it passed trend + behavioral + momentum confluence gates in Pass 1, and (b) Supertrend direction is currently long. Same RS + sector gates apply as for breakouts and watchlist.</p>
+      <p>The Supertrend-long section surfaces tickers where a <strong>fresh</strong> long flip has fired on the daily chart within the last <code>SUPERTREND_MAX_FLIP_AGE_DAYS</code> trading days (default 20). Supertrend is a trailing-stop indicator: when price is above the line, the trend is long and the line itself is your exit level. Uses the same parameters as the Positional Trading Tool: <strong>ATR period 10, multiplier 2.5</strong> (matches TradingView free tier).</p>
+      <p><strong>Why the flip-age gate matters:</strong> without it, every sustained long trend keeps appearing day after day. The point of this section is "new signals I didn't see yesterday," not "every stock currently in a trend." Stale but still-strong trends live in the Recent Quality Supertrend history section instead.</p>
+      <p>A ticker enters the pool when (a) it passed trend + behavioral + momentum confluence gates in Pass 1, (b) Supertrend direction is currently long, and (c) flip age ≤ 20 days. Same RS + sector gates apply as for breakouts and watchlist.</p>
       <p><strong>Supertrend score (0 to ~122):</strong></p>
       <table class="method-table">
         <thead><tr><th>Component</th><th class="num">Points</th></tr></thead>
@@ -843,7 +1159,43 @@ footer {
         <li>Supertrend = already in a trend, trailing-stop managed (continuation)</li>
       </ul>
       <p>A ticker appearing in multiple sections (e.g., both Breakouts and Supertrend) is confluence — multiple signal types confirming the same name. Those are often the best setups.</p>
-      <p><strong>Recent Quality Supertrend (history)</strong> aggregates the past 90 days of Supertrend-long entries. Only tickers whose peak Supertrend score ever hit 70+ are eligible. Keep score adds recency, repeat appearances, and accumulation bonuses.</p>
+      <p><strong>Recent Quality Supertrend (history)</strong> aggregates the past 7 days (rolling week) of Supertrend-long entries. Only tickers whose peak Supertrend score ever hit 70+ in that window are eligible. Keep score adds recency, repeat appearances, and accumulation bonuses.</p>
+    </div>
+  </details>
+
+  <details class="method-block">
+    <summary>How Recovery Setups are built and scored</summary>
+    <div class="method-body">
+      <p>Recovery surfaces stocks "coming out of correction" — the 20 EMA has recently crossed above the 200 EMA from below and the 20 EMA is still close to the 200 EMA (not yet extended). These are classic turnaround setups: a stock went through a correction, found a bottom, and is now rebuilding its uptrend.</p>
+      <p><strong>Entry conditions (all must hold):</strong></p>
+      <ul>
+        <li>20 EMA currently above 200 EMA</li>
+        <li>20 EMA within 10% above 200 EMA (not yet extended)</li>
+        <li>Crossover from below happened within the last 30 trading days</li>
+        <li>20 EMA is rising (compared to 5 bars ago)</li>
+        <li>No -10% gap-down in last 20 sessions (behavioral filter)</li>
+        <li>Momentum confluence ≥ 3 of 4</li>
+      </ul>
+      <p><strong>Looser gates than other sections:</strong> Recovery accepts <strong>RS ≥ 60</strong> (not 85) and <strong>sector top 7</strong> (not 4). Why: a stock that just emerged from a correction has not yet rebuilt its relative strength — if we required RS ≥ 85, we'd never catch the turnaround at the inflection point, only after it had already run.</p>
+      <p><strong>Recovery score (0 to ~142):</strong></p>
+      <table class="method-table">
+        <thead><tr><th>Component</th><th class="num">Points</th></tr></thead>
+        <tbody>
+          <tr><td>Freshness (days since cross)</td><td class="num mono">+30 if ≤ 5d, +25 if ≤ 10d, +15 if ≤ 20d, +5 if ≤ 30d</td></tr>
+          <tr><td>Closeness (gap between EMAs)</td><td class="num mono">+20 if ≤ 3%, +15 if ≤ 5%, +10 if ≤ 7%, +5 if ≤ 10%</td></tr>
+          <tr><td>RS strength</td><td class="num mono">rs_percentile ÷ 2, up to +50</td></tr>
+          <tr><td>Momentum confluence passes</td><td class="num mono">+5 per check, up to +20</td></tr>
+          <tr><td>Sector strength bonus</td><td class="num mono">+2 per rank above 7, up to +12</td></tr>
+          <tr><td>Accumulation days</td><td class="num mono">+1 per day, up to +10</td></tr>
+        </tbody>
+      </table>
+      <p><strong>How to read the row:</strong></p>
+      <ul>
+        <li><strong>Cross Age</strong> — days since 20 EMA crossed 200 EMA. Smaller = fresher = better. Highlighted green if ≤ 5 days.</li>
+        <li><strong>EMA Gap</strong> — how far 20 EMA sits above 200 EMA. Smaller = closer to inflection point = better. Highlighted green if ≤ 3%.</li>
+        <li><strong>Trade entry mechanics:</strong> look for the first pullback into the 20 EMA, or wait for a close above the recent swing high. Stop below the 200 EMA (or below recent swing low). Target: measured move from the correction depth, or trail with the 20 EMA.</li>
+      </ul>
+      <p><strong>Why this fills a gap:</strong> Breakouts and Supertrend both require strength (recent highs, trending long). Recovery catches names BEFORE they get strong — the turnaround phase. These setups can have outsized reward if the recovery continues, but have higher failure rates than confirmed breakouts, so size smaller.</p>
     </div>
   </details>
 
@@ -863,7 +1215,7 @@ footer {
         </tbody>
       </table>
       <p><strong>Pending Trigger / Stop / TPs:</strong> the Trigger is the nearest resistance (20-day high; 55-day as fallback). Stop and TPs are computed from the trigger using the same logic as a fired breakout (stop = tighter of 7% below trigger or 20-day swing low; TP1 = 2R, TP2 = 3R). These are inactive until price actually breaks the Trigger — set alerts and let the setup come to you.</p>
-      <p><strong>Recent Quality Watchlist (history)</strong> aggregates the past 90 days of watchlist entries. Only tickers whose peak watchlist score ever hit 70+ are eligible. Composite ranking (keep score) adds bonuses for recency, repeat appearances, and accumulation.</p>
+      <p><strong>Recent Quality Watchlist (history)</strong> aggregates the past 7 days (rolling week) of watchlist entries. Only tickers whose peak watchlist score ever hit 70+ in that window are eligible. Composite ranking (keep score) adds bonuses for recency, repeat appearances, and accumulation.</p>
       <p><strong>What to look for:</strong></p>
       <ul>
         <li><strong>% to Go</strong> close to 0 (e.g., &lt; 3%): the trigger is imminent — prime alert candidate</li>

@@ -1,0 +1,72 @@
+{
+  "recovery": [
+    {
+      "date": "2026-10-19",
+      "ticker": "ACN",
+      "name": "ACN",
+      "sector": "Unknown",
+      "sector_rank": null,
+      "recovery_score": 108.1,
+      "rs_percentile": 94.3,
+      "momentum_passes": 4,
+      "accumulation_days": 6,
+      "close": 236.93,
+      "short_ema": 206.47,
+      "long_ema": 193.2,
+      "distance_pct": 6.87,
+      "days_since_cross": 7,
+      "piotroski": null
+    },
+    {
+      "date": "2026-10-19",
+      "ticker": "ASO",
+      "name": "ASO",
+      "sector": "Unknown",
+      "sector_rank": null,
+      "recovery_score": 97.6,
+      "rs_percentile": 63.2,
+      "momentum_passes": 4,
+      "accumulation_days": 1,
+      "close": 58.24,
+      "short_ema": 53.2,
+      "long_ema": 50.87,
+      "distance_pct": 4.57,
+      "days_since_cross": 5,
+      "piotroski": null
+    },
+    {
+      "date": "2026-10-19",
+      "ticker": "CTSH",
+      "name": "CTSH",
+      "sector": "Unknown",
+      "sector_rank": null,
+      "recovery_score": 107.2,
+      "rs_percentile": 88.5,
+      "momentum_passes": 3,
+      "accumulation_days": 3,
+      "close": 66.79,
+      "short_ema": 61.26,
+      "long_ema": 59.35,
+      "distance_pct": 3.22,
+      "days_since_cross": 5,
+      "piotroski": null
+    },
+    {
+      "date": "2026-10-19",
+      "ticker": "DSGX",
+      "name": "DSGX",
+      "sector": "Unknown",
+      "sector_rank": null,
+      "recovery_score": 64.2,
+      "rs_percentile": 64.4,
+      "momentum_passes": 3,
+      "accumulation_days": 2,
+      "close": 86.66,
+      "short_ema": 82.71,
+      "long_ema": 78.1,
+      "distance_pct": 5.91,
+      "days_since_cross": 26,
+      "piotroski": null
+    }
+  ]
+}
