@@ -472,6 +472,14 @@ def passes_sector_gate(sector_label: str, sector_ranks: dict[str, int]) -> tuple
     return rank <= SECTOR_MAX_RANK, rank
 
 
+
+def sector_rank_ok(rank: int | None, max_rank: int) -> bool:
+    """Sector check for elite / recovery filters. A missing rank (sector not in
+    the CSV, or not mappable to a SPDR ETF) is NOT gated, consistent with
+    passes_sector_gate. Without this, a CSV lacking a Sector column makes every
+    elite filter fail and the "today" sections are permanently empty."""
+    return rank is None or rank <= max_rank
+
 # ============================================================================
 # Setup scoring
 # ============================================================================
@@ -1519,6 +1527,11 @@ def main() -> None:
     # Load inputs
     universe = load_eligible_universe()
     eligible = universe["eligible"]
+    mapped = sum(1 for e in eligible if sector_etf_for(e.get("sector", "")))
+    if mapped < len(eligible) * 0.5:
+        log(f"WARNING: only {mapped}/{len(eligible)} tickers have a mappable sector. "
+            f"Sector gates are effectively OFF. Add a Sector column to "
+            f"input/manual_universe.csv (see SCREENING.md).")
     log(f"Loaded eligible universe: {len(eligible)} tickers "
         f"(refreshed {universe['refreshed_at']})")
 
@@ -1676,6 +1689,7 @@ def main() -> None:
     recovery_behavioral_pass = 0
     recovery_cross_pass = 0
     recovery_momentum_pass = 0
+    eligible_lookup = {e["ticker"]: e for e in eligible}
 
     for ticker, prices in price_cache.items():
         entry_info = eligible_lookup.get(ticker)
@@ -1700,8 +1714,8 @@ def main() -> None:
             continue
         recovery_cross_pass += 1
 
-        mom_ctx = patterns.check_momentum_confluence(prices)
-        if mom_ctx["pass_count"] < RECOVERY_MOMENTUM_PASSES_MIN:
+        _, mom_ctx = passes_momentum_confluence(prices)
+        if mom_ctx.get("pass_count", 0) < RECOVERY_MOMENTUM_PASSES_MIN:
             continue
         recovery_momentum_pass += 1
 
@@ -1901,9 +1915,11 @@ def main() -> None:
             rec_rs_gated += 1
             continue
 
-        # Recovery accepts top 7 sectors (vs top 6 for main gates)
-        rank = sector_ranks.get(sector_label)
-        if rank is None or rank > RECOVERY_SECTOR_RANK_MAX:
+        # Recovery accepts top 7 sectors (vs top 6 for main gates). Ranks are
+        # keyed by SPDR ETF, so map the sector label first; unmapped = not gated.
+        etf = sector_etf_for(sector_label)
+        rank = sector_ranks.get(etf) if etf else None
+        if not sector_rank_ok(rank, RECOVERY_SECTOR_RANK_MAX):
             rec_sector_gated += 1
             continue
 
@@ -1963,24 +1979,24 @@ def main() -> None:
     def is_elite_breakout(s: dict) -> bool:
         rs_pct = s.get("rs_percentile") or 0
         mom_passes = s.get("momentum_context", {}).get("pass_count", 0)
-        sector_rank = s.get("sector_rank") or 99
+        sector_rank = s.get("sector_rank")
         return (
             s["score"] >= adaptive_min_score
             and rs_pct >= ELITE_RS_PERCENTILE_MIN
             and mom_passes >= ELITE_MOMENTUM_PASSES_MIN
-            and sector_rank <= ELITE_SECTOR_RANK_MAX
+            and sector_rank_ok(sector_rank, ELITE_SECTOR_RANK_MAX)
         )
 
     def is_elite_watchlist(w: dict) -> bool:
         rs_pct = w.get("rs_percentile") or 0
         mom_passes = w.get("momentum_passes", 0)
-        sector_rank = w.get("sector_rank") or 99
+        sector_rank = w.get("sector_rank")
         acc_days = w.get("accumulation_days", 0)
         return (
             w["watchlist_score"] >= WATCHLIST_MIN_SHOW_SCORE
             and rs_pct >= ELITE_RS_PERCENTILE_MIN
             and mom_passes >= ELITE_MOMENTUM_PASSES_MIN
-            and sector_rank <= ELITE_SECTOR_RANK_MAX
+            and sector_rank_ok(sector_rank, ELITE_SECTOR_RANK_MAX)
             and acc_days >= ELITE_WATCHLIST_MIN_ACC_DAYS
         )
 
@@ -1995,13 +2011,13 @@ def main() -> None:
     def is_elite_supertrend(s: dict) -> bool:
         rs_pct = s.get("rs_percentile") or 0
         mom_passes = s.get("momentum_passes", 0)
-        sector_rank = s.get("sector_rank") or 99
+        sector_rank = s.get("sector_rank")
         flip_age = s.get("days_since_flip", 999)
         return (
             s["supertrend_score"] >= SUPERTREND_MIN_SHOW_SCORE
             and rs_pct >= ELITE_RS_PERCENTILE_MIN
             and mom_passes >= ELITE_MOMENTUM_PASSES_MIN
-            and sector_rank <= ELITE_SECTOR_RANK_MAX
+            and sector_rank_ok(sector_rank, ELITE_SECTOR_RANK_MAX)
             and flip_age <= SUPERTREND_MAX_FLIP_AGE_DAYS   # fresh flips only
         )
 

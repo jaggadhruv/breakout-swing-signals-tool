@@ -64,8 +64,21 @@ tighten (>600) or loosen (<300) filter #3 (market cap) or #9 (D/E).
 4. Open Google Sheets → paste (Ctrl+Shift+V for values only)
 5. File → Download → Comma-separated values (.csv)
 
-The file only needs a **Ticker** or **Symbol** column. Company name and Sector
-are used in the report if present but are optional.
+Required columns:
+
+- **Ticker** or **Symbol** (required, the scan cannot run without it)
+- **Sector** (strongly recommended). Sector drives the sector-regime gate, the
+  sector-strength part of every score, and the "top 4 sectors" elite filter.
+  Without it, every ticker is "Unknown", sector logic is skipped entirely, and
+  the scan log prints a `WARNING: only 0/N tickers have a mappable sector`.
+
+Optional: **Company** / **Name** (shown in the report).
+
+Accepted Sector values are the standard Finviz / Stockanalysis / GICS labels:
+Technology, Healthcare, Financial, Consumer Cyclical, Consumer Defensive,
+Industrials, Energy, Utilities, Basic Materials, Real Estate, Communication
+Services (and their GICS equivalents). Both sites include Sector in the default
+export view; on Finviz make sure the Overview tab is selected before copying.
 
 ---
 
