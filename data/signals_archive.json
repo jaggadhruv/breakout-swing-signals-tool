@@ -1,3 +1,76 @@
 {
-  "signals": []
+  "signals": [
+    {
+      "date": "2026-10-23",
+      "ticker": "ADP",
+      "name": "ADP",
+      "sector": "Unknown",
+      "score": 68.2,
+      "pattern_labels": [
+        "55D High",
+        "Resistance Break"
+      ],
+      "entry": 307.94,
+      "stop": 275.41,
+      "tp1": 373.0,
+      "tp2": 405.53,
+      "piotroski": null,
+      "days_on_report": 1,
+      "volume_multiple": 1.82
+    },
+    {
+      "date": "2026-10-23",
+      "ticker": "KDP",
+      "name": "KDP",
+      "sector": "Unknown",
+      "score": 79.4,
+      "pattern_labels": [
+        "55D High",
+        "Resistance Break"
+      ],
+      "entry": 35.19,
+      "stop": 32.45,
+      "tp1": 40.67,
+      "tp2": 43.42,
+      "piotroski": null,
+      "days_on_report": 1,
+      "volume_multiple": 2.42
+    },
+    {
+      "date": "2026-10-23",
+      "ticker": "PG",
+      "name": "PG",
+      "sector": "Unknown",
+      "score": 94.8,
+      "pattern_labels": [
+        "55D High",
+        "Resistance Break"
+      ],
+      "entry": 165.59,
+      "stop": 148.78,
+      "tp1": 199.21,
+      "tp2": 216.02,
+      "piotroski": null,
+      "days_on_report": 4,
+      "volume_multiple": 2.42
+    },
+    {
+      "date": "2026-10-23",
+      "ticker": "QLYS",
+      "name": "QLYS",
+      "sector": "Unknown",
+      "score": 85.4,
+      "pattern_labels": [
+        "55D High",
+        "Resistance Break"
+      ],
+      "entry": 208.2,
+      "stop": 191.81,
+      "tp1": 240.97,
+      "tp2": 257.36,
+      "piotroski": null,
+      "days_on_report": 2,
+      "volume_multiple": 1.88
+    }
+  ]
 }
