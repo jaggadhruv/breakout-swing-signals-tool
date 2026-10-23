@@ -109,9 +109,11 @@ flowchart TD
 
     U --> P1B{Pass 1b · recovery<br/>all fetched tickers,<br/>no trend filter}
     P1B --> RREC[(raw_recovery)]
+    U --> P1C{Pass 1c · all fetched tickers<br/>RS for everyone +<br/>quality base: above rising 200 SMA}
+    P1C --> RSR[(raw S/R · retest · reversal)]
 
-    RBO & RWL & RST & RREC --> PCT[RS percentiles across pool]
-    PCT --> P2[Pass 2 / 2b / 2c / 2d<br/>RS gate + sector gate + scoring]
+    RBO & RWL & RST & RREC & RSR --> PCT[RS percentiles across full universe]
+    PCT --> P2[Pass 2 / 2b / 2c / 2d / 2e<br/>RS gate + sector gate + scoring]
     P2 --> AR[(7-day archives)]
     P2 --> EL[Elite filter + caps]
     AR --> RQ[Recent Quality rankings]
@@ -157,9 +159,29 @@ ticker**, skipping the trend filter:
    from below within the last 30 bars, 20 EMA higher than 5 bars ago
 3. Momentum ≥ 3/4 (same function as Pass 1)
 
-### 5.4 Confluence gates and scoring (Pass 2, 2b, 2c, 2d)
+### 5.3b Pass 1c: full-universe RS and the S/R, retest and reversal setups
 
-RS percentiles are computed once across every ticker that received a raw RS value.
+Pass 1c first computes raw 12-week RS for **every** fetched ticker, so percentiles
+rank against the whole universe. (Before this, only trend-filter survivors were
+ranked, which made "RS ≥ 75" mean the top quarter of the strongest quarter.)
+
+It then applies a shared **quality base** (behavioral filter, close above a 200 SMA
+that is higher than 20 sessions ago) and collects three setup types:
+
+- **Support / resistance**: `patterns.nearest_support_resistance()` clusters swing
+  highs and lows (5 bars each side, last 120 sessions, 1.5% clustering, ≥ 2 touches)
+  and keeps tickers within 3% of the nearest level above or below.
+- **Recent breakout**: `patterns.recent_breakout_status()` finds a close above the
+  prior 55-session high on ≥ 1.5× volume 1–20 sessions ago, then classifies it as
+  `retest` (pulled back ≥ 3%, recent low within 2% of the level, still holding) or
+  `holding`. Breakouts closing > 3% back below the level are dropped as failed.
+- **Reversal swing**: `patterns.reversal_swing_setup()` requires a 5–25% pullback
+  from the 20-day high, RSI(14) ≤ 40 within 5 sessions, and a bullish engulfing,
+  outside-reversal or hammer candle today.
+
+### 5.4 Confluence gates and scoring (Pass 2, 2b, 2c, 2d, 2e)
+
+RS percentiles are computed once, across the full universe (see Pass 1c).
 
 | Pipeline | RS gate | Sector gate | Score function | Max ≈ |
 |---|---|---|---|---|
@@ -167,6 +189,10 @@ RS percentiles are computed once across every ticker that received a raw RS valu
 | Watchlist | ≥ 75 | rank ≤ 6 | `compute_watchlist_score` | 112 |
 | Supertrend | ≥ 75 | rank ≤ 6 | `compute_supertrend_score` | 122 |
 | Recovery | ≥ 60 | rank ≤ 7 | `compute_recovery_score` | 142 |
+| Near support | ≥ 60 | rank ≤ 6 | `compute_support_score` | 122 |
+| Near resistance | ≥ 70 | rank ≤ 6 | `compute_resistance_score` | 142 |
+| Break & retest / holding | ≥ 70 | rank ≤ 6 | `compute_retest_score` | 132 |
+| Reversal swing | ≥ 55 | rank ≤ 7 | `compute_reversal_score` | 147 |
 
 Score components (see docstrings and the report's Methodology section for detail):
 
@@ -203,6 +229,12 @@ Applied only to the four "Today's" sections. Archives are unaffected.
 | Watchlist | score ≥ 60, RS ≥ 85, momentum 4/4, sector ≤ 4, accumulation days ≥ 5 | 8 |
 | Supertrend | score ≥ 60, RS ≥ 85, momentum 4/4, sector ≤ 4, **flip age ≤ 20 d** | 6 |
 | Recovery | score ≥ 55 (gates already looser upstream) | 6 |
+| Near Support / Near Resistance | score ≥ 60 | 10 each |
+| Break & Retest / Holding Above | score ≥ 60 | 8 each |
+| Reversal Swing | score ≥ 55 | 6 |
+
+The S/R, retest and reversal sections are recomputed from price history daily and
+are **not archived** (no Recent Quality history).
 
 "Sector ≤ 4" passes when sector rank is unknown (`sector_rank_ok()`).
 
@@ -232,7 +264,9 @@ volume or accumulation bonus`; show top 10.
 ## 7. Report (`report.py`)
 
 `render()` assembles one self-contained HTML file (embedded CSS, no external assets):
-masthead and breadth panel, four Today's sections, four Recent Quality sections, sector
+masthead and breadth panel, four Today's sections, Support & Resistance (two
+tables), Recent Breakouts & Retests (two tables), Reversal Swing Setups, four Recent
+Quality sections, sector
 breakdown, funnel (counts at every gate, so you can see where candidates drop out),
 and collapsible Methodology blocks. Each section has its own table renderer
 (`_render_*_table`). Adding a section means: a renderer, a `render()` keyword argument,
@@ -256,6 +290,10 @@ pipeline. The ones you are most likely to touch:
 | `RS_PERCENTILE_MIN` / `SECTOR_MAX_RANK` | 75 / 6 | Base gates (affect archives too) |
 | `ARCHIVE_RETENTION_DAYS` | 7 | History window |
 | `SUPERTREND_ATR_PERIOD` / `_MULTIPLIER` | 10 / 2.5 | Keep in sync with the Positional Trading Tool |
+| `SR_NEAR_PCT` / `SR_MIN_TOUCHES` | 3.0 / 2 | How close counts as "near", and level strength |
+| `RETEST_MAX_AGE_BARS` / `RETEST_BAND_PCT` | 20 / 2.0 | Breakout lookback and retest tolerance |
+| `REVERSAL_RSI_OVERSOLD` | 40 | How oversold the pullback must get |
+| `patterns.VOLUME_MULTIPLE_THRESHOLD` | 1.5 | Volume confirmation for every breakout detector |
 
 When a section is empty, read the funnel before tuning: it shows whether candidates
 died at pattern detection, a base gate, or the elite filter.
@@ -293,6 +331,8 @@ There is no unit-test suite yet. Two checks are used before every release:
   (RSI 50–75). Safe to delete the earlier duplicates and the unused function in a
   cleanup pass.
 - **Recovery has no computed stop/targets**, only EMA reference levels.
+- **S/R, retest and reversal have no history archive.** Add one following the
+  recovery archive pattern if needed.
 - **Tight elite Supertrend combination.** A fresh flip after a pullback often still
   has a negative weekly MACD, so "flip ≤ 20 d" plus "momentum 4/4" can leave the
   section empty in otherwise healthy markets. Loosen `ELITE_MOMENTUM_PASSES_MIN` first

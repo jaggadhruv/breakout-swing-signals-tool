@@ -358,6 +358,214 @@ def golden_cross_recovery(
     }
 
 
+# ============================================================================
+# Support / resistance, break-and-retest, reversal swings
+# ============================================================================
+
+def _pivot_points(prices: pd.DataFrame, lookback: int, wing: int) -> list[tuple[float, str]]:
+    """Confirmed swing highs/lows in the last `lookback` bars. A pivot needs
+    `wing` bars on each side, so the newest `wing` bars can never be pivots."""
+    window = prices.iloc[-lookback:]
+    highs = window["High"].to_numpy()
+    lows = window["Low"].to_numpy()
+    pivots: list[tuple[float, str]] = []
+    for i in range(wing, len(window) - wing):
+        if highs[i] == highs[i - wing:i + wing + 1].max():
+            pivots.append((float(highs[i]), "high"))
+        if lows[i] == lows[i - wing:i + wing + 1].min():
+            pivots.append((float(lows[i]), "low"))
+    return pivots
+
+
+def sr_levels(
+    prices: pd.DataFrame, lookback: int = 120, wing: int = 5, cluster_pct: float = 1.5
+) -> list[dict]:
+    """Cluster pivot highs AND lows into horizontal levels (role reversal: an old
+    resistance can act as support). Returns [{level, touches}] sorted by level."""
+    if len(prices) < lookback:
+        return []
+    pivots = sorted(p for p, _ in _pivot_points(prices, lookback, wing))
+    clusters: list[list[float]] = []
+    for p in pivots:
+        if clusters and p <= np.mean(clusters[-1]) * (1 + cluster_pct / 100):
+            clusters[-1].append(p)
+        else:
+            clusters.append([p])
+    return [{"level": float(np.mean(c)), "touches": len(c)} for c in clusters]
+
+
+def nearest_support_resistance(
+    prices: pd.DataFrame,
+    lookback: int = 120,
+    wing: int = 5,
+    cluster_pct: float = 1.5,
+    min_touches: int = 2,
+) -> dict:
+    """Nearest multi-touch level below and above today's close."""
+    close = float(prices["Close"].iloc[-1])
+    levels = [lv for lv in sr_levels(prices, lookback, wing, cluster_pct) if lv["touches"] >= min_touches]
+    below = [lv for lv in levels if lv["level"] < close]
+    above = [lv for lv in levels if lv["level"] > close]
+    out: dict = {"close": round(close, 2), "support": None, "resistance": None}
+    if below:
+        s = max(below, key=lambda lv: lv["level"])
+        out["support"] = {"level": round(s["level"], 2), "touches": s["touches"],
+                          "distance_pct": round((close - s["level"]) / close * 100, 2)}
+    if above:
+        r = min(above, key=lambda lv: lv["level"])
+        out["resistance"] = {"level": round(r["level"], 2), "touches": r["touches"],
+                             "distance_pct": round((r["level"] - close) / close * 100, 2)}
+    return out
+
+
+def recent_breakout_status(
+    prices: pd.DataFrame,
+    max_age: int = 20,
+    level_window: int = 55,
+    vol_mult_min: float = 1.5,
+    retest_band_pct: float = 2.0,
+    fail_pct: float = 3.0,
+    min_pullback_pct: float = 3.0,
+) -> dict | None:
+    """Find the most recent N-day-high breakout (on volume) 1..max_age bars ago
+    and classify what price has done since.
+
+    Status:
+      "retest"  — pulled back ≥ min_pullback_pct from the post-breakout high,
+                  a low in the last 3 bars came within retest_band_pct of the
+                  breakout level, and today's close is still at/above the level
+                  (within 1%). Classic break-and-retest entry zone.
+      "holding" — still above the level, no retest yet.
+      None      — no breakout found, or it failed (close > fail_pct below level).
+    """
+    n = len(prices)
+    if n < level_window + max_age + 21:
+        return None
+    high = prices["High"].to_numpy()
+    low = prices["Low"].to_numpy()
+    close = prices["Close"].to_numpy()
+    vol = prices["Volume"].to_numpy()
+
+    bo_idx = None
+    level = None
+    for i in range(n - 2, n - 2 - max_age, -1):  # yesterday back to max_age bars ago
+        prior_high = high[i - level_window:i].max()
+        avg_vol = vol[i - 20:i].mean()
+        if close[i] > prior_high and avg_vol > 0 and vol[i] / avg_vol >= vol_mult_min:
+            bo_idx, level = i, float(prior_high)
+            break
+    if bo_idx is None:
+        return None
+
+    today_close = float(close[-1])
+    if today_close < level * (1 - fail_pct / 100):
+        return None  # failed breakout
+
+    post_high = float(high[bo_idx:].max())
+    pullback_pct = (post_high - today_close) / post_high * 100
+    recent_low = float(low[-3:].min())
+    extension_pct = (today_close - level) / level * 100
+    age = n - 1 - bo_idx
+    bo_vol_mult = float(vol[bo_idx] / vol[bo_idx - 20:bo_idx].mean())
+
+    retested = (
+        pullback_pct >= min_pullback_pct
+        and recent_low <= level * (1 + retest_band_pct / 100)
+        and today_close >= level * 0.99
+    )
+    status = "retest" if retested else ("holding" if today_close > level else None)
+    if status is None:
+        return None
+    bounce = today_close > float(close[-2])  # green vs prior close = retest bounce confirming
+
+    return {
+        "status": status,
+        "breakout_level": round(level, 2),
+        "breakout_age": int(age),
+        "breakout_vol_mult": round(bo_vol_mult, 2),
+        "post_high": round(post_high, 2),
+        "pullback_pct": round(pullback_pct, 2),
+        "extension_pct": round(extension_pct, 2),
+        "recent_low": round(recent_low, 2),
+        "bounce_today": bool(bounce),
+        "close": round(today_close, 2),
+    }
+
+
+def reversal_swing_setup(
+    prices: pd.DataFrame,
+    min_pullback_pct: float = 5.0,
+    max_pullback_pct: float = 25.0,
+    rsi_oversold: float = 40.0,
+) -> dict | None:
+    """Pullback-in-uptrend reversal.
+
+    Requires: close > 200 SMA (long-term uptrend intact), drawdown from the
+    20-day high between min and max pullback %, RSI(14) touched ≤ rsi_oversold
+    within the last 5 bars, and a bullish reversal candle TODAY:
+      - bullish engulfing (prior red, today green, body engulfs prior body)
+      - outside reversal (low below prior low, close above prior high)
+      - hammer (lower wick ≥ 2× body, close in upper third of range)
+    Returns trigger details plus entry / stop / targets, or None.
+    """
+    if len(prices) < 210:
+        return None
+    o, h, l, c = (prices[k] for k in ("Open", "High", "Low", "Close"))
+    sma200 = float(c.rolling(200).mean().iloc[-1])
+    today_c = float(c.iloc[-1])
+    if today_c <= sma200:
+        return None
+
+    high20 = float(h.iloc[-20:].max())
+    pullback = (high20 - float(l.iloc[-5:].min())) / high20 * 100
+    if not (min_pullback_pct <= pullback <= max_pullback_pct):
+        return None
+
+    rsi_series = rsi(c, 14)
+    rsi_min5 = float(rsi_series.iloc[-5:].min())
+    rsi_now = float(rsi_series.iloc[-1])
+    if rsi_min5 > rsi_oversold:
+        return None
+
+    to, th, tl = float(o.iloc[-1]), float(h.iloc[-1]), float(l.iloc[-1])
+    po, ph, pl, pc = float(o.iloc[-2]), float(h.iloc[-2]), float(l.iloc[-2]), float(c.iloc[-2])
+    rng = th - tl
+    body = abs(today_c - to)
+    lower_wick = min(today_c, to) - tl
+
+    trigger = None
+    if pc < po and today_c > to and today_c >= po and to <= pc:
+        trigger = "Bullish engulfing"
+    elif tl < pl and today_c > ph:
+        trigger = "Outside reversal"
+    elif rng > 0 and body > 0 and lower_wick >= 2 * body and (today_c - tl) / rng >= 0.67:
+        trigger = "Hammer"
+    if trigger is None:
+        return None
+
+    stop = float(l.iloc[-5:].min()) * 0.99
+    entry = today_c
+    risk = entry - stop
+    if risk <= 0:
+        return None
+    sma50 = float(c.rolling(50).mean().iloc[-1])
+    near_sma50 = abs(float(l.iloc[-5:].min()) - sma50) / sma50 * 100 <= 2.0
+
+    return {
+        "trigger": trigger,
+        "pullback_pct": round(pullback, 2),
+        "rsi_min5": round(rsi_min5, 1),
+        "rsi_now": round(rsi_now, 1),
+        "near_sma50": bool(near_sma50),
+        "close": round(entry, 2),
+        "entry": round(entry, 2),
+        "stop": round(stop, 2),
+        "tp1": round(entry + 2 * risk, 2),
+        "tp2": round(entry + 3 * risk, 2),
+        "high20": round(high20, 2),
+    }
+
+
 def accumulation_day_count(prices: pd.DataFrame, lookback: int = 25, vol_avg_window: int = 20) -> int:
     """Count accumulation days in the last `lookback` sessions.
 

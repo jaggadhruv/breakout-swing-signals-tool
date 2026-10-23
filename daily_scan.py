@@ -110,6 +110,41 @@ RECOVERY_QUALITY_THRESHOLD   = 65   # bar for history inclusion
 RECOVERY_RECENT_TOP_N        = 10
 MAX_RECOVERY_SHOWN           = 6
 
+# ----------------------------------------------------------------------------
+# Shared "quality base" for S/R, break-retest and reversal sections (Pass 1c):
+# behavioral filter + close above a rising 200 SMA. These setups are often in
+# pullbacks, so they skip the main trend/momentum gates and use their own.
+# ----------------------------------------------------------------------------
+SR_LOOKBACK_BARS        = 120   # ~6 months of pivots
+SR_PIVOT_WING           = 5     # bars each side to confirm a swing high/low
+SR_CLUSTER_PCT          = 1.5   # pivots within 1.5% merge into one level
+SR_MIN_TOUCHES          = 2     # a level needs ≥ 2 touches
+SR_NEAR_PCT             = 3.0   # "near" = within 3% of the level
+SR_SUPPORT_RS_MIN       = 60    # pullbacks to support have softer RS
+SR_RESISTANCE_RS_MIN    = 70
+SR_SECTOR_RANK_MAX      = 6
+SR_MIN_SHOW_SCORE       = 60
+MAX_SUPPORT_SHOWN       = 10
+MAX_RESISTANCE_SHOWN    = 10
+
+RETEST_MAX_AGE_BARS     = 20    # breakout must be 1-20 sessions old
+RETEST_LEVEL_WINDOW     = 55    # breakout = close above prior 55-session high
+RETEST_BAND_PCT         = 2.0   # pullback low within 2% above the level = retest
+RETEST_FAIL_PCT         = 3.0   # close > 3% below level = failed, excluded
+RETEST_RS_MIN           = 70
+RETEST_SECTOR_RANK_MAX  = 6
+RETEST_MIN_SHOW_SCORE   = 60
+MAX_RETEST_SHOWN        = 8
+MAX_HOLDING_SHOWN       = 8
+
+REVERSAL_MIN_PULLBACK_PCT = 5.0
+REVERSAL_MAX_PULLBACK_PCT = 25.0
+REVERSAL_RSI_OVERSOLD     = 40.0
+REVERSAL_RS_MIN           = 55   # pullbacks dent RS; long-term trend is the real filter
+REVERSAL_SECTOR_RANK_MAX  = 7
+REVERSAL_MIN_SHOW_SCORE   = 55
+MAX_REVERSAL_SHOWN        = 6
+
 # Layer 4: trend context filter — a stock passes if all four hold
 TREND_ABOVE_50_SMA = True
 TREND_ABOVE_200_SMA = True
@@ -1191,6 +1226,89 @@ def compute_recent_quality_recovery(archive: list[dict], n: int = RECOVERY_RECEN
     return eligible[:n]
 
 
+
+# ============================================================================
+# Support / resistance, break-and-retest, reversal — scoring helpers
+# ============================================================================
+
+def _sector_points(rank: int | None) -> float:
+    if rank is None or rank > 7:
+        return 0
+    return min((8 - rank) * 2, 12)
+
+
+def _closeness_points(distance_pct: float) -> float:
+    if distance_pct <= 1.0:
+        return 20
+    if distance_pct <= 2.0:
+        return 15
+    if distance_pct <= SR_NEAR_PCT:
+        return 10
+    return 0
+
+
+def volume_dry_up(prices: pd.DataFrame) -> bool:
+    """Last 5 sessions' average volume < 80% of the prior 20-session average.
+    Quiet volume into a level = sellers (at support) or supply (at resistance)
+    drying up — a constructive sign."""
+    if len(prices) < 26:
+        return False
+    recent = float(prices["Volume"].iloc[-5:].mean())
+    base = float(prices["Volume"].iloc[-25:-5].mean())
+    return base > 0 and recent < 0.8 * base
+
+
+def compute_support_score(*, sr: dict, rs_percentile: float, sector_rank: int | None,
+                          dry_up: bool, sma50: float) -> float:
+    s = sr["support"]
+    score = _closeness_points(s["distance_pct"]) + min(s["touches"], 5) * 4
+    score += rs_percentile / 2 + _sector_points(sector_rank)
+    if dry_up:
+        score += 10
+    if sma50 and abs(s["level"] - sma50) / sma50 * 100 <= 2.0:
+        score += 10  # horizontal level + 50 SMA confluence
+    return round(score, 1)
+
+
+def compute_resistance_score(*, sr: dict, rs_percentile: float, sector_rank: int | None,
+                             dry_up: bool, momentum_passes: int, accumulation_days: int) -> float:
+    r = sr["resistance"]
+    score = _closeness_points(r["distance_pct"]) + min(r["touches"], 5) * 4
+    score += rs_percentile / 2 + _sector_points(sector_rank)
+    score += momentum_passes * 5 + min(accumulation_days, 10)
+    if dry_up:
+        score += 10  # tightening under resistance (VCP-like)
+    return round(score, 1)
+
+
+def compute_retest_score(*, bo: dict, rs_percentile: float, sector_rank: int | None,
+                         momentum_passes: int) -> float:
+    score = 25 if bo["status"] == "retest" else 10
+    if bo["status"] == "retest" and bo["bounce_today"]:
+        score += 10
+    score += min(max((bo["breakout_vol_mult"] - 1.5) * 10, 0), 15)
+    score += 10 if bo["breakout_age"] <= 5 else (5 if bo["breakout_age"] <= 10 else 0)
+    if bo["status"] == "holding" and bo["extension_pct"] > 10:
+        score -= 10  # extended — chasing risk
+    score += rs_percentile / 2 + momentum_passes * 5 + _sector_points(sector_rank)
+    return round(score, 1)
+
+
+def compute_reversal_score(*, rv: dict, rs_percentile: float, sector_rank: int | None,
+                           today_vol_mult: float | None) -> float:
+    score = {"Bullish engulfing": 20, "Outside reversal": 20, "Hammer": 15}.get(rv["trigger"], 0)
+    pb = rv["pullback_pct"]
+    score += 15 if 8 <= pb <= 15 else (8 if 5 <= pb <= 20 else 0)
+    if rv["rsi_now"] - rv["rsi_min5"] >= 5:
+        score += 10
+    if rv["near_sma50"]:
+        score += 10
+    if today_vol_mult is not None and today_vol_mult >= 1.2:
+        score += 10
+    score += rs_percentile / 2 + _sector_points(sector_rank)
+    return round(score, 1)
+
+
 # ============================================================================
 # Market breadth
 # ============================================================================
@@ -1741,6 +1859,73 @@ def main() -> None:
         f"{recovery_cross_pass} valid crossovers → {recovery_momentum_pass} momentum-OK "
         f"→ {len(raw_recovery)} recovery candidates.")
 
+    # ---- Pass 1c: full-universe RS + quality-base setups ----
+    # (1) Compute raw RS for EVERY fetched ticker so percentiles rank against the
+    #     whole universe (previously only trend-filter survivors were ranked,
+    #     which made "RS >= 75" mean "top 25% of the strongest 25%").
+    # (2) Collect support/resistance, break-retest and reversal candidates from a
+    #     "quality base": behavioral filter + close above a rising 200 SMA.
+    log("Pass 1c — full-universe RS + support/resistance, break-retest, reversal scan...")
+    raw_sr: list[dict] = []
+    raw_retest: list[dict] = []
+    raw_reversal: list[dict] = []
+    quality_base_pass = 0
+
+    for ticker, prices in price_cache.items():
+        entry_info = eligible_lookup.get(ticker)
+        if not entry_info:
+            continue
+        if ticker not in ticker_rs:
+            rs_val = compute_ticker_rs(prices, spy)
+            if rs_val is not None:
+                ticker_rs[ticker] = rs_val
+
+        if len(prices) < 221:
+            continue
+        beh_ok, _ = passes_behavioral_filter(prices, ticker)
+        if not beh_ok:
+            continue
+        close_s = prices["Close"]
+        sma200 = close_s.rolling(200).mean()
+        if not (close_s.iloc[-1] > sma200.iloc[-1] and sma200.iloc[-1] > sma200.iloc[-21]):
+            continue
+        quality_base_pass += 1
+
+        _, mom_ctx_c = passes_momentum_confluence(prices)
+        base = {
+            "ticker": ticker,
+            "entry": entry_info,
+            "sma50": float(close_s.rolling(50).mean().iloc[-1]),
+            "dry_up": volume_dry_up(prices),
+            "mom_passes": mom_ctx_c.get("pass_count", 0),
+        }
+
+        sr = patterns.nearest_support_resistance(
+            prices, SR_LOOKBACK_BARS, SR_PIVOT_WING, SR_CLUSTER_PCT, SR_MIN_TOUCHES
+        )
+        near_s = sr["support"] is not None and sr["support"]["distance_pct"] <= SR_NEAR_PCT
+        near_r = sr["resistance"] is not None and sr["resistance"]["distance_pct"] <= SR_NEAR_PCT
+        if near_s or near_r:
+            raw_sr.append({**base, "sr": sr,
+                           "acc_days": patterns.accumulation_day_count(prices, ACCUMULATION_LOOKBACK_DAYS)})
+
+        bo = patterns.recent_breakout_status(
+            prices, max_age=RETEST_MAX_AGE_BARS, level_window=RETEST_LEVEL_WINDOW,
+            vol_mult_min=patterns.VOLUME_MULTIPLE_THRESHOLD,
+            retest_band_pct=RETEST_BAND_PCT, fail_pct=RETEST_FAIL_PCT,
+        )
+        if bo:
+            raw_retest.append({**base, "bo": bo})
+
+        rv = patterns.reversal_swing_setup(
+            prices, REVERSAL_MIN_PULLBACK_PCT, REVERSAL_MAX_PULLBACK_PCT, REVERSAL_RSI_OVERSOLD
+        )
+        if rv:
+            raw_reversal.append({**base, "rv": rv, "vol_mult": patterns.volume_multiple(prices)})
+
+    log(f"Pass 1c complete: RS computed for {len(ticker_rs)} tickers; {quality_base_pass} in quality base "
+        f"→ {len(raw_sr)} near S/R, {len(raw_retest)} recent breakouts, {len(raw_reversal)} reversal triggers.")
+
     # ---- Confluence gates: RS percentile + sector regime ----
     rs_percentiles = compute_rs_percentiles(ticker_rs)
 
@@ -1953,6 +2138,100 @@ def main() -> None:
     log(f"Pass 2d (recovery) complete: {rec_rs_gated} dropped by RS<{RECOVERY_RS_MIN}, "
         f"{rec_sector_gated} dropped by sector → {len(recovery_list)} recovery entries.")
 
+    # ---- Pass 2e: S/R, break-retest, reversal — gates + scoring ----
+    log("Pass 2e — scoring support/resistance, break-retest, reversal candidates...")
+
+    def _rank_for(entry_d: dict) -> int | None:
+        etf = sector_etf_for(entry_d.get("sector", "Unknown"))
+        return sector_ranks.get(etf) if etf else None
+
+    def _common(c: dict, rs_pct: float, rank: int | None) -> dict:
+        e = c["entry"]
+        return {
+            "ticker": c["ticker"], "name": e.get("name", ""), "sector": e.get("sector", "Unknown"),
+            "sector_rank": rank, "rs_percentile": rs_pct, "momentum_passes": c["mom_passes"],
+            "piotroski": e.get("piotroski_f_score"), "dry_up": c["dry_up"],
+        }
+
+    support_list: list[dict] = []
+    resistance_list: list[dict] = []
+    for c in raw_sr:
+        rs_pct = rs_percentiles.get(c["ticker"])
+        rank = _rank_for(c["entry"])
+        if rs_pct is None or not sector_rank_ok(rank, SR_SECTOR_RANK_MAX):
+            continue
+        sr = c["sr"]
+        sup, res = sr["support"], sr["resistance"]
+        if sup and sup["distance_pct"] <= SR_NEAR_PCT and rs_pct >= SR_SUPPORT_RS_MIN:
+            support_list.append({
+                **_common(c, rs_pct, rank),
+                "score": compute_support_score(sr=sr, rs_percentile=rs_pct, sector_rank=rank,
+                                               dry_up=c["dry_up"], sma50=c["sma50"]),
+                "close": sr["close"], "level": sup["level"], "touches": sup["touches"],
+                "distance_pct": sup["distance_pct"],
+                "stop": round(sup["level"] * 0.97, 2),
+                "target": res["level"] if res else None,
+                "sma50_confluence": abs(sup["level"] - c["sma50"]) / c["sma50"] * 100 <= 2.0,
+            })
+        if res and res["distance_pct"] <= SR_NEAR_PCT and rs_pct >= SR_RESISTANCE_RS_MIN:
+            resistance_list.append({
+                **_common(c, rs_pct, rank),
+                "score": compute_resistance_score(sr=sr, rs_percentile=rs_pct, sector_rank=rank,
+                                                  dry_up=c["dry_up"], momentum_passes=c["mom_passes"],
+                                                  accumulation_days=c["acc_days"]),
+                "close": sr["close"], "level": res["level"], "touches": res["touches"],
+                "distance_pct": res["distance_pct"], "accumulation_days": c["acc_days"],
+                "support_below": sup["level"] if sup else None,
+            })
+
+    retest_list: list[dict] = []
+    holding_list: list[dict] = []
+    for c in raw_retest:
+        rs_pct = rs_percentiles.get(c["ticker"])
+        rank = _rank_for(c["entry"])
+        if rs_pct is None or rs_pct < RETEST_RS_MIN or not sector_rank_ok(rank, RETEST_SECTOR_RANK_MAX):
+            continue
+        bo = c["bo"]
+        row = {**_common(c, rs_pct, rank), **bo,
+               "score": compute_retest_score(bo=bo, rs_percentile=rs_pct, sector_rank=rank,
+                                             momentum_passes=c["mom_passes"])}
+        if bo["status"] == "retest":
+            row["stop"] = round(min(bo["recent_low"], bo["breakout_level"]) * 0.98, 2)
+            risk = bo["close"] - row["stop"]
+            row["tp1"] = round(bo["close"] + 2 * risk, 2) if risk > 0 else None
+            retest_list.append(row)
+        else:
+            holding_list.append(row)
+
+    reversal_list: list[dict] = []
+    for c in raw_reversal:
+        rs_pct = rs_percentiles.get(c["ticker"])
+        rank = _rank_for(c["entry"])
+        if rs_pct is None or rs_pct < REVERSAL_RS_MIN or not sector_rank_ok(rank, REVERSAL_SECTOR_RANK_MAX):
+            continue
+        rv = c["rv"]
+        reversal_list.append({
+            **_common(c, rs_pct, rank), **rv,
+            "today_vol_mult": round(c["vol_mult"], 2) if c["vol_mult"] is not None else None,
+            "score": compute_reversal_score(rv=rv, rs_percentile=rs_pct, sector_rank=rank,
+                                            today_vol_mult=c["vol_mult"]),
+        })
+
+    def _curate(rows: list[dict], min_score: float, cap: int) -> tuple[int, list[dict]]:
+        q = sorted((r for r in rows if r["score"] >= min_score), key=lambda r: r["score"], reverse=True)
+        return len(q), q[:cap]
+
+    support_qualified, support_shown = _curate(support_list, SR_MIN_SHOW_SCORE, MAX_SUPPORT_SHOWN)
+    resistance_qualified, resistance_shown = _curate(resistance_list, SR_MIN_SHOW_SCORE, MAX_RESISTANCE_SHOWN)
+    retest_qualified, retest_shown = _curate(retest_list, RETEST_MIN_SHOW_SCORE, MAX_RETEST_SHOWN)
+    holding_qualified, holding_shown = _curate(holding_list, RETEST_MIN_SHOW_SCORE, MAX_HOLDING_SHOWN)
+    reversal_qualified, reversal_shown = _curate(reversal_list, REVERSAL_MIN_SHOW_SCORE, MAX_REVERSAL_SHOWN)
+
+    log(f"Pass 2e complete: support {len(support_list)}→{len(support_shown)}, "
+        f"resistance {len(resistance_list)}→{len(resistance_shown)}, "
+        f"retest {len(retest_list)}→{len(retest_shown)}, holding {len(holding_list)}→{len(holding_shown)}, "
+        f"reversal {len(reversal_list)}→{len(reversal_shown)} (gated → shown).")
+
     # Update history with today's signals (all four pipelines) BEFORE breadth
     update_history(history, [s["ticker"] for s in signals])
     update_history(history, [w["ticker"] for w in watchlist])
@@ -2069,6 +2348,16 @@ def main() -> None:
         "max_watchlist_cap": MAX_WATCHLIST_SHOWN,
         "max_supertrend_cap": MAX_SUPERTREND_SHOWN,
         "max_recovery_cap": MAX_RECOVERY_SHOWN,
+        "quality_base_pass": quality_base_pass,
+        "sr_raw": len(raw_sr), "retest_raw": len(raw_retest), "reversal_raw": len(raw_reversal),
+        "support_signals": len(support_list), "support_qualified": support_qualified, "support_shown": len(support_shown),
+        "resistance_signals": len(resistance_list), "resistance_qualified": resistance_qualified, "resistance_shown": len(resistance_shown),
+        "retest_signals": len(retest_list), "retest_qualified": retest_qualified, "retest_shown": len(retest_shown),
+        "holding_signals": len(holding_list), "holding_qualified": holding_qualified, "holding_shown": len(holding_shown),
+        "reversal_signals": len(reversal_list), "reversal_qualified": reversal_qualified, "reversal_shown": len(reversal_shown),
+        "max_support_cap": MAX_SUPPORT_SHOWN, "max_resistance_cap": MAX_RESISTANCE_SHOWN,
+        "max_retest_cap": MAX_RETEST_SHOWN, "max_holding_cap": MAX_HOLDING_SHOWN,
+        "max_reversal_cap": MAX_REVERSAL_SHOWN,
         "supertrend_max_flip_age_days": SUPERTREND_MAX_FLIP_AGE_DAYS,
         "min_show_score_used": adaptive_min_score,
     }
@@ -2123,6 +2412,11 @@ def main() -> None:
         watchlist=watchlist_shown,
         supertrend=supertrend_shown,
         recovery=recovery_shown,
+        support=support_shown,
+        resistance=resistance_shown,
+        retest=retest_shown,
+        holding=holding_shown,
+        reversal=reversal_shown,
         recent_quality=recent_quality,
         recent_quality_watchlist=recent_quality_watchlist,
         recent_quality_supertrend=recent_quality_supertrend,

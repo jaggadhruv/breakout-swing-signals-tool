@@ -111,6 +111,14 @@ h1.title { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: -0.01em
   display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;
   font-size: 12px;
 }
+h3.subsection {
+  font-size: 12px; font-weight: 600; margin: 18px 0 8px;
+  color: var(--ink); letter-spacing: 0.02em;
+}
+h3.subsection .count { font-weight: 400; color: var(--muted); }
+.tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 11px;
+       border: 1px solid var(--rule); color: var(--muted); }
+.tag.pos { color: var(--sig-pos); border-color: var(--sig-pos); }
 .subindicator {
   padding: 10px 12px;
   background: var(--panel);
@@ -968,6 +976,213 @@ def _render_recent_quality_recovery_table(candidates: list[dict], today_str: str
 """
 
 
+def _empty(msg: str) -> str:
+    return f'<div class="empty">{escape(msg)}</div>'
+
+
+def _rs_cell(rs_val) -> str:
+    disp = f"P{rs_val:.0f}" if rs_val is not None else "—"
+    return f'<td class="num mono {_rs_class(rs_val)}">{disp}</td>'
+
+
+def _yes(flag: bool, label: str) -> str:
+    return f'<span class="tag pos">{escape(label)}</span>' if flag else '<span class="dim">—</span>'
+
+
+def _render_support_table(rows: list[dict]) -> str:
+    if not rows:
+        return _empty("No quality stocks within 3% of a tested support level today.")
+    body = []
+    for c in rows:
+        body.append(f"""
+<tr>
+  <td class="ticker">{escape(c["ticker"])}</td>
+  <td class="{_score_class(c["score"])} num mono">{_fmt(c["score"], ".0f")}</td>
+  <td class="num mono">{_fmt(c["close"], ".2f")}</td>
+  <td class="num mono">{_fmt(c["level"], ".2f")}</td>
+  <td class="num mono">{c["distance_pct"]:.1f}%</td>
+  <td class="num mono">×{c["touches"]}</td>
+  <td class="num">{_yes(c.get("sma50_confluence"), "50 SMA")}</td>
+  <td class="num">{_yes(c.get("dry_up"), "Dry-up")}</td>
+  {_rs_cell(c.get("rs_percentile"))}
+  <td class="num mono">{_fmt(c.get("stop"), ".2f")}</td>
+  <td class="num mono">{_fmt(c.get("target"), ".2f")}</td>
+  <td>{_render_sector_cell(c.get("sector", ""), c.get("sector_rank"))}</td>
+</tr>""")
+    return f"""
+<table class="candidates">
+  <thead><tr>
+    <th>Ticker</th><th class="num">Score</th><th class="num">Current</th><th class="num">Support</th>
+    <th class="num">Above by</th><th class="num">Touches</th><th class="num">Confluence</th>
+    <th class="num">Volume</th><th class="num">RS</th><th class="num">Stop</th>
+    <th class="num">Target (resistance)</th><th>Sector</th>
+  </tr></thead>
+  <tbody>{"".join(body)}</tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  Buy-the-dip candidates: price is resting just above a horizontal level tested ≥ 2 times, inside a rising 200 SMA uptrend.
+  Wait for a bounce candle off the level before entering. Stop = 3% below support; target = next resistance.
+  Dry-up = last 5 sessions' volume &lt; 80% of the prior 20 (sellers exhausting).
+</p>
+"""
+
+
+def _render_resistance_table(rows: list[dict]) -> str:
+    if not rows:
+        return _empty("No quality stocks within 3% below a tested resistance level today.")
+    body = []
+    for c in rows:
+        acc = c.get("accumulation_days", 0)
+        acc_class = "piotroski-hi" if acc >= 7 else ("piotroski-mid" if acc >= 4 else "dim")
+        body.append(f"""
+<tr>
+  <td class="ticker">{escape(c["ticker"])}</td>
+  <td class="{_score_class(c["score"])} num mono">{_fmt(c["score"], ".0f")}</td>
+  <td class="num mono">{_fmt(c["close"], ".2f")}</td>
+  <td class="num mono">{_fmt(c["level"], ".2f")}</td>
+  <td class="num mono">{c["distance_pct"]:.1f}%</td>
+  <td class="num mono">×{c["touches"]}</td>
+  <td class="num">{_yes(c.get("dry_up"), "Tightening")}</td>
+  {_rs_cell(c.get("rs_percentile"))}
+  <td class="num mono">{c.get("momentum_passes", 0)}/4</td>
+  <td class="num mono {acc_class}">{acc}</td>
+  <td class="num mono">{_fmt(c.get("support_below"), ".2f")}</td>
+  <td>{_render_sector_cell(c.get("sector", ""), c.get("sector_rank"))}</td>
+</tr>""")
+    return f"""
+<table class="candidates">
+  <thead><tr>
+    <th>Ticker</th><th class="num">Score</th><th class="num">Current</th><th class="num">Resistance</th>
+    <th class="num">Below by</th><th class="num">Touches</th><th class="num">Volume</th>
+    <th class="num">RS</th><th class="num">Mom</th><th class="num">AccDays</th>
+    <th class="num">Support below</th><th>Sector</th>
+  </tr></thead>
+  <tbody>{"".join(body)}</tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  Breakout candidates pressing a ceiling tested ≥ 2 times. Set an alert at the Resistance level and only act on a close above it
+  with volume ≥ 1.5× average. Tightening = volume contracting under the level (supply drying up, VCP-like).
+</p>
+"""
+
+
+def _render_retest_table(rows: list[dict]) -> str:
+    if not rows:
+        return _empty("No recent breakouts are currently retesting their breakout level.")
+    body = []
+    for c in rows:
+        bounce = '<span class="tag pos">Bounce today</span>' if c.get("bounce_today") else '<span class="dim">Testing</span>'
+        body.append(f"""
+<tr>
+  <td class="ticker">{escape(c["ticker"])}</td>
+  <td class="{_score_class(c["score"])} num mono">{_fmt(c["score"], ".0f")}</td>
+  <td class="num mono">{c["breakout_age"]}d ago</td>
+  <td class="num mono">{_fmt(c["breakout_level"], ".2f")}</td>
+  <td class="num mono">{c["breakout_vol_mult"]:.1f}×</td>
+  <td class="num mono">{_fmt(c["post_high"], ".2f")}</td>
+  <td class="num mono">−{c["pullback_pct"]:.1f}%</td>
+  <td class="num mono">{_fmt(c["close"], ".2f")}</td>
+  <td class="num">{bounce}</td>
+  {_rs_cell(c.get("rs_percentile"))}
+  <td class="num mono">{_fmt(c.get("stop"), ".2f")}</td>
+  <td class="num mono">{_fmt(c.get("tp1"), ".2f")}</td>
+  <td>{_render_sector_cell(c.get("sector", ""), c.get("sector_rank"))}</td>
+</tr>""")
+    return f"""
+<table class="candidates">
+  <thead><tr>
+    <th>Ticker</th><th class="num">Score</th><th class="num">Broke out</th><th class="num">BO level</th>
+    <th class="num">BO volume</th><th class="num">Post-BO high</th><th class="num">Pullback</th>
+    <th class="num">Current</th><th class="num">Status</th><th class="num">RS</th>
+    <th class="num">Stop</th><th class="num">TP1 (2R)</th><th>Sector</th>
+  </tr></thead>
+  <tbody>{"".join(body)}</tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  Break &amp; retest: the stock broke a 55-session high on volume, ran, then pulled back to the old breakout level and is holding it
+  (old resistance acting as new support). "Bounce today" = closed up from the retest, the confirmation many traders wait for.
+  Stop = 2% below the lower of the retest low or breakout level.
+</p>
+"""
+
+
+def _render_holding_table(rows: list[dict]) -> str:
+    if not rows:
+        return _empty("No other recent breakouts holding above their level.")
+    body = []
+    for c in rows:
+        ext = c["extension_pct"]
+        ext_html = (f'<span class="mono" style="color:var(--sig-neg);font-weight:600;">+{ext:.1f}%</span>' if ext > 10
+                    else f'<span class="mono">+{ext:.1f}%</span>')
+        body.append(f"""
+<tr>
+  <td class="ticker">{escape(c["ticker"])}</td>
+  <td class="{_score_class(c["score"])} num mono">{_fmt(c["score"], ".0f")}</td>
+  <td class="num mono">{c["breakout_age"]}d ago</td>
+  <td class="num mono">{_fmt(c["breakout_level"], ".2f")}</td>
+  <td class="num mono">{c["breakout_vol_mult"]:.1f}×</td>
+  <td class="num mono">{_fmt(c["close"], ".2f")}</td>
+  <td class="num">{ext_html}</td>
+  <td class="num mono">−{c["pullback_pct"]:.1f}%</td>
+  {_rs_cell(c.get("rs_percentile"))}
+  <td class="num mono">{c.get("momentum_passes", 0)}/4</td>
+  <td>{_render_sector_cell(c.get("sector", ""), c.get("sector_rank"))}</td>
+</tr>""")
+    return f"""
+<table class="candidates">
+  <thead><tr>
+    <th>Ticker</th><th class="num">Score</th><th class="num">Broke out</th><th class="num">BO level</th>
+    <th class="num">BO volume</th><th class="num">Current</th><th class="num">Above level</th>
+    <th class="num">Off high</th><th class="num">RS</th><th class="num">Mom</th><th>Sector</th>
+  </tr></thead>
+  <tbody>{"".join(body)}</tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  Breakouts from the last 20 sessions that have not retested yet. Above level &gt; 10% (red) = extended; avoid chasing and
+  wait for these to move into the Break &amp; Retest table. Failed breakouts (closed &gt; 3% back below the level) are excluded.
+</p>
+"""
+
+
+def _render_reversal_table(rows: list[dict]) -> str:
+    if not rows:
+        return _empty("No pullback-reversal triggers in quality uptrends today.")
+    body = []
+    for c in rows:
+        body.append(f"""
+<tr>
+  <td class="ticker">{escape(c["ticker"])}</td>
+  <td class="{_score_class(c["score"])} num mono">{_fmt(c["score"], ".0f")}</td>
+  <td><span class="tag pos">{escape(c["trigger"])}</span></td>
+  <td class="num mono">−{c["pullback_pct"]:.1f}%</td>
+  <td class="num mono">{c["rsi_min5"]:.0f} → {c["rsi_now"]:.0f}</td>
+  <td class="num">{_yes(c.get("near_sma50"), "50 SMA")}</td>
+  <td class="num mono">{_fmt(c.get("today_vol_mult"), ".1f")}×</td>
+  {_rs_cell(c.get("rs_percentile"))}
+  <td class="num mono">{_fmt(c["entry"], ".2f")}</td>
+  <td class="num mono">{_fmt(c["stop"], ".2f")}</td>
+  <td class="num mono">{_fmt(c["tp1"], ".2f")}</td>
+  <td class="num mono">{_fmt(c["high20"], ".2f")}</td>
+  <td>{_render_sector_cell(c.get("sector", ""), c.get("sector_rank"))}</td>
+</tr>""")
+    return f"""
+<table class="candidates">
+  <thead><tr>
+    <th>Ticker</th><th class="num">Score</th><th>Trigger</th><th class="num">Pullback</th>
+    <th class="num">RSI low → now</th><th class="num">Support</th><th class="num">Vol</th>
+    <th class="num">RS</th><th class="num">Entry</th><th class="num">Stop</th>
+    <th class="num">TP1 (2R)</th><th class="num">Prior high</th><th>Sector</th>
+  </tr></thead>
+  <tbody>{"".join(body)}</tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  Pullback-in-uptrend reversals: price above the 200 SMA, down 5–25% from its 20-day high, RSI dipped to ≤ 40, and today printed
+  a bullish reversal candle. Stop = just under the 5-day low. Prior high = natural target. Counter-trend on the short timeframe,
+  so size smaller than for breakouts.
+</p>
+"""
+
+
 def _render_sector_breakdown(sector_counts: dict) -> str:
     if not sector_counts:
         return '<div class="dim">No signals to break down.</div>'
@@ -1008,6 +1223,15 @@ def _render_funnel(funnel: dict) -> str:
         (f"Watchlist shown (top {wl_cap})", funnel.get("watchlist_shown", 0)),
         (f"Supertrend shown (top {st_cap})", funnel.get("supertrend_shown", 0)),
         (f"Recovery shown (top {funnel.get('max_recovery_cap', 6)})", funnel.get("recovery_shown", 0)),
+        ("Quality base (behavioral + above rising 200 SMA)", funnel.get("quality_base_pass", 0)),
+        ("— Near support / resistance (raw)", funnel.get("sr_raw", 0)),
+        ("— Recent breakouts not failed (raw)", funnel.get("retest_raw", 0)),
+        ("— Reversal candle triggers (raw)", funnel.get("reversal_raw", 0)),
+        ("Support: gated → qualified → shown", f'{funnel.get("support_signals", 0)} → {funnel.get("support_qualified", 0)} → {funnel.get("support_shown", 0)}'),
+        ("Resistance: gated → qualified → shown", f'{funnel.get("resistance_signals", 0)} → {funnel.get("resistance_qualified", 0)} → {funnel.get("resistance_shown", 0)}'),
+        ("Break & retest: gated → qualified → shown", f'{funnel.get("retest_signals", 0)} → {funnel.get("retest_qualified", 0)} → {funnel.get("retest_shown", 0)}'),
+        ("Holding above: gated → qualified → shown", f'{funnel.get("holding_signals", 0)} → {funnel.get("holding_qualified", 0)} → {funnel.get("holding_shown", 0)}'),
+        ("Reversal: gated → qualified → shown", f'{funnel.get("reversal_signals", 0)} → {funnel.get("reversal_qualified", 0)} → {funnel.get("reversal_shown", 0)}'),
     ]
     items = "".join(
         f'<li><span class="step-name">{escape(name)}</span>'
@@ -1195,6 +1419,34 @@ def _render_methodology() -> str:
   </details>
 
   <details class="method-block">
+    <summary>How Support &amp; Resistance, Break &amp; Retest, and Reversal sections work</summary>
+    <div class="method-body">
+      <p><strong>Shared quality base.</strong> These three sections scan every ticker, not just main trend-filter survivors, because their setups are often mid-pullback. Each ticker must still pass: no −10% gap-down in 20 sessions, and close above a 200 SMA that is higher than 20 sessions ago. Each section then applies its own RS and sector gates, a minimum score, and a display cap, so only the technically strongest names show.</p>
+
+      <p><strong>Support &amp; Resistance levels.</strong> Swing highs and lows (5 bars each side) from the last 120 sessions are clustered: pivots within 1.5% merge into one horizontal level. A level needs ≥ 2 touches. Old highs and old lows are pooled, so a former ceiling can show up as today's floor (role reversal). "Near" = within 3%.</p>
+      <table class="method-table">
+        <thead><tr><th>Score component</th><th>Near Support</th><th>Near Resistance</th></tr></thead>
+        <tbody>
+          <tr><td>Closeness to level (≤ 1% / ≤ 2% / ≤ 3%)</td><td class="mono">20 / 15 / 10</td><td class="mono">20 / 15 / 10</td></tr>
+          <tr><td>Touches (4 each, max 5)</td><td class="mono">up to 20</td><td class="mono">up to 20</td></tr>
+          <tr><td>RS percentile ÷ 2</td><td class="mono">up to 50</td><td class="mono">up to 50</td></tr>
+          <tr><td>Sector strength</td><td class="mono">up to 12</td><td class="mono">up to 12</td></tr>
+          <tr><td>Volume dry-up (5d avg &lt; 80% of prior 20d)</td><td class="mono">+10</td><td class="mono">+10</td></tr>
+          <tr><td>Level within 2% of 50 SMA</td><td class="mono">+10</td><td class="mono">—</td></tr>
+          <tr><td>Momentum passes × 5 / accumulation days</td><td class="mono">—</td><td class="mono">up to 20 / up to 10</td></tr>
+          <tr><td>Gates</td><td class="mono">RS ≥ 60, sector ≤ 6</td><td class="mono">RS ≥ 70, sector ≤ 6</td></tr>
+        </tbody>
+      </table>
+
+      <p><strong>Break &amp; Retest.</strong> Finds the most recent close above the prior 55-session high on ≥ 1.5× volume, 1–20 sessions ago (same-day breakouts are in Today's Breakouts). It is a <em>retest</em> when price has pulled back ≥ 3% from its post-breakout high, a low in the last 3 sessions came within 2% of the breakout level, and today's close is still at or above the level. Otherwise it is <em>holding above</em>. A close more than 3% below the level marks a failed breakout, which is dropped. Score: retest 25 (holding 10), bounce today +10, breakout volume above 1.5× up to +15, freshness up to +10, extended &gt; 10% −10, plus RS ÷ 2, momentum × 5, sector. Gates: RS ≥ 70, sector ≤ 6.</p>
+
+      <p><strong>Reversal Swing.</strong> A pullback inside an intact uptrend: down 5–25% from the 20-day high, RSI(14) at or below 40 within the last 5 sessions, and today's candle is a bullish engulfing, an outside reversal (undercut prior low, closed above prior high), or a hammer (lower wick ≥ 2× body, close in top third). Score: trigger 15–20, pullback depth in the 8–15% sweet spot +15, RSI rebound ≥ 5 points +10, pullback low within 2% of the 50 SMA +10, today's volume ≥ 1.2× average +10, plus RS ÷ 2 and sector. Gates: RS ≥ 55, sector ≤ 7. Entry = today's close, stop = 1% under the 5-day low, TP1 = 2R; the prior 20-day high is the natural target.</p>
+
+      <p><strong>How these differ from existing sections:</strong> Watchlist triggers are simple 20/55-day highs; Near Resistance uses multi-touch horizontal levels. Recovery is a 20/200 EMA turnaround from a downtrend; Reversal Swing is a short pullback inside an existing uptrend. These sections are recomputed from price history each day and are not archived.</p>
+    </div>
+  </details>
+
+  <details class="method-block">
     <summary>How Recovery Setups are built and scored</summary>
     <div class="method-body">
       <p>Recovery surfaces stocks "coming out of correction" — the 20 EMA has recently crossed above the 200 EMA from below and the 20 EMA is still close to the 200 EMA (not yet extended). These are classic turnaround setups: a stock went through a correction, found a bottom, and is now rebuilding its uptrend.</p>
@@ -1272,6 +1524,11 @@ def render(
     watchlist: list[dict] | None = None,
     supertrend: list[dict] | None = None,
     recovery: list[dict] | None = None,
+    support: list[dict] | None = None,
+    resistance: list[dict] | None = None,
+    retest: list[dict] | None = None,
+    holding: list[dict] | None = None,
+    reversal: list[dict] | None = None,
     recent_quality: list[dict],
     recent_quality_watchlist: list[dict] | None = None,
     recent_quality_supertrend: list[dict] | None = None,
@@ -1284,6 +1541,8 @@ def render(
     watchlist = watchlist or []
     supertrend = supertrend or []
     recovery = recovery or []
+    support, resistance = support or [], resistance or []
+    retest, holding, reversal = retest or [], holding or [], reversal or []
     recent_quality_watchlist = recent_quality_watchlist or []
     recent_quality_supertrend = recent_quality_supertrend or []
     recent_quality_recovery = recent_quality_recovery or []
@@ -1323,6 +1582,21 @@ def render(
 
   <h2 class="section">Today's Recovery Setups <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(20 EMA crossed above 200 EMA from below, within 10% distance, top {funnel.get("max_recovery_cap", 6)} max)</span></h2>
   {_render_recovery_table(recovery)}
+
+  <h2 class="section">Support &amp; Resistance <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(quality stocks within 3% of a level tested ≥ 2 times)</span></h2>
+  <h3 class="subsection">Near Support <span class="count">· buy-the-dip zone, top {funnel.get("max_support_cap", 10)} by technical score</span></h3>
+  {_render_support_table(support)}
+  <h3 class="subsection">Near Resistance <span class="count">· breakout watch, top {funnel.get("max_resistance_cap", 10)} by technical score</span></h3>
+  {_render_resistance_table(resistance)}
+
+  <h2 class="section">Recent Breakouts &amp; Retests <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(55-session-high breakouts on volume, last 20 sessions)</span></h2>
+  <h3 class="subsection">Break &amp; Retest <span class="count">· pulled back to the breakout level and holding, top {funnel.get("max_retest_cap", 8)}</span></h3>
+  {_render_retest_table(retest)}
+  <h3 class="subsection">Holding Above Breakout <span class="count">· not yet retested, top {funnel.get("max_holding_cap", 8)}</span></h3>
+  {_render_holding_table(holding)}
+
+  <h2 class="section">Reversal Swing Setups <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(pullback in an uptrend + bullish reversal candle today, top {funnel.get("max_reversal_cap", 6)})</span></h2>
+  {_render_reversal_table(reversal)}
 
   <h2 class="section">Recent Quality Breakouts <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(top 10 by conviction, appearances, volume, and recency)</span></h2>
   {_render_recent_quality_table(recent_quality, date_str)}
