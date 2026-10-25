@@ -71,6 +71,94 @@
       "piotroski": null,
       "days_on_report": 2,
       "volume_multiple": 1.88
+    },
+    {
+      "date": "2026-10-25",
+      "ticker": "CART",
+      "name": "CART",
+      "sector": "Unknown",
+      "score": 133.4,
+      "pattern_labels": [
+        "52W High",
+        "Resistance Break"
+      ],
+      "entry": 56.44,
+      "stop": 48.99,
+      "tp1": 71.34,
+      "tp2": 78.78,
+      "piotroski": null,
+      "days_on_report": 2,
+      "volume_multiple": 5.07
+    },
+    {
+      "date": "2026-10-25",
+      "ticker": "DVN",
+      "name": "DVN",
+      "sector": "Unknown",
+      "score": 45.7,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 51.39,
+      "stop": 47.21,
+      "tp1": 59.76,
+      "tp2": 63.94,
+      "piotroski": null,
+      "days_on_report": 2,
+      "volume_multiple": 1.53
+    },
+    {
+      "date": "2026-10-25",
+      "ticker": "EQNR",
+      "name": "EQNR",
+      "sector": "Unknown",
+      "score": 101.4,
+      "pattern_labels": [
+        "52W High",
+        "Resistance Break"
+      ],
+      "entry": 48.82,
+      "stop": 43.72,
+      "tp1": 59.02,
+      "tp2": 64.12,
+      "piotroski": null,
+      "days_on_report": 2,
+      "volume_multiple": 1.56
+    },
+    {
+      "date": "2026-10-25",
+      "ticker": "MANH",
+      "name": "MANH",
+      "sector": "Unknown",
+      "score": 61.2,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 238.19,
+      "stop": 210.51,
+      "tp1": 293.54,
+      "tp2": 321.22,
+      "piotroski": null,
+      "days_on_report": 3,
+      "volume_multiple": 1.62
+    },
+    {
+      "date": "2026-10-25",
+      "ticker": "QLYS",
+      "name": "QLYS",
+      "sector": "Unknown",
+      "score": 117.8,
+      "pattern_labels": [
+        "52W High",
+        "Resistance Break"
+      ],
+      "entry": 216.7,
+      "stop": 195.39,
+      "tp1": 259.31,
+      "tp2": 280.62,
+      "piotroski": null,
+      "days_on_report": 3,
+      "volume_multiple": 1.78
     }
   ]
 }
