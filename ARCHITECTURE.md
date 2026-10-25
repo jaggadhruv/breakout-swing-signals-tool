@@ -97,7 +97,8 @@ scan logs `WARNING: only X/N tickers have a mappable sector`.
 flowchart TD
     U[eligible_universe.json] --> F[Fetch SPY, VIX, 11 sector ETFs<br/>rank sectors by 60d RS vs SPY]
     F --> P1{Pass 1 · per ticker}
-    P1 -->|fetch 1y OHLCV<br/>partial-day guard| T[Trend filter]
+    P1 -->|fetch 3y OHLCV<br/>partial-day guard| LQ[Liquidity filter<br/>all sections]
+    LQ --> T[Trend filter]
     T --> B[Behavioral filter]
     B --> M[Momentum confluence ≥ 3/4]
     M --> RS1[Raw 12-week RS vs SPY]
@@ -122,10 +123,16 @@ flowchart TD
 
 ### 5.1 Data fetch
 
-`fetch_prices()` pulls 1 year of daily OHLCV per ticker with a 0.3 s delay. **Partial-day
+`fetch_prices()` pulls 3 years of daily OHLCV per ticker (needed for monthly RSI)
+with a 0.3 s delay. **Partial-day
 guard:** if the last bar's volume is under 30% of the prior 20-day average, the bar is
 dropped as an incomplete session (protects manual runs during market hours). Fetched
-frames are cached in `price_cache` and reused by Pass 1b and breadth.
+frames are cached in `price_cache` and reused by Pass 1b, Pass 1c and breadth.
+
+**Liquidity filter (every section).** Right after fetching, `passes_liquidity()`
+requires price ≥ $10, 20-session average volume ≥ 500K shares and average dollar
+volume ≥ $10M. Failing tickers go into an `illiquid` set that Pass 1b and Pass 1c
+also skip. Breadth still uses them, so breadth reflects the whole universe.
 
 ### 5.2 Pass 1: shared pre-filters (breakouts, watchlist, Supertrend)
 
@@ -178,6 +185,22 @@ that is higher than 20 sessions ago) and collects three setup types:
 - **Reversal swing**: `patterns.reversal_swing_setup()` requires a 5–25% pullback
   from the 20-day high, RSI(14) ≤ 40 within 5 sessions, and a bullish engulfing,
   outside-reversal or hammer candle today.
+- **Multi-timeframe RSI**: `patterns.mtf_rsi_bounce()` requires monthly and weekly
+  RSI(14) ≥ 60 and a daily RSI cross from below 50 within 3 sessions, with cross-day
+  volume ≥ 1.0× average. Checked after the behavioral filter, before the 200 SMA
+  quality base.
+
+**Fake breakouts.** `recent_breakout_status()` now returns `failed` / `failing`
+statuses instead of dropping them, plus `fake_flags` (weak breakout close, marginal
+volume, no follow-through, heavy selling since, back below level) and
+`resistance_touches` (swing highs at the level before the break).
+`todays_breakout_risk()` flags same-day breakouts (weak close, marginal volume,
+extended > 5%, gap-and-fade); an Adverse regime adds a flag after breadth is known.
+Retest and holding rows lose 5 points per flag.
+
+**High-probability retest** = retest + bounce today + resistance_touches ≥ 2 +
+zero fake flags. It gets +15 score and a gold ★ row, both in its own subsection and
+in Near Support when the support level matches the broken resistance.
 
 ### 5.4 Confluence gates and scoring (Pass 2, 2b, 2c, 2d, 2e)
 
@@ -193,6 +216,8 @@ RS percentiles are computed once, across the full universe (see Pass 1c).
 | Near resistance | ≥ 70 | rank ≤ 6 | `compute_resistance_score` | 142 |
 | Break & retest / holding | ≥ 70 | rank ≤ 6 | `compute_retest_score` | 132 |
 | Reversal swing | ≥ 55 | rank ≤ 7 | `compute_reversal_score` | 147 |
+| Fake / failed breakouts | ≥ 60 | none | most recent first | — |
+| MTF RSI momentum | ≥ 60 | rank ≤ 7 | `compute_mtf_rsi_score` | 147 |
 
 Score components (see docstrings and the report's Methodology section for detail):
 
@@ -232,6 +257,9 @@ Applied only to the four "Today's" sections. Archives are unaffected.
 | Near Support / Near Resistance | score ≥ 60 | 10 each |
 | Break & Retest / Holding Above | score ≥ 60 | 8 each |
 | Reversal Swing | score ≥ 55 | 6 |
+| ★ High-Probability Retests | subset of Break & Retest rows | (within 8) |
+| Fake / Failed Breakouts | RS ≥ 60 | 8 |
+| Multi-Timeframe RSI Momentum | score ≥ 60 | 8 |
 
 The S/R, retest and reversal sections are recomputed from price history daily and
 are **not archived** (no Recent Quality history).
@@ -265,7 +293,8 @@ volume or accumulation bonus`; show top 10.
 
 `render()` assembles one self-contained HTML file (embedded CSS, no external assets):
 masthead and breadth panel, four Today's sections, Support & Resistance (two
-tables), Recent Breakouts & Retests (two tables), Reversal Swing Setups, four Recent
+tables), Recent Breakouts & Retests (high-probability, retest, holding, fake/failed
+tables), Reversal Swing Setups, Multi-Timeframe RSI Momentum, four Recent
 Quality sections, sector
 breakdown, funnel (counts at every gate, so you can see where candidates drop out),
 and collapsible Methodology blocks. Each section has its own table renderer
@@ -294,6 +323,10 @@ pipeline. The ones you are most likely to touch:
 | `RETEST_MAX_AGE_BARS` / `RETEST_BAND_PCT` | 20 / 2.0 | Breakout lookback and retest tolerance |
 | `REVERSAL_RSI_OVERSOLD` | 40 | How oversold the pullback must get |
 | `patterns.VOLUME_MULTIPLE_THRESHOLD` | 1.5 | Volume confirmation for every breakout detector |
+| `MIN_PRICE` / `MIN_AVG_VOLUME` / `MIN_AVG_DOLLAR_VOLUME` | 10 / 500K / 10M | Liquidity filter for all sections |
+| `HP_MIN_RESISTANCE_TOUCHES` / `FAKE_FLAG_PENALTY` | 2 / 5 | High-probability rule and fakeout penalty |
+| `MTF_RSI_MONTHLY_MIN` / `_WEEKLY_MIN` / `_DAILY_LEVEL` | 60 / 60 / 50 | Multi-timeframe RSI thresholds |
+| `PRICE_HISTORY_PERIOD` | "3y" | Must stay ≥ 2y for monthly RSI |
 
 When a section is empty, read the funnel before tuning: it shows whether candidates
 died at pattern detection, a base gate, or the elite filter.
@@ -331,7 +364,10 @@ There is no unit-test suite yet. Two checks are used before every release:
   (RSI 50–75). Safe to delete the earlier duplicates and the unused function in a
   cleanup pass.
 - **Recovery has no computed stop/targets**, only EMA reference levels.
-- **S/R, retest and reversal have no history archive.** Add one following the
+- **Monthly RSI uses the in-progress month** (as TradingView does) and 3 years of
+  history, so early-month values can move and may differ from charting tools by a
+  few points.
+- **S/R, retest, reversal and MTF RSI have no history archive.** Add one following the
   recovery archive pattern if needed.
 - **Tight elite Supertrend combination.** A fresh flip after a pullback often still
   has a negative weekly MACD, so "flip ≤ 20 d" plus "momentum 4/4" can leave the

@@ -47,7 +47,7 @@ RECOVERY_ARCHIVE_PATH = Path("data/recovery_archive.json")
 REPORTS_DIR = Path("reports")
 
 YFINANCE_DELAY_SECONDS = 0.3
-PRICE_HISTORY_PERIOD = "1y"
+PRICE_HISTORY_PERIOD = "3y"   # 3y so monthly RSI(14) has enough bars
 
 # Recent-quality section: rolling 1-week archive of past signals (same rollover
 # cadence as the Positional Trading Tool — each run drops entries > 7 days old).
@@ -144,6 +144,34 @@ REVERSAL_RS_MIN           = 55   # pullbacks dent RS; long-term trend is the rea
 REVERSAL_SECTOR_RANK_MAX  = 7
 REVERSAL_MIN_SHOW_SCORE   = 55
 MAX_REVERSAL_SHOWN        = 6
+
+# Fake-breakout handling and high-probability retests
+FAKE_RS_MIN               = 60   # only show fakeouts in names you'd otherwise care about
+MAX_FAKE_SHOWN            = 8
+HP_MIN_RESISTANCE_TOUCHES = 2    # breakout level must be an old resistance tested ≥ 2×
+HP_SCORE_BONUS            = 15
+FAKE_FLAG_PENALTY         = 5    # per fake-breakout flag on retest / holding rows
+
+# ----------------------------------------------------------------------------
+# Liquidity filter — applied to EVERY section (before any pipeline runs).
+# Thin names give unreliable breakouts, wide spreads and slippage.
+# ----------------------------------------------------------------------------
+MIN_PRICE                 = 10.0
+MIN_AVG_VOLUME            = 500_000      # 20-session average shares/day
+MIN_AVG_DOLLAR_VOLUME     = 10_000_000   # 20-session average close × volume
+
+# ----------------------------------------------------------------------------
+# Multi-timeframe RSI momentum bounce
+# ----------------------------------------------------------------------------
+MTF_RSI_MONTHLY_MIN       = 60
+MTF_RSI_WEEKLY_MIN        = 60
+MTF_RSI_DAILY_LEVEL       = 50
+MTF_RSI_CROSS_LOOKBACK    = 3     # daily cross above 50 within last 3 sessions
+MTF_RSI_MIN_CROSS_VOL     = 1.0   # volume on the cross day ≥ 1.0× 20-day average
+MTF_RSI_RS_MIN            = 60
+MTF_RSI_SECTOR_RANK_MAX   = 7
+MTF_RSI_MIN_SHOW_SCORE    = 60
+MAX_MTF_RSI_SHOWN         = 8
 
 # Layer 4: trend context filter — a stock passes if all four hold
 TREND_ABOVE_50_SMA = True
@@ -1247,6 +1275,28 @@ def _closeness_points(distance_pct: float) -> float:
     return 0
 
 
+def passes_liquidity(prices: pd.DataFrame) -> tuple[bool, dict]:
+    """Minimum price, share volume and dollar volume (20-session averages)."""
+    if len(prices) < 21:
+        return False, {}
+    close = float(prices["Close"].iloc[-1])
+    avg_vol = float(prices["Volume"].iloc[-20:].mean())
+    avg_dollar = float((prices["Close"].iloc[-20:] * prices["Volume"].iloc[-20:]).mean())
+    ok = close >= MIN_PRICE and avg_vol >= MIN_AVG_VOLUME and avg_dollar >= MIN_AVG_DOLLAR_VOLUME
+    return ok, {"close": close, "avg_vol": avg_vol, "avg_dollar_vol": avg_dollar}
+
+
+def compute_mtf_rsi_score(*, m: dict, rs_percentile: float, sector_rank: int | None,
+                          accumulation_days: int) -> float:
+    score = min((m["monthly_rsi"] - 60) * 1.5, 15) + min((m["weekly_rsi"] - 60) * 1.5, 15)
+    score += {0: 20, 1: 15, 2: 10}.get(m["cross_age"], 5)
+    vm = m["cross_vol_mult"]
+    score += 15 if vm >= 1.5 else (10 if vm >= 1.2 else 5)
+    score += 10 if m["daily_rsi_dip"] <= 40 else (5 if m["daily_rsi_dip"] <= 45 else 0)
+    score += rs_percentile / 2 + _sector_points(sector_rank) + min(accumulation_days, 10)
+    return round(score, 1)
+
+
 def volume_dry_up(prices: pd.DataFrame) -> bool:
     """Last 5 sessions' average volume < 80% of the prior 20-session average.
     Quiet volume into a level = sellers (at support) or supply (at resistance)
@@ -1690,6 +1740,7 @@ def main() -> None:
     raw_supertrend: list[dict] = []
     raw_recovery: list[dict] = []
     ticker_rs: dict[str, float] = {}
+    illiquid: set[str] = set()
 
     for i, entry in enumerate(eligible):
         ticker = entry["ticker"]
@@ -1701,6 +1752,12 @@ def main() -> None:
                 log(f"  {i+1}/{len(eligible)} scanned, {len(raw_candidates)} candidates, {no_data} skipped")
             continue
         price_cache[ticker] = prices
+
+        # Liquidity filter — applies to every section (Pass 1b/1c skip these too)
+        liq_ok, _ = passes_liquidity(prices)
+        if not liq_ok:
+            illiquid.add(ticker)
+            continue
 
         # Trend filter (Layer 4)
         trend_ok, trend_ctx = passes_trend_filter(prices, spy)
@@ -1811,7 +1868,7 @@ def main() -> None:
 
     for ticker, prices in price_cache.items():
         entry_info = eligible_lookup.get(ticker)
-        if not entry_info:
+        if not entry_info or ticker in illiquid:
             continue
         recovery_scanned += 1
 
@@ -1869,11 +1926,12 @@ def main() -> None:
     raw_sr: list[dict] = []
     raw_retest: list[dict] = []
     raw_reversal: list[dict] = []
+    raw_mtf_rsi: list[dict] = []
     quality_base_pass = 0
 
     for ticker, prices in price_cache.items():
         entry_info = eligible_lookup.get(ticker)
-        if not entry_info:
+        if not entry_info or ticker in illiquid:
             continue
         if ticker not in ticker_rs:
             rs_val = compute_ticker_rs(prices, spy)
@@ -1885,6 +1943,14 @@ def main() -> None:
         beh_ok, _ = passes_behavioral_filter(prices, ticker)
         if not beh_ok:
             continue
+
+        m_rsi = patterns.mtf_rsi_bounce(
+            prices, MTF_RSI_MONTHLY_MIN, MTF_RSI_WEEKLY_MIN, MTF_RSI_DAILY_LEVEL, MTF_RSI_CROSS_LOOKBACK
+        )
+        if m_rsi and m_rsi["cross_vol_mult"] >= MTF_RSI_MIN_CROSS_VOL:
+            raw_mtf_rsi.append({"ticker": ticker, "entry": entry_info, "m": m_rsi,
+                                "acc_days": patterns.accumulation_day_count(prices, ACCUMULATION_LOOKBACK_DAYS)})
+
         close_s = prices["Close"]
         sma200 = close_s.rolling(200).mean()
         if not (close_s.iloc[-1] > sma200.iloc[-1] and sma200.iloc[-1] > sma200.iloc[-21]):
@@ -1924,7 +1990,8 @@ def main() -> None:
             raw_reversal.append({**base, "rv": rv, "vol_mult": patterns.volume_multiple(prices)})
 
     log(f"Pass 1c complete: RS computed for {len(ticker_rs)} tickers; {quality_base_pass} in quality base "
-        f"→ {len(raw_sr)} near S/R, {len(raw_retest)} recent breakouts, {len(raw_reversal)} reversal triggers.")
+        f"→ {len(raw_sr)} near S/R, {len(raw_retest)} recent breakouts, {len(raw_reversal)} reversal triggers, "
+        f"{len(raw_mtf_rsi)} MTF-RSI bounces; {len(illiquid)} illiquid tickers excluded.")
 
     # ---- Confluence gates: RS percentile + sector regime ----
     rs_percentiles = compute_rs_percentiles(ticker_rs)
@@ -1982,6 +2049,7 @@ def main() -> None:
             "days_in_consolidation": days_in_cons,
             "days_on_report": streak,
             "piotroski": entry.get("piotroski_f_score"),
+            "fake_flags": patterns.todays_breakout_risk(prices, stops.get("breakout_level_used")),
             **stops,
         })
 
@@ -2186,15 +2254,40 @@ def main() -> None:
 
     retest_list: list[dict] = []
     holding_list: list[dict] = []
+    fake_list: list[dict] = []
     for c in raw_retest:
         rs_pct = rs_percentiles.get(c["ticker"])
         rank = _rank_for(c["entry"])
-        if rs_pct is None or rs_pct < RETEST_RS_MIN or not sector_rank_ok(rank, RETEST_SECTOR_RANK_MAX):
-            continue
         bo = c["bo"]
-        row = {**_common(c, rs_pct, rank), **bo,
-               "score": compute_retest_score(bo=bo, rs_percentile=rs_pct, sector_rank=rank,
-                                             momentum_passes=c["mom_passes"])}
+        if rs_pct is None:
+            continue
+
+        # Fake / failed breakouts: shown as an "avoid" list, lighter gates
+        if bo["status"] in ("failed", "failing"):
+            if rs_pct >= FAKE_RS_MIN:
+                fake_list.append({**_common(c, rs_pct, rank), **bo,
+                                  "score": 100 - bo["breakout_age"]})  # most recent first
+            continue
+
+        if rs_pct < RETEST_RS_MIN or not sector_rank_ok(rank, RETEST_SECTOR_RANK_MAX):
+            continue
+        score = compute_retest_score(bo=bo, rs_percentile=rs_pct, sector_rank=rank,
+                                     momentum_passes=c["mom_passes"])
+        score -= FAKE_FLAG_PENALTY * len(bo["fake_flags"])
+        row = {**_common(c, rs_pct, rank), **bo}
+
+        # High probability: old resistance (≥ 2 touches) retested as support,
+        # bounce today, and zero fake-breakout flags.
+        row["high_probability"] = (
+            bo["status"] == "retest"
+            and bo["bounce_today"]
+            and bo["resistance_touches"] >= HP_MIN_RESISTANCE_TOUCHES
+            and not bo["fake_flags"]
+        )
+        if row["high_probability"]:
+            score += HP_SCORE_BONUS
+        row["score"] = round(score, 1)
+
         if bo["status"] == "retest":
             row["stop"] = round(min(bo["recent_low"], bo["breakout_level"]) * 0.98, 2)
             risk = bo["close"] - row["stop"]
@@ -2202,6 +2295,29 @@ def main() -> None:
             retest_list.append(row)
         else:
             holding_list.append(row)
+
+    # Cross-mark Near Support rows whose support IS a just-broken old resistance
+    hp_levels = {r["ticker"]: r["breakout_level"] for r in retest_list if r["high_probability"]}
+    for r in support_list:
+        lvl = hp_levels.get(r["ticker"])
+        r["high_probability"] = lvl is not None and abs(r["level"] - lvl) / lvl * 100 <= 2.0
+        if r["high_probability"]:
+            r["score"] = round(r["score"] + HP_SCORE_BONUS, 1)
+
+    mtf_rsi_list: list[dict] = []
+    for c in raw_mtf_rsi:
+        rs_pct = rs_percentiles.get(c["ticker"])
+        rank = _rank_for(c["entry"])
+        if rs_pct is None or rs_pct < MTF_RSI_RS_MIN or not sector_rank_ok(rank, MTF_RSI_SECTOR_RANK_MAX):
+            continue
+        e = c["entry"]
+        mtf_rsi_list.append({
+            "ticker": c["ticker"], "name": e.get("name", ""), "sector": e.get("sector", "Unknown"),
+            "sector_rank": rank, "rs_percentile": rs_pct, "accumulation_days": c["acc_days"],
+            "piotroski": e.get("piotroski_f_score"), **c["m"],
+            "score": compute_mtf_rsi_score(m=c["m"], rs_percentile=rs_pct, sector_rank=rank,
+                                           accumulation_days=c["acc_days"]),
+        })
 
     reversal_list: list[dict] = []
     for c in raw_reversal:
@@ -2226,11 +2342,16 @@ def main() -> None:
     retest_qualified, retest_shown = _curate(retest_list, RETEST_MIN_SHOW_SCORE, MAX_RETEST_SHOWN)
     holding_qualified, holding_shown = _curate(holding_list, RETEST_MIN_SHOW_SCORE, MAX_HOLDING_SHOWN)
     reversal_qualified, reversal_shown = _curate(reversal_list, REVERSAL_MIN_SHOW_SCORE, MAX_REVERSAL_SHOWN)
+    fake_qualified, fake_shown = _curate(fake_list, 0, MAX_FAKE_SHOWN)
+    mtf_rsi_qualified, mtf_rsi_shown = _curate(mtf_rsi_list, MTF_RSI_MIN_SHOW_SCORE, MAX_MTF_RSI_SHOWN)
+    high_prob_shown = [r for r in retest_shown if r["high_probability"]]
 
     log(f"Pass 2e complete: support {len(support_list)}→{len(support_shown)}, "
         f"resistance {len(resistance_list)}→{len(resistance_shown)}, "
         f"retest {len(retest_list)}→{len(retest_shown)}, holding {len(holding_list)}→{len(holding_shown)}, "
-        f"reversal {len(reversal_list)}→{len(reversal_shown)} (gated → shown).")
+        f"reversal {len(reversal_list)}→{len(reversal_shown)}, fake {len(fake_list)}→{len(fake_shown)}, "
+        f"MTF-RSI {len(mtf_rsi_list)}→{len(mtf_rsi_shown)}, high-probability retests {len(high_prob_shown)} "
+        f"(gated → shown).")
 
     # Update history with today's signals (all four pipelines) BEFORE breadth
     update_history(history, [s["ticker"] for s in signals])
@@ -2251,6 +2372,8 @@ def main() -> None:
         adaptive_min_score = SCORING["min_show_score_adverse"]
         log(f"Market regime: Adverse (weekly breadth {breadth['weekly_score']:.1f}). "
             f"Raising min show score {SCORING['min_show_score']} -> {adaptive_min_score}.")
+        for s_ in signals:  # breakouts in a weak tape fail more often
+            s_["fake_flags"] = s_.get("fake_flags", []) + ["Adverse market regime"]
 
     # ---- Elite display filter: curate "today" sections to a small set ----
     # Archives retain everything above base gates; only displayed set is strict.
@@ -2358,6 +2481,13 @@ def main() -> None:
         "max_support_cap": MAX_SUPPORT_SHOWN, "max_resistance_cap": MAX_RESISTANCE_SHOWN,
         "max_retest_cap": MAX_RETEST_SHOWN, "max_holding_cap": MAX_HOLDING_SHOWN,
         "max_reversal_cap": MAX_REVERSAL_SHOWN,
+        "illiquid": len(illiquid),
+        "min_price": MIN_PRICE, "min_avg_volume": MIN_AVG_VOLUME, "min_avg_dollar_volume": MIN_AVG_DOLLAR_VOLUME,
+        "fake_signals": len(fake_list), "fake_shown": len(fake_shown), "max_fake_cap": MAX_FAKE_SHOWN,
+        "high_prob_shown": len(high_prob_shown),
+        "mtf_rsi_raw": len(raw_mtf_rsi), "mtf_rsi_signals": len(mtf_rsi_list),
+        "mtf_rsi_qualified": mtf_rsi_qualified, "mtf_rsi_shown": len(mtf_rsi_shown),
+        "max_mtf_rsi_cap": MAX_MTF_RSI_SHOWN,
         "supertrend_max_flip_age_days": SUPERTREND_MAX_FLIP_AGE_DAYS,
         "min_show_score_used": adaptive_min_score,
     }
@@ -2417,6 +2547,9 @@ def main() -> None:
         retest=retest_shown,
         holding=holding_shown,
         reversal=reversal_shown,
+        fake=fake_shown,
+        high_prob=high_prob_shown,
+        mtf_rsi=mtf_rsi_shown,
         recent_quality=recent_quality,
         recent_quality_watchlist=recent_quality_watchlist,
         recent_quality_supertrend=recent_quality_supertrend,

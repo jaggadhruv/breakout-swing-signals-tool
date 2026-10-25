@@ -119,6 +119,12 @@ h3.subsection .count { font-weight: 400; color: var(--muted); }
 .tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 11px;
        border: 1px solid var(--rule); color: var(--muted); }
 .tag.pos { color: var(--sig-pos); border-color: var(--sig-pos); }
+.tag.neg { color: var(--sig-neg); border-color: var(--sig-neg); }
+.tag.warn { color: var(--sig-warn); border-color: var(--sig-warn); }
+.tag.hp { background: #C8961E; color: #fff; border-color: #C8961E; font-weight: 600; }
+tr.hp td { background: rgba(200, 150, 30, 0.13); }
+tr.hp td:first-child { box-shadow: inset 3px 0 0 #C8961E; }
+.flags { display: block; font-size: 10px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
 .subindicator {
   padding: 10px 12px;
   background: var(--panel);
@@ -432,6 +438,7 @@ def _render_candidates_table(candidates: list[dict]) -> str:
   <td class="num mono">{_fmt(c["tp1"], ".2f")}</td>
   <td class="num mono">{_fmt(c["tp2"], ".2f")}</td>
   <td class="num mono">{_fmt(rr, ".1f")}R</td>
+  <td>{_risk_badge(c.get("fake_flags"))}</td>
   <td class="num mono {_rs_class(rs_val)}">{rs_display}</td>
   <td class="num mono {_piotroski_class(c["piotroski"])}">{_fmt(c["piotroski"])}</td>
   <td class="num mono">{streak_html}</td>
@@ -450,6 +457,7 @@ def _render_candidates_table(candidates: list[dict]) -> str:
       <th class="num">TP1</th>
       <th class="num">TP2</th>
       <th class="num">R:R</th>
+      <th>Fakeout risk</th>
       <th class="num">RS</th>
       <th class="num">Piotroski</th>
       <th class="num">Streak</th>
@@ -989,14 +997,32 @@ def _yes(flag: bool, label: str) -> str:
     return f'<span class="tag pos">{escape(label)}</span>' if flag else '<span class="dim">—</span>'
 
 
+def _risk_badge(flags: list[str] | None) -> str:
+    """Fake-breakout risk: 0 flags = Clean, 1 = Caution, 2+ = High risk."""
+    flags = flags or []
+    if not flags:
+        return '<span class="tag pos">Clean</span>'
+    cls, label = ("warn", "Caution") if len(flags) == 1 else ("neg", "High risk")
+    return (f'<span class="tag {cls}" title="{escape("; ".join(flags))}">{label}</span>'
+            f'<span class="flags">{escape(" · ".join(flags))}</span>')
+
+
+def _hp_attrs(row: dict) -> tuple[str, str]:
+    """(tr class attribute, star badge) for high-probability rows."""
+    if row.get("high_probability"):
+        return ' class="hp"', ' <span class="tag hp">★ High prob</span>'
+    return "", ""
+
+
 def _render_support_table(rows: list[dict]) -> str:
     if not rows:
         return _empty("No quality stocks within 3% of a tested support level today.")
     body = []
     for c in rows:
+        tr_cls, star = _hp_attrs(c)
         body.append(f"""
-<tr>
-  <td class="ticker">{escape(c["ticker"])}</td>
+<tr{tr_cls}>
+  <td class="ticker">{escape(c["ticker"])}{star}</td>
   <td class="{_score_class(c["score"])} num mono">{_fmt(c["score"], ".0f")}</td>
   <td class="num mono">{_fmt(c["close"], ".2f")}</td>
   <td class="num mono">{_fmt(c["level"], ".2f")}</td>
@@ -1023,6 +1049,7 @@ def _render_support_table(rows: list[dict]) -> str:
   Buy-the-dip candidates: price is resting just above a horizontal level tested ≥ 2 times, inside a rising 200 SMA uptrend.
   Wait for a bounce candle off the level before entering. Stop = 3% below support; target = next resistance.
   Dry-up = last 5 sessions' volume &lt; 80% of the prior 20 (sellers exhausting).
+  <span class="tag hp">★ High prob</span> = this support is an old resistance the stock just broke out of (see Recent Breakouts &amp; Retests).
 </p>
 """
 
@@ -1072,9 +1099,10 @@ def _render_retest_table(rows: list[dict]) -> str:
     body = []
     for c in rows:
         bounce = '<span class="tag pos">Bounce today</span>' if c.get("bounce_today") else '<span class="dim">Testing</span>'
+        tr_cls, star = _hp_attrs(c)
         body.append(f"""
-<tr>
-  <td class="ticker">{escape(c["ticker"])}</td>
+<tr{tr_cls}>
+  <td class="ticker">{escape(c["ticker"])}{star}</td>
   <td class="{_score_class(c["score"])} num mono">{_fmt(c["score"], ".0f")}</td>
   <td class="num mono">{c["breakout_age"]}d ago</td>
   <td class="num mono">{_fmt(c["breakout_level"], ".2f")}</td>
@@ -1083,6 +1111,8 @@ def _render_retest_table(rows: list[dict]) -> str:
   <td class="num mono">−{c["pullback_pct"]:.1f}%</td>
   <td class="num mono">{_fmt(c["close"], ".2f")}</td>
   <td class="num">{bounce}</td>
+  <td class="num mono">×{c.get("resistance_touches", 0)}</td>
+  <td>{_risk_badge(c.get("fake_flags"))}</td>
   {_rs_cell(c.get("rs_percentile"))}
   <td class="num mono">{_fmt(c.get("stop"), ".2f")}</td>
   <td class="num mono">{_fmt(c.get("tp1"), ".2f")}</td>
@@ -1093,7 +1123,8 @@ def _render_retest_table(rows: list[dict]) -> str:
   <thead><tr>
     <th>Ticker</th><th class="num">Score</th><th class="num">Broke out</th><th class="num">BO level</th>
     <th class="num">BO volume</th><th class="num">Post-BO high</th><th class="num">Pullback</th>
-    <th class="num">Current</th><th class="num">Status</th><th class="num">RS</th>
+    <th class="num">Current</th><th class="num">Status</th><th class="num">Prior tests</th>
+    <th>Fakeout risk</th><th class="num">RS</th>
     <th class="num">Stop</th><th class="num">TP1 (2R)</th><th>Sector</th>
   </tr></thead>
   <tbody>{"".join(body)}</tbody>
@@ -1101,7 +1132,7 @@ def _render_retest_table(rows: list[dict]) -> str:
 <p class="dim" style="font-size:11px;margin-top:6px;">
   Break &amp; retest: the stock broke a 55-session high on volume, ran, then pulled back to the old breakout level and is holding it
   (old resistance acting as new support). "Bounce today" = closed up from the retest, the confirmation many traders wait for.
-  Stop = 2% below the lower of the retest low or breakout level.
+  Stop = 2% below the lower of the retest low or breakout level. Prior tests = swing highs at this level before the breakout.
 </p>
 """
 
@@ -1124,6 +1155,7 @@ def _render_holding_table(rows: list[dict]) -> str:
   <td class="num mono">{_fmt(c["close"], ".2f")}</td>
   <td class="num">{ext_html}</td>
   <td class="num mono">−{c["pullback_pct"]:.1f}%</td>
+  <td>{_risk_badge(c.get("fake_flags"))}</td>
   {_rs_cell(c.get("rs_percentile"))}
   <td class="num mono">{c.get("momentum_passes", 0)}/4</td>
   <td>{_render_sector_cell(c.get("sector", ""), c.get("sector_rank"))}</td>
@@ -1133,13 +1165,101 @@ def _render_holding_table(rows: list[dict]) -> str:
   <thead><tr>
     <th>Ticker</th><th class="num">Score</th><th class="num">Broke out</th><th class="num">BO level</th>
     <th class="num">BO volume</th><th class="num">Current</th><th class="num">Above level</th>
-    <th class="num">Off high</th><th class="num">RS</th><th class="num">Mom</th><th>Sector</th>
+    <th class="num">Off high</th><th>Fakeout risk</th><th class="num">RS</th><th class="num">Mom</th><th>Sector</th>
   </tr></thead>
   <tbody>{"".join(body)}</tbody>
 </table>
 <p class="dim" style="font-size:11px;margin-top:6px;">
   Breakouts from the last 20 sessions that have not retested yet. Above level &gt; 10% (red) = extended; avoid chasing and
   wait for these to move into the Break &amp; Retest table. Failed breakouts (closed &gt; 3% back below the level) are excluded.
+</p>
+"""
+
+
+def _render_high_prob_table(rows: list[dict]) -> str:
+    if not rows:
+        return _empty("No high-probability retests today (needs: old resistance tested ≥ 2×, broken on volume, "
+                      "retested as support, bounce today, zero fakeout flags).")
+    return _render_retest_table(rows)
+
+
+def _render_fake_table(rows: list[dict]) -> str:
+    if not rows:
+        return _empty("No recent breakouts have failed among quality names.")
+    body = []
+    for c in rows:
+        status = ('<span class="tag neg">Failed</span>' if c["status"] == "failed"
+                  else '<span class="tag warn">Failing</span>')
+        body.append(f"""
+<tr>
+  <td class="ticker">{escape(c["ticker"])}</td>
+  <td>{status}</td>
+  <td class="num mono">{c["breakout_age"]}d ago</td>
+  <td class="num mono">{_fmt(c["breakout_level"], ".2f")}</td>
+  <td class="num mono">{_fmt(c["post_high"], ".2f")}</td>
+  <td class="num mono">{_fmt(c["close"], ".2f")}</td>
+  <td class="num mono" style="color:var(--sig-neg);">{c["extension_pct"]:+.1f}%</td>
+  <td class="num mono">{c["breakout_vol_mult"]:.1f}×</td>
+  <td><span class="flags" style="font-size:11px;">{escape(" · ".join(c.get("fake_flags", [])))}</span></td>
+  {_rs_cell(c.get("rs_percentile"))}
+  <td>{_render_sector_cell(c.get("sector", ""), c.get("sector_rank"))}</td>
+</tr>""")
+    return f"""
+<table class="candidates">
+  <thead><tr>
+    <th>Ticker</th><th>Status</th><th class="num">Broke out</th><th class="num">BO level</th>
+    <th class="num">Post-BO high</th><th class="num">Current</th><th class="num">vs level</th>
+    <th class="num">BO volume</th><th>Why it looks fake</th><th class="num">RS</th><th>Sector</th>
+  </tr></thead>
+  <tbody>{"".join(body)}</tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  Avoid list. Failed = closed &gt; 3% back below the breakout level; Failing = back below it by less than 3%.
+  If you hold one of these, the breakout thesis is broken: tighten or exit. A later reclaim of the level can be re-evaluated fresh.
+</p>
+"""
+
+
+def _render_mtf_rsi_table(rows: list[dict]) -> str:
+    if not rows:
+        return _empty("No stocks with monthly & weekly RSI > 60 and a fresh daily RSI bounce above 50 on good volume today.")
+    body = []
+    for c in rows:
+        age = c["cross_age"]
+        age_html = '<span class="streak">today</span>' if age == 0 else f'<span class="mono">{age}d ago</span>'
+        acc = c.get("accumulation_days", 0)
+        acc_class = "piotroski-hi" if acc >= 7 else ("piotroski-mid" if acc >= 4 else "dim")
+        body.append(f"""
+<tr>
+  <td class="ticker">{escape(c["ticker"])}</td>
+  <td class="{_score_class(c["score"])} num mono">{_fmt(c["score"], ".0f")}</td>
+  <td class="num mono score-hi">{c["monthly_rsi"]:.0f}</td>
+  <td class="num mono score-hi">{c["weekly_rsi"]:.0f}</td>
+  <td class="num mono">{c["daily_rsi_dip"]:.0f} → {c["daily_rsi"]:.0f}</td>
+  <td class="num">{age_html}</td>
+  <td class="num mono">{c["cross_vol_mult"]:.1f}×</td>
+  <td class="num mono {acc_class}">{acc}</td>
+  {_rs_cell(c.get("rs_percentile"))}
+  <td class="num mono">{_fmt(c["entry"], ".2f")}</td>
+  <td class="num mono">{_fmt(c["stop"], ".2f")}</td>
+  <td class="num mono">{_fmt(c["tp1"], ".2f")}</td>
+  <td class="num mono">{_fmt(c["tp2"], ".2f")}</td>
+  <td>{_render_sector_cell(c.get("sector", ""), c.get("sector_rank"))}</td>
+</tr>""")
+    return f"""
+<table class="candidates">
+  <thead><tr>
+    <th>Ticker</th><th class="num">Score</th><th class="num">Monthly RSI</th><th class="num">Weekly RSI</th>
+    <th class="num">Daily RSI dip → now</th><th class="num">Crossed 50</th><th class="num">Cross-day vol</th>
+    <th class="num">AccDays</th><th class="num">RS</th><th class="num">Entry</th><th class="num">Stop</th>
+    <th class="num">TP1 (2R)</th><th class="num">TP2 (3R)</th><th>Sector</th>
+  </tr></thead>
+  <tbody>{"".join(body)}</tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  Higher-timeframe momentum intact (monthly and weekly RSI(14) &gt; 60) while the daily RSI dipped below 50 and has just
+  crossed back above it on at least average volume: the short-term pullback is ending inside a strong trend.
+  Stop = 1% under the 10-session low. Monthly RSI uses the in-progress month, as TradingView does.
 </p>
 """
 
@@ -1202,6 +1322,7 @@ def _render_funnel(funnel: dict) -> str:
     steps = [
         ("Eligible pool", funnel["eligible"]),
         ("Skipped (no data)", funnel.get("no_data", 0)),
+        (f"Dropped by liquidity filter (price ≥ ${funnel.get('min_price', 10):.0f}, vol ≥ {funnel.get('min_avg_volume', 500000)/1e3:.0f}K, $vol ≥ ${funnel.get('min_avg_dollar_volume', 1e7)/1e6:.0f}M)", funnel.get("illiquid", 0)),
         ("Passed trend filter", funnel["trend_pass"]),
         ("Passed behavioral filter", funnel["behavioral_pass"]),
         ("Passed momentum confluence", funnel.get("momentum_pass", 0)),
@@ -1231,6 +1352,9 @@ def _render_funnel(funnel: dict) -> str:
         ("Resistance: gated → qualified → shown", f'{funnel.get("resistance_signals", 0)} → {funnel.get("resistance_qualified", 0)} → {funnel.get("resistance_shown", 0)}'),
         ("Break & retest: gated → qualified → shown", f'{funnel.get("retest_signals", 0)} → {funnel.get("retest_qualified", 0)} → {funnel.get("retest_shown", 0)}'),
         ("Holding above: gated → qualified → shown", f'{funnel.get("holding_signals", 0)} → {funnel.get("holding_qualified", 0)} → {funnel.get("holding_shown", 0)}'),
+        ("★ High-probability retests shown", funnel.get("high_prob_shown", 0)),
+        ("Fake / failed breakouts: gated → shown", f'{funnel.get("fake_signals", 0)} → {funnel.get("fake_shown", 0)}'),
+        ("MTF RSI: raw → gated → qualified → shown", f'{funnel.get("mtf_rsi_raw", 0)} → {funnel.get("mtf_rsi_signals", 0)} → {funnel.get("mtf_rsi_qualified", 0)} → {funnel.get("mtf_rsi_shown", 0)}'),
         ("Reversal: gated → qualified → shown", f'{funnel.get("reversal_signals", 0)} → {funnel.get("reversal_qualified", 0)} → {funnel.get("reversal_shown", 0)}'),
     ]
     items = "".join(
@@ -1419,6 +1543,30 @@ def _render_methodology() -> str:
   </details>
 
   <details class="method-block">
+    <summary>Fake-breakout detection, high-probability retests, liquidity filter, multi-timeframe RSI</summary>
+    <div class="method-body">
+      <p><strong>Liquidity filter (all sections).</strong> Before any pipeline runs, a ticker needs a price ≥ $10, a 20-session average volume ≥ 500K shares and average dollar volume ≥ $10M. Thin names produce unreliable breakouts, wide spreads and slippage. The funnel shows how many were dropped.</p>
+      <p><strong>Fakeout risk badge.</strong> Every breakout is checked for warning signs. 0 flags = <span class="tag pos">Clean</span>, 1 = <span class="tag warn">Caution</span>, 2+ = <span class="tag neg">High risk</span> (hover or read the small text for the reasons).</p>
+      <table class="method-table">
+        <thead><tr><th>Flag</th><th>Meaning</th><th>Applies to</th></tr></thead>
+        <tbody>
+          <tr><td>Weak close / upper wick</td><td>Breakout day closed in the bottom half of its range: sellers rejected the move</td><td>Today + recent</td></tr>
+          <tr><td>Marginal volume</td><td>Breakout volume under 2× average: little institutional commitment</td><td>Today + recent</td></tr>
+          <tr><td>Extended &gt; 5% above level</td><td>Bought far above the pivot: poor risk/reward, prone to snap back</td><td>Today</td></tr>
+          <tr><td>Gap-and-fade</td><td>Opened above the level, closed below the open</td><td>Today</td></tr>
+          <tr><td>Adverse market regime</td><td>Weekly breadth &lt; 4: breakouts fail more often in weak tapes</td><td>Today</td></tr>
+          <tr><td>No follow-through</td><td>Never got 3% above the level after breaking out</td><td>Recent</td></tr>
+          <tr><td>Heavy selling since</td><td>A down day after the breakout traded more volume than the breakout day</td><td>Recent</td></tr>
+          <tr><td>Back below level</td><td>Today's close is under the breakout level</td><td>Recent</td></tr>
+        </tbody>
+      </table>
+      <p>Retest and Holding rows lose 5 score points per flag. Breakouts that close back below the level move to <strong>Fake / Failed Breakouts</strong> (Failing = below by &lt; 3%, Failed = below by &gt; 3%).</p>
+      <p><strong><span class="tag hp">★ High probability</span> retest</strong> requires all of: the breakout level was an <em>old resistance</em> with ≥ 2 swing highs within 1.5% of it in the 120 sessions before the break; price broke it on volume, pulled back and is now retesting it as support; it closed up today (bounce); and it carries zero fakeout flags. These get +15 score, a gold row highlight, their own subsection, and the same highlight in Near Support when the support level is that broken resistance.</p>
+      <p><strong>Multi-Timeframe RSI Momentum.</strong> RSI(14) on monthly and weekly closes both ≥ 60 (higher-timeframe trend strong), and daily RSI crossed from below 50 to ≥ 50 within the last 3 sessions, with volume on the cross day ≥ 1.0× its 20-session average. Gates: liquidity, behavioral, RS ≥ 60, sector ≤ 7. Score: monthly and weekly RSI above 60 (up to 15 each), cross freshness (today 20, 1d 15, 2d 10), cross-day volume (5–15), daily dip depth (≤ 40 +10, ≤ 45 +5), RS ÷ 2, sector, accumulation days. Price history is 3 years so monthly RSI has enough bars.</p>
+    </div>
+  </details>
+
+  <details class="method-block">
     <summary>How Support &amp; Resistance, Break &amp; Retest, and Reversal sections work</summary>
     <div class="method-body">
       <p><strong>Shared quality base.</strong> These three sections scan every ticker, not just main trend-filter survivors, because their setups are often mid-pullback. Each ticker must still pass: no −10% gap-down in 20 sessions, and close above a 200 SMA that is higher than 20 sessions ago. Each section then applies its own RS and sector gates, a minimum score, and a display cap, so only the technically strongest names show.</p>
@@ -1529,6 +1677,9 @@ def render(
     retest: list[dict] | None = None,
     holding: list[dict] | None = None,
     reversal: list[dict] | None = None,
+    fake: list[dict] | None = None,
+    high_prob: list[dict] | None = None,
+    mtf_rsi: list[dict] | None = None,
     recent_quality: list[dict],
     recent_quality_watchlist: list[dict] | None = None,
     recent_quality_supertrend: list[dict] | None = None,
@@ -1543,6 +1694,7 @@ def render(
     recovery = recovery or []
     support, resistance = support or [], resistance or []
     retest, holding, reversal = retest or [], holding or [], reversal or []
+    fake, high_prob, mtf_rsi = fake or [], high_prob or [], mtf_rsi or []
     recent_quality_watchlist = recent_quality_watchlist or []
     recent_quality_supertrend = recent_quality_supertrend or []
     recent_quality_recovery = recent_quality_recovery or []
@@ -1590,13 +1742,20 @@ def render(
   {_render_resistance_table(resistance)}
 
   <h2 class="section">Recent Breakouts &amp; Retests <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(55-session-high breakouts on volume, last 20 sessions)</span></h2>
+  <h3 class="subsection"><span class="tag hp">★</span> High-Probability: Old Resistance Retested as Support <span class="count">· broke a level tested ≥ 2×, came back to it, held and bounced today, zero fakeout flags</span></h3>
+  {_render_high_prob_table(high_prob)}
   <h3 class="subsection">Break &amp; Retest <span class="count">· pulled back to the breakout level and holding, top {funnel.get("max_retest_cap", 8)}</span></h3>
   {_render_retest_table(retest)}
   <h3 class="subsection">Holding Above Breakout <span class="count">· not yet retested, top {funnel.get("max_holding_cap", 8)}</span></h3>
   {_render_holding_table(holding)}
+  <h3 class="subsection">Fake / Failed Breakouts <span class="count">· avoid list, top {funnel.get("max_fake_cap", 8)} most recent</span></h3>
+  {_render_fake_table(fake)}
 
   <h2 class="section">Reversal Swing Setups <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(pullback in an uptrend + bullish reversal candle today, top {funnel.get("max_reversal_cap", 6)})</span></h2>
   {_render_reversal_table(reversal)}
+
+  <h2 class="section">Multi-Timeframe RSI Momentum <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(monthly &amp; weekly RSI &gt; 60, daily RSI just crossed back above 50 on good volume, top {funnel.get("max_mtf_rsi_cap", 8)})</span></h2>
+  {_render_mtf_rsi_table(mtf_rsi)}
 
   <h2 class="section">Recent Quality Breakouts <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(top 10 by conviction, appearances, volume, and recency)</span></h2>
   {_render_recent_quality_table(recent_quality, date_str)}

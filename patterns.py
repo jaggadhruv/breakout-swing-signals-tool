@@ -418,6 +418,17 @@ def nearest_support_resistance(
     return out
 
 
+def _resistance_touches_before(prices: pd.DataFrame, bo_idx: int, level: float,
+                               lookback: int = 120, wing: int = 5, tol_pct: float = 1.5) -> int:
+    """How many confirmed swing highs sat within tol_pct of `level` in the
+    `lookback` bars before the breakout. ≥ 2 = a genuine, tested resistance."""
+    pre = prices.iloc[max(0, bo_idx - lookback):bo_idx]
+    if len(pre) < 2 * wing + 1:
+        return 0
+    return sum(1 for p, kind in _pivot_points(pre, len(pre), wing)
+               if kind == "high" and abs(p - level) / level * 100 <= tol_pct)
+
+
 def recent_breakout_status(
     prices: pd.DataFrame,
     max_age: int = 20,
@@ -427,20 +438,28 @@ def recent_breakout_status(
     fail_pct: float = 3.0,
     min_pullback_pct: float = 3.0,
 ) -> dict | None:
-    """Find the most recent N-day-high breakout (on volume) 1..max_age bars ago
-    and classify what price has done since.
+    """Find the most recent N-session-high breakout (on volume) 1..max_age bars
+    ago, classify what price has done since, and list fake-breakout warnings.
 
     Status:
-      "retest"  — pulled back ≥ min_pullback_pct from the post-breakout high,
-                  a low in the last 3 bars came within retest_band_pct of the
-                  breakout level, and today's close is still at/above the level
-                  (within 1%). Classic break-and-retest entry zone.
+      "retest"  — pulled back ≥ min_pullback_pct from the post-breakout high, a
+                  low in the last 3 bars came within retest_band_pct of the
+                  level, and today's close is at/above the level (within 1%).
       "holding" — still above the level, no retest yet.
-      None      — no breakout found, or it failed (close > fail_pct below level).
+      "failing" — closed back below the level, but by less than fail_pct.
+      "failed"  — closed more than fail_pct below the level (fake breakout).
+
+    Fake-breakout flags (any status):
+      weak_close      breakout-day close in the bottom half of its range
+      marginal_volume breakout volume < 2× the 20-session average
+      no_follow       post-breakout high never reached level + 3%
+      heavy_selling   a down day since the breakout out-traded the breakout day
+      back_below      today's close is below the breakout level
     """
     n = len(prices)
     if n < level_window + max_age + 21:
         return None
+    o = prices["Open"].to_numpy()
     high = prices["High"].to_numpy()
     low = prices["Low"].to_numpy()
     close = prices["Close"].to_numpy()
@@ -458,25 +477,43 @@ def recent_breakout_status(
         return None
 
     today_close = float(close[-1])
-    if today_close < level * (1 - fail_pct / 100):
-        return None  # failed breakout
-
     post_high = float(high[bo_idx:].max())
     pullback_pct = (post_high - today_close) / post_high * 100
     recent_low = float(low[-3:].min())
     extension_pct = (today_close - level) / level * 100
     age = n - 1 - bo_idx
     bo_vol_mult = float(vol[bo_idx] / vol[bo_idx - 20:bo_idx].mean())
+    bo_range = high[bo_idx] - low[bo_idx]
+    bo_close_pos = (close[bo_idx] - low[bo_idx]) / bo_range if bo_range > 0 else 1.0
+
+    heavy_selling = any(
+        close[j] < close[j - 1] and vol[j] > vol[bo_idx] for j in range(bo_idx + 1, n)
+    )
+    flags = []
+    if bo_close_pos < 0.5:
+        flags.append("Weak breakout close")
+    if bo_vol_mult < 2.0:
+        flags.append("Marginal volume")
+    if post_high < level * 1.03:
+        flags.append("No follow-through")
+    if heavy_selling:
+        flags.append("Heavy selling since")
+    if today_close < level:
+        flags.append("Back below level")
 
     retested = (
         pullback_pct >= min_pullback_pct
         and recent_low <= level * (1 + retest_band_pct / 100)
         and today_close >= level * 0.99
     )
-    status = "retest" if retested else ("holding" if today_close > level else None)
-    if status is None:
-        return None
-    bounce = today_close > float(close[-2])  # green vs prior close = retest bounce confirming
+    if today_close < level * (1 - fail_pct / 100):
+        status = "failed"
+    elif retested:
+        status = "retest"
+    elif today_close > level:
+        status = "holding"
+    else:
+        status = "failing"
 
     return {
         "status": status,
@@ -487,8 +524,93 @@ def recent_breakout_status(
         "pullback_pct": round(pullback_pct, 2),
         "extension_pct": round(extension_pct, 2),
         "recent_low": round(recent_low, 2),
-        "bounce_today": bool(bounce),
+        "bounce_today": bool(today_close > float(close[-2])),
         "close": round(today_close, 2),
+        "resistance_touches": _resistance_touches_before(prices, bo_idx, level),
+        "fake_flags": flags,
+    }
+
+
+def todays_breakout_risk(prices: pd.DataFrame, level: float | None) -> list[str]:
+    """Fake-breakout warnings for a breakout firing TODAY."""
+    if level is None or len(prices) < 21:
+        return []
+    o, h, l, c = (float(prices[k].iloc[-1]) for k in ("Open", "High", "Low", "Close"))
+    rng = h - l
+    flags = []
+    if rng > 0 and (c - l) / rng < 0.5:
+        flags.append("Weak close (upper wick)")
+    vm = volume_multiple(prices)
+    if vm is not None and vm < 2.0:
+        flags.append("Marginal volume")
+    if c > level * 1.05:
+        flags.append("Extended > 5% above level")
+    if o > level and c < o:
+        flags.append("Gap-and-fade")
+    return flags
+
+
+def mtf_rsi_bounce(
+    prices: pd.DataFrame,
+    monthly_min: float = 60.0,
+    weekly_min: float = 60.0,
+    daily_level: float = 50.0,
+    cross_lookback: int = 3,
+) -> dict | None:
+    """Multi-timeframe RSI(14): monthly and weekly RSI both above their minimum
+    (higher-timeframe momentum intact) and daily RSI crossed back above
+    `daily_level` from below within the last `cross_lookback` sessions
+    (short-term dip ending). Needs ~2+ years of daily data for monthly RSI."""
+    c = prices["Close"]
+    if len(c) < 300:
+        return None
+    try:
+        monthly_close = c.resample("ME").last().dropna()
+    except ValueError:  # pandas < 2.2
+        monthly_close = c.resample("M").last().dropna()
+    weekly_close = c.resample("W-FRI").last().dropna()
+    if len(monthly_close) < 16 or len(weekly_close) < 30:
+        return None
+    m_rsi = float(rsi(monthly_close, 14).iloc[-1])
+    w_rsi = float(rsi(weekly_close, 14).iloc[-1])
+    if not (m_rsi >= monthly_min and w_rsi >= weekly_min):
+        return None
+
+    d = rsi(c, 14)
+    d_now = float(d.iloc[-1])
+    if d_now < daily_level:
+        return None
+    cross_age = None
+    for k in range(0, cross_lookback):
+        i = len(d) - 1 - k
+        if d.iloc[i] >= daily_level and d.iloc[i - 1] < daily_level:
+            cross_age = k
+            break
+    if cross_age is None:
+        return None
+
+    vol = prices["Volume"]
+    cross_i = len(d) - 1 - cross_age
+    avg20 = float(vol.iloc[cross_i - 20:cross_i].mean())
+    cross_vol_mult = float(vol.iloc[cross_i] / avg20) if avg20 > 0 else 0.0
+    dip_min = float(d.iloc[-15:].min())
+    stop = float(prices["Low"].iloc[-10:].min()) * 0.99
+    entry = float(c.iloc[-1])
+    risk = entry - stop
+    if risk <= 0:
+        return None
+    return {
+        "monthly_rsi": round(m_rsi, 1),
+        "weekly_rsi": round(w_rsi, 1),
+        "daily_rsi": round(d_now, 1),
+        "daily_rsi_dip": round(dip_min, 1),
+        "cross_age": int(cross_age),
+        "cross_vol_mult": round(cross_vol_mult, 2),
+        "close": round(entry, 2),
+        "entry": round(entry, 2),
+        "stop": round(stop, 2),
+        "tp1": round(entry + 2 * risk, 2),
+        "tp2": round(entry + 3 * risk, 2),
     }
 
 
