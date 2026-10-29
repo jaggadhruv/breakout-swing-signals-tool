@@ -118,6 +118,50 @@ h1.title { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: -0.01em
 .liq.t-h b  { color: #3E7CB1; }
 .liq.t-a b  { color: var(--sig-warn); }
 
+/* Multi-section (confluence) highlighting — background on every row of that ticker */
+.cf { display: inline-block; margin-left: 6px; padding: 0 5px; border-radius: 3px; font-size: 10px;
+      font-weight: 700; color: #fff; vertical-align: 1px; }
+.cf.cf2 { background: #7A3DB8; }
+.cf.cf3 { background: #C2185B; }
+tr.hp td { background: rgba(200, 150, 30, 0.13); }
+tr:has(.cf2) > td { background: #EFE3FF; }
+tr:has(.cf3) > td { background: #FFDCEB; }
+.ldot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--rule-strong); }
+.ldot.t-vh { background: var(--sig-pos); } .ldot.t-h { background: #3E7CB1; } .ldot.t-a { background: var(--sig-warn); }
+
+/* Category blocks: guide | today | this week */
+.cat { border-radius: 10px; margin: 0 0 22px; border: 1px solid color-mix(in srgb, var(--pc) 35%, transparent);
+       background: color-mix(in srgb, var(--pc) 6%, var(--surface)); overflow: hidden; }
+.cat-head { background: var(--pc); color: #fff; padding: 10px 16px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.cat-head .c-title { font-size: 16px; font-weight: 700; }
+.cat-head .c-counts { font-size: 12px; opacity: 0.92; font-family: "SF Mono", Menlo, Consolas, monospace; }
+.cat-grid { display: grid; grid-template-columns: 260px 1fr 1fr; gap: 14px; padding: 14px 16px; }
+@media (max-width: 1100px) { .cat-grid { grid-template-columns: 1fr; } }
+.cat-guide { font-size: 12px; line-height: 1.5; background: color-mix(in srgb, var(--pc) 12%, var(--surface));
+             border-radius: 8px; padding: 10px 12px; }
+.cat-guide h4 { margin: 0 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--pc); }
+.cat-guide p { margin: 0 0 10px; }
+.cat-col { border-radius: 8px; padding: 8px 10px; min-width: 0; }
+.cat-col.today { background: var(--surface); border: 2px solid var(--pc); }
+.cat-col.week { background: color-mix(in srgb, var(--pc) 10%, var(--surface)); border: 1px dashed var(--pc); }
+.cat-col h4 { margin: 0 0 6px; font-size: 12px; color: var(--pc); display: flex; justify-content: space-between; }
+.cat-col h4 .n { font-weight: 400; color: var(--muted); }
+table.mini { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.mini th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted);
+                border-bottom: 1px solid var(--rule); padding: 3px 4px; font-weight: 600; }
+table.mini td { padding: 4px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+table.mini th.num, table.mini td.num { text-align: right; }
+table.mini td.tk { font-weight: 700; }
+.setup { display: inline-block; font-size: 10px; padding: 0 5px; border-radius: 3px;
+         background: color-mix(in srgb, var(--pc) 16%, transparent); color: var(--ink); }
+.more { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.avoid { font-size: 11px; margin-top: 8px; color: var(--sig-neg); }
+details.detail { border-top: 1px solid color-mix(in srgb, var(--pc) 30%, transparent); padding: 8px 16px 12px; }
+details.detail > summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--pc); }
+details.detail .detail-body { overflow-x: auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 11px; color: var(--muted); margin: -10px 0 22px; align-items: center; }
+.legend .sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -3px; margin-right: 5px; border: 1px solid var(--rule); }
+
 /* At-a-glance dashboard */
 .glance { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin: 6px 0 22px; }
 .glance a { display: block; text-decoration: none; color: inherit; background: var(--surface);
@@ -127,6 +171,9 @@ h1.title { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: -0.01em
 .glance .g-count { font-size: 24px; font-weight: 700; color: var(--pc); line-height: 1.1; margin-top: 4px; }
 .glance .g-count.zero { color: var(--rule-strong); }
 .glance .g-sub { font-size: 11px; color: var(--muted); }
+.glance .g-top { font-size: 11px; margin-top: 6px; font-weight: 600; color: var(--ink); white-space: nowrap;
+                 overflow: hidden; text-overflow: ellipsis; }
+.glance a { background: color-mix(in srgb, var(--pc) 8%, var(--surface)); }
 
 /* Strategy panels */
 details.panel { background: var(--surface); border: 1px solid var(--rule); border-left: 5px solid var(--pc);
@@ -157,7 +204,6 @@ h3.subsection .count { font-weight: 400; color: var(--muted); }
 .tag.neg { color: var(--sig-neg); border-color: var(--sig-neg); }
 .tag.warn { color: var(--sig-warn); border-color: var(--sig-warn); }
 .tag.hp { background: #C8961E; color: #fff; border-color: #C8961E; font-weight: 600; }
-tr.hp td { background: rgba(200, 150, 30, 0.13); }
 tr.hp td:first-child { box-shadow: inset 3px 0 0 #C8961E; }
 .flags { display: block; font-size: 10px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
 .subindicator {
@@ -1060,8 +1106,23 @@ def _liq_html(c: dict) -> str:
             f'{_shares(lq["avg_vol"])} sh · {_money(lq["avg_dollar_vol"])}/d · 1% ADV {_money(lq["one_pct_adv"])}</span>')
 
 
-def _tk(c: dict) -> str:
-    return f'{escape(c["ticker"])}{_liq_html(c)}'
+def _cf_badge(c: dict) -> str:
+    """Badge for tickers appearing in 2+ sections today (row background via CSS :has)."""
+    secs = c.get("confluence") or []
+    if len(secs) < 2:
+        return ""
+    cls = "cf3" if len(secs) >= 3 else "cf2"
+    return f'<span class="cf {cls}" title="In {len(secs)} sections today: {escape(", ".join(secs))}">×{len(secs)} sections</span>'
+
+
+def _tk(c: dict, compact: bool = False) -> str:
+    if compact:
+        lq = c.get("liquidity") or {}
+        dot = {"Very high": "t-vh", "High": "t-h", "Adequate": "t-a"}.get(lq.get("tier"), "")
+        dot_html = (f'<span class="ldot {dot}" title="Liquidity {escape(lq.get("tier", ""))}: '
+                    f'{_money(lq.get("avg_dollar_vol"))}/day, 1% ADV {_money(lq.get("one_pct_adv"))}"></span>') if lq else ""
+        return f'{dot_html}{escape(c["ticker"])}{_cf_badge(c)}'
+    return f'{escape(c["ticker"])}{_cf_badge(c)}{_liq_html(c)}'
 
 
 _SETUP_LABELS = {"support": "Near support", "resistance": "Near resistance", "retest": "Break & retest", "holding": "Holding above BO",
@@ -1847,32 +1908,152 @@ def _render_methodology() -> str:
 # Top-level renderer
 # ============================================================================
 
-# Panel colours (one per strategy family)
+# Category colours (one per strategy family)
 PANEL_COLORS = {
     "breakout": "#2A6FDB", "watch": "#138A8A", "retest": "#C8961E", "trend": "#7B4FBF",
     "pullback": "#2E7D5B", "recovery": "#D9731A", "positional": "#1F3A5F", "diag": "#6B6B75",
 }
 
+CATEGORY_GUIDE = {
+    "breakout": (
+        "Stocks clearing a 20/55/252-day high, horizontal resistance or a volatility contraction today on ≥ 1.5× volume, "
+        "with top-15% relative strength, 4/4 momentum and a strong sector.",
+        "Enter near the close or next session if price holds above the breakout level. Skip High fakeout risk rows or "
+        "anything > 5% above the level. Use the shown stop; take partial profits at TP1 (2R)."),
+    "watch": (
+        "Quality names coiling just under a trigger (20/55-day high) or under a horizontal resistance tested ≥ 2 times. "
+        "Not actionable yet.",
+        "Set price alerts at the trigger/level. Act only on a daily close above it with ≥ 1.5× volume; the pending stop "
+        "and target apply from that moment. Tightening volume under the level is a plus."),
+    "retest": (
+        "Recent breakouts (last 20 sessions): pullbacks to the old breakout level (the lowest-risk entry), names still "
+        "holding above, and failed breakouts. ★ = old resistance tested ≥ 2× now holding as support, bounced today.",
+        "Prefer ★ and 'Bounce today' rows; stop just under the retest low. Holders > 10% extended: wait for a retest. "
+        "Never buy from the Avoid list; if you hold one, the breakout thesis is broken."),
+    "trend": (
+        "Fresh daily Supertrend (ATR 10 × 2.5) long flips in strong names. The Supertrend line itself is the trailing stop. "
+        "Same settings as the Positional Trading Tool.",
+        "Best entries within ~3 days of the flip. Move the stop up to the Supertrend line each day and exit on a daily "
+        "close below it. Older flips are for riding, not for new entries."),
+    "pullback": (
+        "Buying dips inside uptrends: price resting on tested support, bullish reversal candles after a 5–25% pullback, "
+        "and RSI resets (monthly & weekly RSI > 60, daily RSI back above 50).",
+        "Wait for confirmation (bounce candle or close above the prior day's high). Keep stops tight under the level or "
+        "the 5-day low. Short-term counter-trend, so size smaller than breakouts."),
+    "recovery": (
+        "Stocks coming out of a correction: the 20 EMA just crossed above the 200 EMA and is still within 10% of it. "
+        "Looser RS gates, because relative strength is still rebuilding.",
+        "Higher reward, higher failure rate. Enter on the first pullback to the 20 EMA or a close above the recent swing "
+        "high; stop below the 200 EMA. Size small."),
+    "positional": (
+        "Profitable, cash-generative, moderately levered companies at PEG ≤ 2, in a long-term uptrend but not stretched "
+        "(≤ 15% above the 200 SMA, RSI ≤ 65). Fundamentals from Yahoo, refreshed weekly.",
+        "Weeks-to-months holds. Build in tranches near the 50 SMA add zone; stop 3% under the 200 SMA. Verify the numbers "
+        "in the company's filings before committing capital."),
+}
 
-def _panel(pid: str, title: str, desc: str, today_n: int, week_n: int | None, body: str,
-           force_open: bool | None = None) -> str:
-    is_open = (today_n > 0) if force_open is None else force_open
-    week = f" · this week <b>{week_n}</b>" if week_n is not None else ""
+
+def _sc(r: dict) -> float:
+    for k in ("score", "watchlist_score", "supertrend_score", "recovery_score", "best_score"):
+        if r.get(k) is not None:
+            return float(r[k])
+    return 0.0
+
+
+# (setup label, entry key, stop key, target key) per today-table kind
+_TODAY_FIELDS = {
+    "breakout":   ("Breakout",        "entry",   "stop",             "tp1"),
+    "watchlist":  ("Trigger",         "trigger", "stop_pending",     "tp1_pending"),
+    "resistance": ("Resistance",      "level",   "support_below",    None),
+    "high_prob":  ("★ Retest",        "close",   "stop",             "tp1"),
+    "retest":     ("Retest",          "close",   "stop",             "tp1"),
+    "holding":    ("Holding",         "close",   "breakout_level",   None),
+    "supertrend": ("ST flip",         "close",   "supertrend_level", None),
+    "support":    ("Support",         "close",   "stop",             "target"),
+    "reversal":   ("Reversal",        "entry",   "stop",             "tp1"),
+    "mtf_rsi":    ("RSI reset",       "entry",   "stop",             "tp1"),
+    "recovery":   ("Recovery",        "close",   "long_ema",         None),
+    "positional": ("Positional",      "close",   "stop",             "target"),
+}
+# (label, level key) per weekly-list kind
+_WEEK_FIELDS = {
+    "breakout":   ("Breakout",   "peak_entry"),
+    "watchlist":  ("Trigger",    "peak_trigger"),
+    "supertrend": ("ST flip",    "peak_close"),
+    "recovery":   ("Recovery",   "peak_close"),
+}
+
+
+def _mini_today(items: list[tuple[str, dict]], cap: int = 10) -> str:
+    if not items:
+        return '<div class="more">Nothing today.</div>'
+    items = sorted(items, key=lambda kv: _sc(kv[1]), reverse=True)
+    rows = []
+    for kind, r in items[:cap]:
+        label, ek, sk, tk = _TODAY_FIELDS[kind]
+        tr_cls = ' class="hp"' if r.get("high_probability") else ""
+        rows.append(
+            f'<tr{tr_cls}><td class="tk">{_tk(r, compact=True)}</td><td><span class="setup">{label}</span></td>'
+            f'<td class="num mono">{_sc(r):.0f}</td><td class="num mono">{_fmt(r.get(ek), ".2f")}</td>'
+            f'<td class="num mono">{_fmt(r.get(sk), ".2f")}</td>'
+            f'<td class="num mono">{_fmt(r.get(tk), ".2f") if tk else "—"}</td></tr>')
+    more = f'<div class="more">+{len(items) - cap} more in Full detail</div>' if len(items) > cap else ""
+    return ('<table class="mini"><thead><tr><th>Ticker</th><th>Setup</th><th class="num">Score</th>'
+            '<th class="num">Entry</th><th class="num">Stop</th><th class="num">Target</th></tr></thead>'
+            f'<tbody>{"".join(rows)}</tbody></table>{more}')
+
+
+def _mini_week(items: list[tuple[str, dict]], today_str: str, cap: int = 8) -> str:
+    if not items:
+        return '<div class="more">No names have reached the quality bar this week yet.</div>'
+    items = sorted(items, key=lambda kv: kv[1].get("keep_score", _sc(kv[1])), reverse=True)
+    rows = []
+    for kind, r in items[:cap]:
+        if kind == "setup":
+            label, level = _SETUP_LABELS.get(r["setup"], r["setup"]), r.get("level")
+        else:
+            label, lk = _WEEK_FIELDS[kind]
+            level = r.get(lk)
+        tr_cls = ' class="hp"' if r.get("high_probability") else ""
+        pick = r.get("best_score_date", "")
+        pick_html = f'<span class="streak">today</span>' if pick == today_str else escape(pick[5:])
+        rows.append(
+            f'<tr{tr_cls}><td class="tk">{_tk(r, compact=True)}</td><td><span class="setup">{escape(label)}</span></td>'
+            f'<td class="num mono">{_sc(r):.0f}</td><td class="num mono">×{r.get("appearances", 1)}</td>'
+            f'<td class="num mono">{pick_html}</td><td class="num mono">{_fmt(level, ".2f")}</td></tr>')
+    more = f'<div class="more">+{len(items) - cap} more in Full detail</div>' if len(items) > cap else ""
+    return ('<table class="mini"><thead><tr><th>Ticker</th><th>Setup</th><th class="num">Best</th>'
+            '<th class="num">Seen</th><th class="num">Picked</th><th class="num">Level</th></tr></thead>'
+            f'<tbody>{"".join(rows)}</tbody></table>{more}')
+
+
+def _category(cid: str, title: str, today_items: list, week_items: list, detail_html: str,
+              today_str: str, avoid: list[dict] | None = None) -> str:
+    summary, how = CATEGORY_GUIDE[cid]
+    avoid_html = ""
+    if avoid:
+        avoid_html = ('<div class="avoid"><b>Avoid (failed breakouts):</b> '
+                      + ", ".join(escape(a["ticker"]) for a in avoid) + "</div>")
     return f"""
-<details class="panel" id="{pid}" style="--pc:{PANEL_COLORS[pid.removeprefix('p-')]}"{' open' if is_open else ''}>
-  <summary><span class="p-title">{title}</span><span class="p-desc">{desc}</span>
-  <span class="p-counts">today <b>{today_n}</b>{week}</span></summary>
-  <div class="panel-body">{body}</div>
-</details>"""
-
-
-def _history(label: str, n: int, table: str) -> str:
-    return f'<details class="history"><summary>{label} ({n})</summary>{table}</details>'
+<section class="cat" id="p-{cid}" style="--pc:{PANEL_COLORS[cid]}">
+  <div class="cat-head"><span class="c-title">{title}</span>
+    <span class="c-counts">today {len(today_items)} · this week {len(week_items)}</span></div>
+  <div class="cat-grid">
+    <div class="cat-guide"><h4>What it is</h4><p>{escape(summary)}</p><h4>How to use it</h4><p>{escape(how)}</p></div>
+    <div class="cat-col today"><h4>Today <span class="n">{len(today_items)}</span></h4>{_mini_today(today_items)}{avoid_html}</div>
+    <div class="cat-col week"><h4>This week's quality list <span class="n">{len(week_items)}</span></h4>{_mini_week(week_items, today_str)}</div>
+  </div>
+  <details class="detail"><summary>Full detail tables</summary><div class="detail-body">{detail_html}</div></details>
+</section>"""
 
 
 def _sub(title: str, note: str = "") -> str:
     note_html = f' <span class="count">· {note}</span>' if note else ""
     return f'<h3 class="subsection">{title}{note_html}</h3>'
+
+
+def _history(label: str, n: int, table: str) -> str:
+    return f'<h3 class="subsection">{label} <span class="count">· {n}</span></h3>{table}'
 
 
 def render(
@@ -1905,7 +2086,7 @@ def render(
     funnel: dict,
     eligible_refreshed_at: str,
 ) -> str:
-    """Assemble the full HTML report as colour-coded strategy panels."""
+    """Assemble the dashboard: one colour-coded block per strategy category."""
     L = lambda x: x or []
     watchlist, supertrend, recovery = L(watchlist), L(supertrend), L(recovery)
     support, resistance, retest, holding = L(support), L(resistance), L(retest), L(holding)
@@ -1914,62 +2095,86 @@ def render(
     rq_res, rq_ret, rq_pb, rq_pos = L(recent_resistance), L(recent_retest), L(recent_pullback), L(recent_positional)
     f = funnel
 
-    panels = [
-        ("p-breakout", "Breakouts", "Pattern breakouts firing today on volume, elite-filtered.",
-         len(candidates), len(rq),
+    # ---- Confluence: tickers in 2+ sections TODAY (fake = avoid list and ★ = subset of retest: excluded) ----
+    section_rows = {
+        "Breakouts": candidates, "Watchlist": watchlist, "Near resistance": resistance,
+        "Break & retest": retest, "Holding above": holding, "Supertrend": supertrend,
+        "Near support": support, "Reversal": reversal, "MTF RSI": mtf_rsi,
+        "Recovery": recovery, "Positional": positional,
+    }
+    sections_by_ticker: dict[str, set] = {}
+    for name, rows in section_rows.items():
+        for r in rows:
+            sections_by_ticker.setdefault(r["ticker"], set()).add(name)
+    for rows in list(section_rows.values()) + [high_prob, fake, rq, rq_wl, rq_st, rq_rec, rq_res, rq_ret, rq_pb, rq_pos]:
+        for r in rows:
+            r["confluence"] = sorted(sections_by_ticker.get(r["ticker"], ()))
+    multi = sorted(((t, sorted(sec)) for t, sec in sections_by_ticker.items() if len(sec) >= 2),
+                   key=lambda kv: -len(kv[1]))
+
+    cats = [
+        ("breakout", "Breakouts",
+         [("breakout", r) for r in candidates],
+         [("breakout", r) for r in rq],
          _sub("Today's breakouts", f"top {f.get('max_breakouts_cap', 5)}") + _render_candidates_table(candidates)
-         + _history("This week's quality breakouts", len(rq), _render_recent_quality_table(rq, date_str))),
-
-        ("p-watch", "Pre-breakout watch", "Quality setups coiling under a trigger or tested resistance. Set alerts.",
-         len(watchlist) + len(resistance), len(rq_wl) + len(rq_res),
+         + _history("This week's quality breakouts", len(rq), _render_recent_quality_table(rq, date_str)), None),
+        ("watch", "Pre-breakout watch",
+         [("watchlist", r) for r in watchlist] + [("resistance", r) for r in resistance],
+         [("watchlist", r) for r in rq_wl] + [("setup", r) for r in rq_res],
          _sub("Swing-ready watchlist", f"top {f.get('max_watchlist_cap', 8)}") + _render_watchlist_table(watchlist)
-         + _sub("Near resistance", f"within 3% of a level tested ≥ 2×, top {f.get('max_resistance_cap', 10)}")
-         + _render_resistance_table(resistance)
+         + _sub("Near resistance", f"top {f.get('max_resistance_cap', 10)}") + _render_resistance_table(resistance)
          + _history("This week's quality watchlist", len(rq_wl), _render_recent_quality_watchlist_table(rq_wl, date_str))
-         + _history("This week's quality near-resistance names", len(rq_res), _render_setup_history_table(rq_res, date_str))),
-
-        ("p-retest", "Break &amp; retest", "Recent breakouts: high-probability retests, retests, holders, and fakeouts to avoid.",
-         len(retest) + len(holding), len(rq_ret),
-         _sub('<span class="tag hp">★</span> High-probability: old resistance retested as support',
-              "tested ≥ 2× before the break, held, bounced today, zero fakeout flags")
-         + _render_high_prob_table(high_prob)
+         + _history("This week's quality near-resistance names", len(rq_res), _render_setup_history_table(rq_res, date_str)), None),
+        ("retest", "Break &amp; retest",
+         [("high_prob" if r.get("high_probability") else "retest", r) for r in retest] + [("holding", r) for r in holding],
+         [("setup", r) for r in rq_ret],
+         _sub('<span class="tag hp">★</span> High-probability: old resistance retested as support') + _render_high_prob_table(high_prob)
          + _sub("Break &amp; retest", f"top {f.get('max_retest_cap', 8)}") + _render_retest_table(retest)
-         + _sub("Holding above breakout", f"not yet retested, top {f.get('max_holding_cap', 8)}") + _render_holding_table(holding)
+         + _sub("Holding above breakout", f"top {f.get('max_holding_cap', 8)}") + _render_holding_table(holding)
          + _sub("Fake / failed breakouts", "avoid list") + _render_fake_table(fake)
-         + _history("This week's quality breakouts-in-progress", len(rq_ret), _render_setup_history_table(rq_ret, date_str))),
-
-        ("p-trend", "Trend following (Supertrend)", f"Fresh daily Supertrend long flips (ATR 10 × 2.5, ≤ {f.get('supertrend_max_flip_age_days', 20)}d).",
-         len(supertrend), len(rq_st),
-         _sub("Today's Supertrend longs", f"top {f.get('max_supertrend_cap', 6)}") + _render_supertrend_table(supertrend)
-         + _history("This week's quality Supertrend names", len(rq_st), _render_recent_quality_supertrend_table(rq_st, date_str))),
-
-        ("p-pullback", "Pullback &amp; reversal", "Buying dips in uptrends: support tests, reversal candles, RSI resets.",
-         len(support) + len(reversal) + len(mtf_rsi), len(rq_pb),
-         _sub("Near support", f"within 3% above a level tested ≥ 2×, top {f.get('max_support_cap', 10)}") + _render_support_table(support)
+         + _history("This week's quality breakouts-in-progress", len(rq_ret), _render_setup_history_table(rq_ret, date_str)), fake),
+        ("trend", "Trend following: Supertrend flips",
+         [("supertrend", r) for r in supertrend],
+         [("supertrend", r) for r in rq_st],
+         _sub("Today's Supertrend longs", f"fresh flips ≤ {f.get('supertrend_max_flip_age_days', 20)}d") + _render_supertrend_table(supertrend)
+         + _history("This week's quality Supertrend names", len(rq_st), _render_recent_quality_supertrend_table(rq_st, date_str)), None),
+        ("pullback", "Pullback &amp; reversal",
+         [("support", r) for r in support] + [("reversal", r) for r in reversal] + [("mtf_rsi", r) for r in mtf_rsi],
+         [("setup", r) for r in rq_pb],
+         _sub("Near support", f"top {f.get('max_support_cap', 10)}") + _render_support_table(support)
          + _sub("Reversal swing setups", f"top {f.get('max_reversal_cap', 6)}") + _render_reversal_table(reversal)
-         + _sub("Multi-timeframe RSI momentum", "monthly &amp; weekly RSI &gt; 60, daily RSI back above 50 on good volume")
-         + _render_mtf_rsi_table(mtf_rsi)
-         + _history("This week's quality pullback names", len(rq_pb), _render_setup_history_table(rq_pb, date_str))),
-
-        ("p-recovery", "Recovery", "Coming out of a correction: 20 EMA just crossed above 200 EMA, not yet extended.",
-         len(recovery), len(rq_rec),
+         + _sub("Multi-timeframe RSI momentum") + _render_mtf_rsi_table(mtf_rsi)
+         + _history("This week's quality pullback names", len(rq_pb), _render_setup_history_table(rq_pb, date_str)), None),
+        ("recovery", "Recovery: coming out of correction",
+         [("recovery", r) for r in recovery],
+         [("recovery", r) for r in rq_rec],
          _sub("Today's recovery setups", f"top {f.get('max_recovery_cap', 6)}") + _render_recovery_table(recovery)
-         + _history("This week's quality recovery names", len(rq_rec), _render_recent_quality_recovery_table(rq_rec, date_str))),
-
-        ("p-positional", "Positional: quality at a fair price", "Financially strong companies at a fair valuation, in an uptrend but not overextended.",
-         len(positional), len(rq_pos),
+         + _history("This week's quality recovery names", len(rq_rec), _render_recent_quality_recovery_table(rq_rec, date_str)), None),
+        ("positional", "Positional: quality at a fair price",
+         [("positional", r) for r in positional],
+         [("setup", r) for r in rq_pos],
          _sub("Today's positional candidates", f"top {f.get('max_positional_cap', 8)}") + _render_positional_table(positional)
-         + _history("This week's quality positional names", len(rq_pos), _render_setup_history_table(rq_pos, date_str))),
+         + _history("This week's quality positional names", len(rq_pos), _render_setup_history_table(rq_pos, date_str)), None),
     ]
 
+    def top_names(items):
+        names = [r["ticker"] for _, r in sorted(items, key=lambda kv: _sc(kv[1]), reverse=True)]
+        return ", ".join(dict.fromkeys(names)) or "—"
+
     glance = "".join(
-        f'<a href="#{pid}" style="--pc:{PANEL_COLORS[pid.removeprefix("p-")]}">'
-        f'<div class="g-title">{title}</div>'
-        f'<div class="g-count{" zero" if today_n == 0 else ""}">{today_n}</div>'
-        f'<div class="g-sub">today · {week_n} this week</div></a>'
-        for pid, title, _d, today_n, week_n, _b in panels
+        f'<a href="#p-{cid}" style="--pc:{PANEL_COLORS[cid]}"><div class="g-title">{title}</div>'
+        f'<div class="g-count{" zero" if not today else ""}">{len(today)}</div>'
+        f'<div class="g-sub">today · {len(week)} this week</div>'
+        f'<div class="g-top" title="{escape(top_names(today))}">{escape(top_names(today))}</div></a>'
+        for cid, title, today, week, _d, _a in cats
     )
-    panels_html = "".join(_panel(pid, title, desc, tn, wn, body) for pid, title, desc, tn, wn, body in panels)
+    multi_html = (
+        "".join(f'<span class="cf {"cf3" if len(sec) >= 3 else "cf2"}" title="{escape(", ".join(sec))}">'
+                f'{escape(t)} ×{len(sec)}</span> ' for t, sec in multi)
+        if multi else '<span class="dim">none today</span>'
+    )
+    cats_html = "".join(_category(cid, title, today, week, detail, date_str, avoid)
+                        for cid, title, today, week, detail, avoid in cats)
     diag_body = f"""
   <div class="secondary">
     <div><h3 class="subsection">Sector distribution</h3>{_render_sector_breakdown(sector_counts)}</div>
@@ -2002,16 +2207,25 @@ def render(
 
   <h2 class="section">At a glance</h2>
   <div class="glance">{glance}</div>
-  <p class="dim" style="font-size:11px;margin:-12px 0 20px;">
-    Click a card to jump to its panel. Panels with nothing today start collapsed. Under every ticker:
-    liquidity tier (<b style="color:var(--sig-pos)">Very high</b> ≥ $100M/day ·
-    <b style="color:#3E7CB1">High</b> ≥ $25M · <b style="color:var(--sig-warn)">Adequate</b> ≥ $10M minimum),
-    average shares/day, average dollar volume/day, and 1% of ADV (a common position-size ceiling).
-  </p>
+  <div class="legend">
+    <span><b>In several sections today:</b> {multi_html}</span>
+  </div>
+  <div class="legend">
+    <span><span class="sw" style="background:#EFE3FF"></span>Row in 2 sections</span>
+    <span><span class="sw" style="background:#FFDCEB"></span>Row in 3+ sections</span>
+    <span><span class="sw" style="background:rgba(200,150,30,0.25)"></span>★ High-probability retest</span>
+    <span><span class="ldot t-vh"></span>Very high liquidity ≥ $100M/day</span>
+    <span><span class="ldot t-h"></span>High ≥ $25M</span>
+    <span><span class="ldot t-a"></span>Adequate ≥ $10M</span>
+    <span>Full liquidity levels (shares/day, $/day, 1% ADV) are in each block's Full detail tables.</span>
+  </div>
 
-  {panels_html}
+  {cats_html}
 
-  {_panel("p-diag", "Diagnostics", "Sector distribution and the full filter funnel.", 0, None, diag_body, force_open=False)}
+  <details class="panel" id="p-diag" style="--pc:{PANEL_COLORS['diag']}">
+    <summary><span class="p-title">Diagnostics</span><span class="p-desc">Sector distribution and the full filter funnel.</span></summary>
+    <div class="panel-body">{diag_body}</div>
+  </details>
   <details class="panel" id="p-method" style="--pc:{PANEL_COLORS['diag']}">
     <summary><span class="p-title">Methodology</span><span class="p-desc">How every score, gate and section works.</span></summary>
     <div class="panel-body">{_render_methodology()}</div>
@@ -2022,14 +2236,6 @@ def render(
     <div>Not investment advice. For personal research use.</div>
   </footer>
 </div>
-<script>
-  function openFromHash() {{
-    var id = location.hash.slice(1), el = id && document.getElementById(id);
-    if (el && el.tagName === "DETAILS") {{ el.open = true; }}
-  }}
-  window.addEventListener("hashchange", openFromHash);
-  openFromHash();
-</script>
 </body>
 </html>
 """

@@ -313,31 +313,43 @@ volume or accumulation bonus`; show top 10.
 
 ## 7. Report (`report.py`)
 
-`render()` assembles one self-contained HTML file (embedded CSS, a 6-line anchor
-script, no external assets):
+`render()` builds one self-contained HTML dashboard (embedded CSS, no scripts, no
+external assets):
 
 1. Masthead and colour-coded breadth panel
-2. **At a glance**: one card per strategy panel with today's and this week's counts;
-   clicking a card opens and jumps to the panel
-3. **Strategy panels** (`<details>`, colour per `PANEL_COLORS`), each holding its
-   today tables and a collapsible weekly quality list. Panels with nothing today start
-   collapsed.
+2. **At a glance**: one card per category (colour, today count, week count, top
+   tickers); cards link to their block
+3. **Multi-section chips and legend**: tickers appearing in 2+ sections today, plus
+   the colour key
+4. **One block per category**, each in its own colour (`PANEL_COLORS`), laid out in
+   three columns: *What it is / How to use it* (`CATEGORY_GUIDE`), **Today** (compact
+   list: ticker, setup, score, entry, stop, target) and **This week's quality list**
+   (compact: ticker, setup, best score, times seen, pick date, level). The original
+   wide tables, with full liquidity levels, sit under a collapsible *Full detail
+   tables* in each block.
+5. Diagnostics and Methodology, collapsed
 
-| Panel | Colour | Today tables | Weekly list(s) |
+| Block | Colour | Today | This week |
 |---|---|---|---|
-| Breakouts | blue | Today's breakouts | `signals_archive` |
-| Pre-breakout watch | teal | Watchlist, Near resistance | `watchlist_archive`, setups: resistance |
-| Break & retest | gold | ★ High-probability, Break & retest, Holding above, Fake/failed | setups: retest, holding |
-| Trend following | purple | Supertrend longs | `supertrend_archive` |
-| Pullback & reversal | green | Near support, Reversal swing, MTF RSI | setups: support, reversal, mtf_rsi |
-| Recovery | orange | Recovery setups | `recovery_archive` |
-| Positional | navy | Quality at a fair price | setups: positional |
+| Breakouts | blue | breakouts | `signals_archive` |
+| Pre-breakout watch | teal | watchlist, near resistance | `watchlist_archive`, setups: resistance |
+| Break & retest | gold | ★ retests, retests, holding (+ avoid line for fakes) | setups: retest, holding |
+| Trend following | purple | Supertrend flips | `supertrend_archive` |
+| Pullback & reversal | green | near support, reversal, MTF RSI | setups: support, reversal, mtf_rsi |
+| Recovery | orange | recovery | `recovery_archive` |
+| Positional | navy | quality at a fair price | setups: positional |
 
-4. Diagnostics (sector distribution, funnel) and Methodology, both collapsed.
+**Multi-section highlighting.** `render()` maps each ticker to the set of today
+sections it appears in (11 sections; Fake/failed and the ★ subset are excluded).
+Every row for that ticker, in compact lists, weekly lists and full tables, gets a
+badge (`_cf_badge`), and CSS `tr:has(.cf2)` / `tr:has(.cf3)` colours the row: violet
+for 2 sections, pink for 3+. ★ high-probability rows keep a gold left stripe.
 
-Every ticker cell goes through `_tk()`, which appends the liquidity line. Adding a
-section means: a table renderer, a `render()` keyword argument, a line in the
-`panels` list (or a new panel tuple and colour), funnel rows, and a methodology block.
+Compact lists normalise every row type through `_TODAY_FIELDS` / `_WEEK_FIELDS`
+(which keys hold entry, stop, target, level). Adding a section means: a full table
+renderer, a `render()` keyword argument, an entry in `_TODAY_FIELDS` (and
+`_WEEK_FIELDS` if it has its own archive), adding it to the right `cats` block and to
+`section_rows`, funnel rows, and a methodology block.
 
 ---
 
