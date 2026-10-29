@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Breakout Scan — 2026-10-29</title>
+<title>Swing Scan — 2026-10-29</title>
 <style>
 :root {
   --bg:       #FAFAF8;
@@ -71,6 +71,41 @@ h1.title { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: -0.01em
   display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;
   font-size: 12px;
 }
+/* Liquidity sub-line under each ticker */
+.liq { display: block; font-size: 10px; font-weight: 400; color: var(--muted); margin-top: 2px; white-space: nowrap; }
+.liq b { font-weight: 600; }
+.liq.t-vh b { color: var(--sig-pos); }
+.liq.t-h b  { color: #3E7CB1; }
+.liq.t-a b  { color: var(--sig-warn); }
+
+/* At-a-glance dashboard */
+.glance { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin: 6px 0 22px; }
+.glance a { display: block; text-decoration: none; color: inherit; background: var(--surface);
+            border: 1px solid var(--rule); border-top: 4px solid var(--pc); border-radius: 6px; padding: 10px 12px; }
+.glance a:hover { border-color: var(--pc); }
+.glance .g-title { font-size: 12px; font-weight: 600; }
+.glance .g-count { font-size: 24px; font-weight: 700; color: var(--pc); line-height: 1.1; margin-top: 4px; }
+.glance .g-count.zero { color: var(--rule-strong); }
+.glance .g-sub { font-size: 11px; color: var(--muted); }
+
+/* Strategy panels */
+details.panel { background: var(--surface); border: 1px solid var(--rule); border-left: 5px solid var(--pc);
+                border-radius: 6px; margin: 0 0 16px; }
+details.panel > summary { cursor: pointer; list-style: none; padding: 12px 16px; display: flex; align-items: baseline;
+                          gap: 12px; flex-wrap: wrap; background: color-mix(in srgb, var(--pc) 7%, transparent); }
+details.panel > summary::-webkit-details-marker { display: none; }
+details.panel > summary::before { content: "▸"; color: var(--pc); font-size: 12px; }
+details.panel[open] > summary::before { content: "▾"; }
+details.panel .p-title { font-size: 15px; font-weight: 700; color: var(--pc); }
+details.panel .p-desc { font-size: 12px; color: var(--muted); flex: 1; min-width: 240px; }
+details.panel .p-counts { font-size: 12px; font-family: "SF Mono", Menlo, Consolas, monospace; }
+details.panel .p-counts b { color: var(--pc); }
+details.panel .panel-body { padding: 4px 16px 16px; overflow-x: auto; }
+details.panel h3.subsection:first-child { margin-top: 10px; }
+details.history { margin-top: 14px; border-top: 1px dashed var(--rule); padding-top: 8px; }
+details.history > summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--pc); }
+details.history[open] > summary { margin-bottom: 6px; }
+
 h3.subsection {
   font-size: 12px; font-weight: 600; margin: 18px 0 8px;
   color: var(--ink); letter-spacing: 0.02em;
@@ -229,19 +264,19 @@ footer {
   <header class="masthead">
     <div class="masthead-top">
       <div>
-        <h1 class="title">Breakout Swing Scan</h1>
-        <div class="title-sub">Discovery from Russell 3000, filtered and ranked.</div>
+        <h1 class="title">Swing &amp; Positional Scan</h1>
+        <div class="title-sub">Curated US universe, filtered for trend, momentum, volume, liquidity and value.</div>
       </div>
       <div class="date-block">
         <div class="date-primary">2026-10-29</div>
-        <div class="date-secondary">Generated 2026-10-29 01:39 UTC</div>
+        <div class="date-secondary">Generated 2026-10-29 17:20 UTC</div>
       </div>
     </div>
     
 <section class="breadth">
   <div class="breadth-metric">
     <div class="label">This Week</div>
-    <div class="value mono">5.3<span class="max"> / 10</span></div>
+    <div class="value mono">5.5<span class="max"> / 10</span></div>
   </div>
   <div class="breadth-metric">
     <div class="label">This Month</div>
@@ -257,15 +292,27 @@ footer {
 <section class="breadth" style="border-top:none; padding-top:0; padding-bottom:16px;">
   <div style="grid-column: 1 / -1;">
     <div class="subindicators">
-      <div class="subindicator sub-mid"><div class="name">% eligible above 200 SMA</div><div class="val mono sub-mid">5.1<span class="dim" style="font-weight:400;font-size:11px;"> / 10</span></div><div class="interp">Mixed — about half the universe above long-term trend.</div></div><div class="subindicator sub-mid"><div class="name">% eligible above 50 SMA</div><div class="val mono sub-mid">4.5<span class="dim" style="font-weight:400;font-size:11px;"> / 10</span></div><div class="interp">Mixed short-term participation.</div></div><div class="subindicator sub-mid"><div class="name">New 52W highs vs lows</div><div class="val mono sub-mid">4.7<span class="dim" style="font-weight:400;font-size:11px;"> / 10</span></div><div class="interp">Balanced highs and lows — no clear leadership tape.</div></div><div class="subindicator sub-mid"><div class="name">SPY 14-day rate of change</div><div class="val mono sub-mid">4.8<span class="dim" style="font-weight:400;font-size:11px;"> / 10</span></div><div class="interp">SPY grinding sideways or small gain — no strong direction.</div></div><div class="subindicator sub-strong"><div class="name">VIX (inverted)</div><div class="val mono sub-strong">7.7<span class="dim" style="font-weight:400;font-size:11px;"> / 10</span></div><div class="interp">Low volatility — market calm (sometimes complacent).</div></div>
+      <div class="subindicator sub-mid"><div class="name">% eligible above 200 SMA</div><div class="val mono sub-mid">5.1<span class="dim" style="font-weight:400;font-size:11px;"> / 10</span></div><div class="interp">Mixed — about half the universe above long-term trend.</div></div><div class="subindicator sub-mid"><div class="name">% eligible above 50 SMA</div><div class="val mono sub-mid">4.8<span class="dim" style="font-weight:400;font-size:11px;"> / 10</span></div><div class="interp">Mixed short-term participation.</div></div><div class="subindicator sub-mid"><div class="name">New 52W highs vs lows</div><div class="val mono sub-mid">5.8<span class="dim" style="font-weight:400;font-size:11px;"> / 10</span></div><div class="interp">Balanced highs and lows — no clear leadership tape.</div></div><div class="subindicator sub-weak"><div class="name">SPY 14-day rate of change</div><div class="val mono sub-weak">3.7<span class="dim" style="font-weight:400;font-size:11px;"> / 10</span></div><div class="interp">SPY in recent decline — momentum has rolled over.</div></div><div class="subindicator sub-strong"><div class="name">VIX (inverted)</div><div class="val mono sub-strong">7.9<span class="dim" style="font-weight:400;font-size:11px;"> / 10</span></div><div class="interp">Low volatility — market calm (sometimes complacent).</div></div>
     </div>
   </div>
 </section>
 
   </header>
 
-  <h2 class="section">Today's Breakouts <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(elite-filtered, top 5 max)</span></h2>
+  <h2 class="section">At a glance</h2>
+  <div class="glance"><a href="#p-breakout" style="--pc:#2A6FDB"><div class="g-title">Breakouts</div><div class="g-count">1</div><div class="g-sub">today · 8 this week</div></a><a href="#p-watch" style="--pc:#138A8A"><div class="g-title">Pre-breakout watch</div><div class="g-count">15</div><div class="g-sub">today · 20 this week</div></a><a href="#p-retest" style="--pc:#C8961E"><div class="g-title">Break &amp; retest</div><div class="g-count">15</div><div class="g-sub">today · 10 this week</div></a><a href="#p-trend" style="--pc:#7B4FBF"><div class="g-title">Trend following (Supertrend)</div><div class="g-count">6</div><div class="g-sub">today · 10 this week</div></a><a href="#p-pullback" style="--pc:#2E7D5B"><div class="g-title">Pullback &amp; reversal</div><div class="g-count">13</div><div class="g-sub">today · 10 this week</div></a><a href="#p-recovery" style="--pc:#D9731A"><div class="g-title">Recovery</div><div class="g-count">6</div><div class="g-sub">today · 10 this week</div></a><a href="#p-positional" style="--pc:#1F3A5F"><div class="g-title">Positional: quality at a fair price</div><div class="g-count">8</div><div class="g-sub">today · 10 this week</div></a></div>
+  <p class="dim" style="font-size:11px;margin:-12px 0 20px;">
+    Click a card to jump to its panel. Panels with nothing today start collapsed. Under every ticker:
+    liquidity tier (<b style="color:var(--sig-pos)">Very high</b> ≥ $100M/day ·
+    <b style="color:#3E7CB1">High</b> ≥ $25M · <b style="color:var(--sig-warn)">Adequate</b> ≥ $10M minimum),
+    average shares/day, average dollar volume/day, and 1% of ADV (a common position-size ceiling).
+  </p>
+
   
+<details class="panel" id="p-breakout" style="--pc:#2A6FDB" open>
+  <summary><span class="p-title">Breakouts</span><span class="p-desc">Pattern breakouts firing today on volume, elite-filtered.</span>
+  <span class="p-counts">today <b>1</b> · this week <b>8</b></span></summary>
+  <div class="panel-body"><h3 class="subsection">Today's breakouts <span class="count">· top 5</span></h3>
 <table class="candidates">
   <thead>
     <tr>
@@ -286,1121 +333,22 @@ footer {
   </thead>
   <tbody>
 <tr>
-  <td class="ticker">AVPT</td>
-  <td class="score score-hi num mono">129</td>
-  <td class="patterns"><span class="pattern-tag">52W High</span><span class="pattern-tag">Resistance Break</span></td>
-  <td class="num mono">17.20</td>
-  <td class="num mono">15.87</td>
-  <td class="num mono">19.87</td>
-  <td class="num mono">21.20</td>
-  <td class="num mono">2.0R</td>
-  <td><span class="tag pos">Clean</span></td>
-  <td class="num mono piotroski-hi">P95</td>
-  <td class="num mono dim">—</td>
-  <td class="num mono"><span class="streak">×3</span></td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">AR</td>
-  <td class="score score-hi num mono">82</td>
-  <td class="patterns"><span class="pattern-tag">55D High</span><span class="pattern-tag">Resistance Break</span></td>
-  <td class="num mono">42.11</td>
-  <td class="num mono">39.15</td>
-  <td class="num mono">48.02</td>
-  <td class="num mono">50.98</td>
-  <td class="num mono">2.0R</td>
-  <td><span class="tag neg" title="Weak close (upper wick); Marginal volume; Gap-and-fade">High risk</span><span class="flags">Weak close (upper wick) · Marginal volume · Gap-and-fade</span></td>
-  <td class="num mono mono">P88</td>
-  <td class="num mono dim">—</td>
-  <td class="num mono"><span class="streak">×3</span></td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">MANH</td>
-  <td class="score score-hi num mono">77</td>
+  <td class="ticker">CART<span class="liq t-vh" title="Liquidity Very high: avg 6.5M shares/day, $361.9M/day. Keeping a position under 1% of ADV ($3.6M) avoids moving the price."><b>Very high</b> · 6.5M sh · $361.9M/d · 1% ADV $3.6M</span></td>
+  <td class="score score-hi num mono">78</td>
   <td class="patterns"><span class="pattern-tag">Resistance Break</span></td>
-  <td class="num mono">239.73</td>
-  <td class="num mono">212.21</td>
-  <td class="num mono">294.78</td>
-  <td class="num mono">322.30</td>
+  <td class="num mono">57.46</td>
+  <td class="num mono">48.29</td>
+  <td class="num mono">75.81</td>
+  <td class="num mono">84.98</td>
   <td class="num mono">2.0R</td>
   <td><span class="tag neg" title="Weak close (upper wick); Extended &gt; 5% above level; Gap-and-fade">High risk</span><span class="flags">Weak close (upper wick) · Extended &gt; 5% above level · Gap-and-fade</span></td>
-  <td class="num mono piotroski-hi">P94</td>
+  <td class="num mono piotroski-hi">P95</td>
   <td class="num mono dim">—</td>
   <td class="num mono"><span class="streak">×4</span></td>
   <td><span class="dim">Unknown</span></td>
 </tr></tbody>
 </table>
-
-
-  <h2 class="section">Today's Swing-Ready Watchlist <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(elite-filtered, top 8 max)</span></h2>
-  
-<table class="candidates">
-  <thead>
-    <tr>
-      <th>Ticker</th>
-      <th class="num">Score</th>
-      <th class="num">RS</th>
-      <th class="num">Mom</th>
-      <th class="num">AccDays</th>
-      <th class="num">52W%</th>
-      <th class="num">Current</th>
-      <th class="num">Trigger</th>
-      <th class="num">% to Go</th>
-      <th class="num">Stop†</th>
-      <th class="num">TP1†</th>
-      <th class="num">Piotroski</th>
-      <th>Sector</th>
-    </tr>
-  </thead>
-  <tbody>
-<tr>
-  <td class="ticker">DT</td>
-  <td class="score score-hi num mono">88</td>
-  <td class="num mono piotroski-hi">P97</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono piotroski-mid">5</td>
-  <td class="num mono">90%</td>
-  <td class="num mono">62.81</td>
-  <td class="num mono">66.30</td>
-  <td class="num mono">+5.6%</td>
-  <td class="num mono">61.66</td>
-  <td class="num mono">75.58</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">DHT</td>
-  <td class="score score-hi num mono">88</td>
-  <td class="num mono piotroski-hi">P97</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono piotroski-mid">5</td>
-  <td class="num mono">84%</td>
-  <td class="num mono">24.46</td>
-  <td class="num mono">26.91</td>
-  <td class="num mono">+10.0%</td>
-  <td class="num mono">25.03</td>
-  <td class="num mono">30.68</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">FRSH</td>
-  <td class="score score-hi num mono">88</td>
-  <td class="num mono piotroski-hi">P95</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono piotroski-mid">5</td>
-  <td class="num mono">99%</td>
-  <td class="num mono">15.38</td>
-  <td class="num mono">15.51</td>
-  <td class="num streak">+0.8%</td>
-  <td class="num mono">14.42</td>
-  <td class="num mono">17.68</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">STNG</td>
-  <td class="score score-hi num mono">83</td>
-  <td class="num mono mono">P85</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono piotroski-mid">5</td>
-  <td class="num mono">91%</td>
-  <td class="num mono">88.72</td>
-  <td class="num mono">89.75</td>
-  <td class="num streak">+1.2%</td>
-  <td class="num mono">83.47</td>
-  <td class="num mono">102.31</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr></tbody>
-</table>
-<p class="dim" style="font-size:11px;margin-top:6px;">
-  † Stop / TP are pending — they only become active once price breaks the Trigger level. Set an alert at the Trigger.
-  Mom = momentum confluence passes (RSI 50-75, ADX ≥ 20, Weekly MACD +, 52W pos ≥ 60%). AccDays = IBD-style accumulation days in last 25 sessions (close in upper 25% of day's range with above-average volume).
-</p>
-
-
-  <h2 class="section">Today's Supertrend Longs <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(daily chart ATR 10 × 2.5, fresh flips ≤ 20d, elite-filtered, top 6 max)</span></h2>
-  
-<table class="candidates">
-  <thead>
-    <tr>
-      <th>Ticker</th>
-      <th class="num">Score</th>
-      <th class="num">Flip Age</th>
-      <th class="num">RS</th>
-      <th class="num">Mom</th>
-      <th class="num">AccDays</th>
-      <th class="num">Current</th>
-      <th class="num">ST Stop</th>
-      <th class="num">% Above Stop</th>
-      <th class="num">Piotroski</th>
-      <th>Sector</th>
-    </tr>
-  </thead>
-  <tbody>
-<tr>
-  <td class="ticker">OKTA</td>
-  <td class="score score-hi num mono">95</td>
-  <td class="num"><span class="mono">2d</span></td>
-  <td class="num mono piotroski-hi">P99</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono dim">0</td>
-  <td class="num mono">222.66</td>
-  <td class="num mono">196.39</td>
-  <td class="num mono">+13.4%</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">CRWD</td>
-  <td class="score score-hi num mono">93</td>
-  <td class="num"><span class="mono">3d</span></td>
-  <td class="num mono piotroski-hi">P94</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono dim">1</td>
-  <td class="num mono">266.66</td>
-  <td class="num mono">237.11</td>
-  <td class="num mono">+12.5%</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">CART</td>
-  <td class="score score-hi num mono">77</td>
-  <td class="num"><span class="dim mono">13d</span></td>
-  <td class="num mono piotroski-hi">P96</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono piotroski-mid">4</td>
-  <td class="num mono">58.42</td>
-  <td class="num mono">52.81</td>
-  <td class="num mono">+10.6%</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">ESTC</td>
-  <td class="score score-hi num mono">76</td>
-  <td class="num"><span class="dim mono">13d</span></td>
-  <td class="num mono piotroski-hi">P99</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono dim">1</td>
-  <td class="num mono">106.58</td>
-  <td class="num mono">95.87</td>
-  <td class="num mono">+11.2%</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">AR</td>
-  <td class="score score-hi num mono">75</td>
-  <td class="num"><span class="dim mono">12d</span></td>
-  <td class="num mono mono">P88</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono piotroski-mid">6</td>
-  <td class="num mono">42.11</td>
-  <td class="num mono">38.87</td>
-  <td class="num mono">+8.3%</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">MANH</td>
-  <td class="score score-hi num mono">75</td>
-  <td class="num"><span class="dim mono">12d</span></td>
-  <td class="num mono piotroski-hi">P94</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono dim">3</td>
-  <td class="num mono">239.73</td>
-  <td class="num mono">224.75</td>
-  <td class="num mono">+6.7%</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr></tbody>
-</table>
-<p class="dim" style="font-size:11px;margin-top:6px;">
-  Supertrend (ATR 10, mult 2.5) matches TradingView free tier and your Positional Trading Tool. The ST Stop line trails upward as the trend continues — exit when price closes below it. Flip Age in days since the long signal fired; fresher flips (≤ 3 days) are typically the best risk/reward entries.
-</p>
-
-
-  <h2 class="section">Today's Recovery Setups <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(20 EMA crossed above 200 EMA from below, within 10% distance, top 6 max)</span></h2>
-  
-<table class="candidates">
-  <thead>
-    <tr>
-      <th>Ticker</th>
-      <th class="num">Score</th>
-      <th class="num">Cross Age</th>
-      <th class="num">EMA Gap</th>
-      <th class="num">RS</th>
-      <th class="num">Mom</th>
-      <th class="num">AccDays</th>
-      <th class="num">Current</th>
-      <th class="num">20 EMA</th>
-      <th class="num">200 EMA</th>
-      <th class="num">Piotroski</th>
-      <th>Sector</th>
-    </tr>
-  </thead>
-  <tbody>
-<tr>
-  <td class="ticker">EPAM</td>
-  <td class="score score-hi num mono">115</td>
-  <td class="num"><span class="streak">2d ago</span></td>
-  <td class="num"><span class="streak">+1.3%</span></td>
-  <td class="num mono piotroski-hi">P92</td>
-  <td class="num mono">3/4</td>
-  <td class="num mono piotroski-mid">4</td>
-  <td class="num mono">136.23</td>
-  <td class="num mono">125.40</td>
-  <td class="num mono">123.84</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">ROP</td>
-  <td class="score score-hi num mono">112</td>
-  <td class="num"><span class="streak">3d ago</span></td>
-  <td class="num"><span class="streak">+3.0%</span></td>
-  <td class="num mono mono">P81</td>
-  <td class="num mono">3/4</td>
-  <td class="num mono piotroski-mid">6</td>
-  <td class="num mono">440.66</td>
-  <td class="num mono">400.95</td>
-  <td class="num mono">389.46</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">VNOM</td>
-  <td class="score score-hi num mono">111</td>
-  <td class="num"><span class="mono">7d ago</span></td>
-  <td class="num"><span class="streak">+2.9%</span></td>
-  <td class="num mono mono">P77</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono piotroski-hi">8</td>
-  <td class="num mono">46.46</td>
-  <td class="num mono">44.72</td>
-  <td class="num mono">43.47</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">TYL</td>
-  <td class="score score-hi num mono">108</td>
-  <td class="num"><span class="streak">2d ago</span></td>
-  <td class="num"><span class="streak">+0.3%</span></td>
-  <td class="num mono mono">P85</td>
-  <td class="num mono">3/4</td>
-  <td class="num mono dim">1</td>
-  <td class="num mono">360.90</td>
-  <td class="num mono">361.06</td>
-  <td class="num mono">359.95</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">AR</td>
-  <td class="score score-hi num mono">105</td>
-  <td class="num"><span class="mono">9d ago</span></td>
-  <td class="num"><span class="mono">+5.8%</span></td>
-  <td class="num mono mono">P88</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono piotroski-mid">6</td>
-  <td class="num mono">42.11</td>
-  <td class="num mono">38.55</td>
-  <td class="num mono">36.43</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">FTV</td>
-  <td class="score score-hi num mono">104</td>
-  <td class="num"><span class="streak">4d ago</span></td>
-  <td class="num"><span class="streak">+1.9%</span></td>
-  <td class="num mono dim">P71</td>
-  <td class="num mono">3/4</td>
-  <td class="num mono piotroski-mid">4</td>
-  <td class="num mono">64.11</td>
-  <td class="num mono">58.98</td>
-  <td class="num mono">57.91</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr></tbody>
-</table>
-<p class="dim" style="font-size:11px;margin-top:6px;">
-  "Coming out of correction" — 20 EMA just crossed above 200 EMA from below. Looser gates than other sections (RS ≥ 60, sector top 7) because recovery stocks had recent weakness and RS is still rebuilding. Prefer rows with Cross Age ≤ 10 days and EMA Gap ≤ 5% — the stock is still close to the inflection, not yet extended.
-</p>
-
-
-  <h2 class="section">Support &amp; Resistance <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(quality stocks within 3% of a level tested ≥ 2 times)</span></h2>
-  <h3 class="subsection">Near Support <span class="count">· buy-the-dip zone, top 10 by technical score</span></h3>
-  
-<table class="candidates">
-  <thead><tr>
-    <th>Ticker</th><th class="num">Score</th><th class="num">Current</th><th class="num">Support</th>
-    <th class="num">Above by</th><th class="num">Touches</th><th class="num">Confluence</th>
-    <th class="num">Volume</th><th class="num">RS</th><th class="num">Stop</th>
-    <th class="num">Target (resistance)</th><th>Sector</th>
-  </tr></thead>
-  <tbody>
-<tr>
-  <td class="ticker">DV</td>
-  <td class="score score-hi num mono">92</td>
-  <td class="num mono">13.53</td>
-  <td class="num mono">13.43</td>
-  <td class="num mono">0.7%</td>
-  <td class="num mono">×9</td>
-  <td class="num"><span class="tag pos">50 SMA</span></td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num mono mono">P84</td>
-  <td class="num mono">13.03</td>
-  <td class="num mono">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">AVNT</td>
-  <td class="score score-hi num mono">87</td>
-  <td class="num mono">42.19</td>
-  <td class="num mono">42.07</td>
-  <td class="num mono">0.3%</td>
-  <td class="num mono">×2</td>
-  <td class="num"><span class="tag pos">50 SMA</span></td>
-  <td class="num"><span class="tag pos">Dry-up</span></td>
-  <td class="num mono mono">P78</td>
-  <td class="num mono">40.81</td>
-  <td class="num mono">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">RAMP</td>
-  <td class="score score-hi num mono">85</td>
-  <td class="num mono">38.14</td>
-  <td class="num mono">37.73</td>
-  <td class="num mono">1.1%</td>
-  <td class="num mono">×15</td>
-  <td class="num"><span class="tag pos">50 SMA</span></td>
-  <td class="num"><span class="tag pos">Dry-up</span></td>
-  <td class="num mono dim">P60</td>
-  <td class="num mono">36.60</td>
-  <td class="num mono">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">TTE</td>
-  <td class="score score-hi num mono">80</td>
-  <td class="num mono">92.88</td>
-  <td class="num mono">92.73</td>
-  <td class="num mono">0.2%</td>
-  <td class="num mono">×3</td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num"><span class="tag pos">Dry-up</span></td>
-  <td class="num mono mono">P76</td>
-  <td class="num mono">89.95</td>
-  <td class="num mono">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">CVE</td>
-  <td class="score score-hi num mono">79</td>
-  <td class="num mono">32.29</td>
-  <td class="num mono">32.28</td>
-  <td class="num mono">0.0%</td>
-  <td class="num mono">×2</td>
-  <td class="num"><span class="tag pos">50 SMA</span></td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num mono mono">P82</td>
-  <td class="num mono">31.31</td>
-  <td class="num mono">33.60</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">VNOM</td>
-  <td class="score score-hi num mono">75</td>
-  <td class="num mono">46.46</td>
-  <td class="num mono">45.87</td>
-  <td class="num mono">1.3%</td>
-  <td class="num mono">×3</td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num"><span class="tag pos">Dry-up</span></td>
-  <td class="num mono mono">P77</td>
-  <td class="num mono">44.49</td>
-  <td class="num mono">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">ACA</td>
-  <td class="score score-hi num mono">72</td>
-  <td class="num mono">149.15</td>
-  <td class="num mono">145.66</td>
-  <td class="num mono">2.3%</td>
-  <td class="num mono">×11</td>
-  <td class="num"><span class="tag pos">50 SMA</span></td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num mono dim">P64</td>
-  <td class="num mono">141.29</td>
-  <td class="num mono">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">KMI</td>
-  <td class="score score-hi num mono">72</td>
-  <td class="num mono">33.56</td>
-  <td class="num mono">33.07</td>
-  <td class="num mono">1.5%</td>
-  <td class="num mono">×7</td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num mono dim">P73</td>
-  <td class="num mono">32.08</td>
-  <td class="num mono">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">EXPD</td>
-  <td class="score score-hi num mono">71</td>
-  <td class="num mono">197.15</td>
-  <td class="num mono">193.43</td>
-  <td class="num mono">1.9%</td>
-  <td class="num mono">×2</td>
-  <td class="num"><span class="tag pos">50 SMA</span></td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num mono mono">P75</td>
-  <td class="num mono">187.63</td>
-  <td class="num mono">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">SMCI</td>
-  <td class="score score-mid num mono">70</td>
-  <td class="num mono">35.81</td>
-  <td class="num mono">35.50</td>
-  <td class="num mono">0.9%</td>
-  <td class="num mono">×2</td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num mono mono">P83</td>
-  <td class="num mono">34.44</td>
-  <td class="num mono">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr></tbody>
-</table>
-<p class="dim" style="font-size:11px;margin-top:6px;">
-  Buy-the-dip candidates: price is resting just above a horizontal level tested ≥ 2 times, inside a rising 200 SMA uptrend.
-  Wait for a bounce candle off the level before entering. Stop = 3% below support; target = next resistance.
-  Dry-up = last 5 sessions' volume &lt; 80% of the prior 20 (sellers exhausting).
-  <span class="tag hp">★ High prob</span> = this support is an old resistance the stock just broke out of (see Recent Breakouts &amp; Retests).
-</p>
-
-  <h3 class="subsection">Near Resistance <span class="count">· breakout watch, top 10 by technical score</span></h3>
-  
-<table class="candidates">
-  <thead><tr>
-    <th>Ticker</th><th class="num">Score</th><th class="num">Current</th><th class="num">Resistance</th>
-    <th class="num">Below by</th><th class="num">Touches</th><th class="num">Volume</th>
-    <th class="num">RS</th><th class="num">Mom</th><th class="num">AccDays</th>
-    <th class="num">Support below</th><th>Sector</th>
-  </tr></thead>
-  <tbody>
-<tr>
-  <td class="ticker">FLYW</td>
-  <td class="score score-hi num mono">98</td>
-  <td class="num mono">18.93</td>
-  <td class="num mono">18.94</td>
-  <td class="num mono">0.1%</td>
-  <td class="num mono">×3</td>
-  <td class="num"><span class="tag pos">Tightening</span></td>
-  <td class="num mono mono">P76</td>
-  <td class="num mono">3/4</td>
-  <td class="num mono dim">3</td>
-  <td class="num mono">16.86</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">PAGP</td>
-  <td class="score score-hi num mono">96</td>
-  <td class="num mono">28.58</td>
-  <td class="num mono">28.60</td>
-  <td class="num mono">0.1%</td>
-  <td class="num mono">×2</td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num mono mono">P82</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono piotroski-hi">7</td>
-  <td class="num mono">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">STNG</td>
-  <td class="score score-hi num mono">91</td>
-  <td class="num mono">88.72</td>
-  <td class="num mono">89.90</td>
-  <td class="num mono">1.3%</td>
-  <td class="num mono">×2</td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num mono mono">P85</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono piotroski-mid">5</td>
-  <td class="num mono">80.69</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">AAPL</td>
-  <td class="score score-hi num mono">88</td>
-  <td class="num mono">343.83</td>
-  <td class="num mono">346.02</td>
-  <td class="num mono">0.6%</td>
-  <td class="num mono">×3</td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num mono mono">P79</td>
-  <td class="num mono">3/4</td>
-  <td class="num mono dim">1</td>
-  <td class="num mono">336.85</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">PAYS</td>
-  <td class="score score-hi num mono">88</td>
-  <td class="num mono">13.97</td>
-  <td class="num mono">14.37</td>
-  <td class="num mono">2.8%</td>
-  <td class="num mono">×2</td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num mono piotroski-hi">P99</td>
-  <td class="num mono">3/4</td>
-  <td class="num mono piotroski-mid">5</td>
-  <td class="num mono">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">FANG</td>
-  <td class="score score-hi num mono">83</td>
-  <td class="num mono">206.22</td>
-  <td class="num mono">211.59</td>
-  <td class="num mono">2.6%</td>
-  <td class="num mono">×4</td>
-  <td class="num"><span class="tag pos">Tightening</span></td>
-  <td class="num mono dim">P74</td>
-  <td class="num mono">2/4</td>
-  <td class="num mono dim">0</td>
-  <td class="num mono">181.88</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">RGLD</td>
-  <td class="score score-hi num mono">83</td>
-  <td class="num mono">241.95</td>
-  <td class="num mono">242.25</td>
-  <td class="num mono">0.1%</td>
-  <td class="num mono">×2</td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num mono mono">P87</td>
-  <td class="num mono">2/4</td>
-  <td class="num mono dim">1</td>
-  <td class="num mono">227.97</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">FTV</td>
-  <td class="score score-hi num mono">82</td>
-  <td class="num mono">64.11</td>
-  <td class="num mono">64.45</td>
-  <td class="num mono">0.5%</td>
-  <td class="num mono">×2</td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num mono dim">P71</td>
-  <td class="num mono">3/4</td>
-  <td class="num mono piotroski-mid">4</td>
-  <td class="num mono">63.03</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">SMTC</td>
-  <td class="score score-hi num mono">79</td>
-  <td class="num mono">146.97</td>
-  <td class="num mono">149.09</td>
-  <td class="num mono">1.4%</td>
-  <td class="num mono">×3</td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num mono mono">P84</td>
-  <td class="num mono">2/4</td>
-  <td class="num mono dim">0</td>
-  <td class="num mono">143.97</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">ERO</td>
-  <td class="score score-hi num mono">72</td>
-  <td class="num mono">32.19</td>
-  <td class="num mono">32.57</td>
-  <td class="num mono">1.2%</td>
-  <td class="num mono">×3</td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num mono mono">P79</td>
-  <td class="num mono">1/4</td>
-  <td class="num mono dim">1</td>
-  <td class="num mono">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr></tbody>
-</table>
-<p class="dim" style="font-size:11px;margin-top:6px;">
-  Breakout candidates pressing a ceiling tested ≥ 2 times. Set an alert at the Resistance level and only act on a close above it
-  with volume ≥ 1.5× average. Tightening = volume contracting under the level (supply drying up, VCP-like).
-</p>
-
-
-  <h2 class="section">Recent Breakouts &amp; Retests <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(55-session-high breakouts on volume, last 20 sessions)</span></h2>
-  <h3 class="subsection"><span class="tag hp">★</span> High-Probability: Old Resistance Retested as Support <span class="count">· broke a level tested ≥ 2×, came back to it, held and bounced today, zero fakeout flags</span></h3>
-  <div class="empty">No high-probability retests today (needs: old resistance tested ≥ 2×, broken on volume, retested as support, bounce today, zero fakeout flags).</div>
-  <h3 class="subsection">Break &amp; Retest <span class="count">· pulled back to the breakout level and holding, top 8</span></h3>
-  
-<table class="candidates">
-  <thead><tr>
-    <th>Ticker</th><th class="num">Score</th><th class="num">Broke out</th><th class="num">BO level</th>
-    <th class="num">BO volume</th><th class="num">Post-BO high</th><th class="num">Pullback</th>
-    <th class="num">Current</th><th class="num">Status</th><th class="num">Prior tests</th>
-    <th>Fakeout risk</th><th class="num">RS</th>
-    <th class="num">Stop</th><th class="num">TP1 (2R)</th><th>Sector</th>
-  </tr></thead>
-  <tbody>
-<tr>
-  <td class="ticker">CART</td>
-  <td class="score score-hi num mono">118</td>
-  <td class="num mono">2d ago</td>
-  <td class="num mono">57.98</td>
-  <td class="num mono">8.4×</td>
-  <td class="num mono">62.00</td>
-  <td class="num mono">−5.8%</td>
-  <td class="num mono">58.42</td>
-  <td class="num"><span class="dim">Testing</span></td>
-  <td class="num mono">×0</td>
-  <td><span class="tag pos">Clean</span></td>
-  <td class="num mono piotroski-hi">P96</td>
-  <td class="num mono">51.56</td>
-  <td class="num mono">72.14</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">QLYS</td>
-  <td class="score score-hi num mono">99</td>
-  <td class="num mono">2d ago</td>
-  <td class="num mono">219.03</td>
-  <td class="num mono">1.5×</td>
-  <td class="num mono">231.09</td>
-  <td class="num mono">−3.3%</td>
-  <td class="num mono">223.52</td>
-  <td class="num"><span class="dim">Testing</span></td>
-  <td class="num mono">×0</td>
-  <td><span class="tag warn" title="Marginal volume">Caution</span><span class="flags">Marginal volume</span></td>
-  <td class="num mono piotroski-hi">P97</td>
-  <td class="num mono">212.19</td>
-  <td class="num mono">246.18</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">MANH</td>
-  <td class="score score-hi num mono">97</td>
-  <td class="num mono">6d ago</td>
-  <td class="num mono">231.63</td>
-  <td class="num mono">1.5×</td>
-  <td class="num mono">254.00</td>
-  <td class="num mono">−5.6%</td>
-  <td class="num mono">239.73</td>
-  <td class="num"><span class="tag pos">Bounce today</span></td>
-  <td class="num mono">×0</td>
-  <td><span class="tag neg" title="Marginal volume; Heavy selling since">High risk</span><span class="flags">Marginal volume · Heavy selling since</span></td>
-  <td class="num mono piotroski-hi">P94</td>
-  <td class="num mono">227.00</td>
-  <td class="num mono">265.19</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">SU</td>
-  <td class="score score-hi num mono">97</td>
-  <td class="num mono">8d ago</td>
-  <td class="num mono">76.73</td>
-  <td class="num mono">1.7×</td>
-  <td class="num mono">80.25</td>
-  <td class="num mono">−3.4%</td>
-  <td class="num mono">77.54</td>
-  <td class="num"><span class="tag pos">Bounce today</span></td>
-  <td class="num mono">×0</td>
-  <td><span class="tag neg" title="Weak breakout close; Marginal volume">High risk</span><span class="flags">Weak breakout close · Marginal volume</span></td>
-  <td class="num mono piotroski-hi">P90</td>
-  <td class="num mono">74.60</td>
-  <td class="num mono">83.42</td>
-  <td><span class="dim">Unknown</span></td>
-</tr></tbody>
-</table>
-<p class="dim" style="font-size:11px;margin-top:6px;">
-  Break &amp; retest: the stock broke a 55-session high on volume, ran, then pulled back to the old breakout level and is holding it
-  (old resistance acting as new support). "Bounce today" = closed up from the retest, the confirmation many traders wait for.
-  Stop = 2% below the lower of the retest low or breakout level. Prior tests = swing highs at this level before the breakout.
-</p>
-
-  <h3 class="subsection">Holding Above Breakout <span class="count">· not yet retested, top 8</span></h3>
-  
-<table class="candidates">
-  <thead><tr>
-    <th>Ticker</th><th class="num">Score</th><th class="num">Broke out</th><th class="num">BO level</th>
-    <th class="num">BO volume</th><th class="num">Current</th><th class="num">Above level</th>
-    <th class="num">Off high</th><th>Fakeout risk</th><th class="num">RS</th><th class="num">Mom</th><th>Sector</th>
-  </tr></thead>
-  <tbody>
-<tr>
-  <td class="ticker">RRC</td>
-  <td class="score score-hi num mono">99</td>
-  <td class="num mono">1d ago</td>
-  <td class="num mono">53.65</td>
-  <td class="num mono">4.1×</td>
-  <td class="num mono">55.88</td>
-  <td class="num"><span class="mono">+4.2%</span></td>
-  <td class="num mono">−1.8%</td>
-  <td><span class="tag pos">Clean</span></td>
-  <td class="num mono piotroski-hi">P98</td>
-  <td class="num mono">3/4</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">AR</td>
-  <td class="score score-hi num mono">92</td>
-  <td class="num mono">2d ago</td>
-  <td class="num mono">40.62</td>
-  <td class="num mono">2.3×</td>
-  <td class="num mono">42.11</td>
-  <td class="num"><span class="mono">+3.7%</span></td>
-  <td class="num mono">−1.5%</td>
-  <td><span class="tag pos">Clean</span></td>
-  <td class="num mono mono">P88</td>
-  <td class="num mono">4/4</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">SSL</td>
-  <td class="score score-hi num mono">87</td>
-  <td class="num mono">4d ago</td>
-  <td class="num mono">16.34</td>
-  <td class="num mono">1.8×</td>
-  <td class="num mono">17.30</td>
-  <td class="num"><span class="mono">+5.9%</span></td>
-  <td class="num mono">−4.9%</td>
-  <td><span class="tag warn" title="Marginal volume">Caution</span><span class="flags">Marginal volume</span></td>
-  <td class="num mono piotroski-hi">P100</td>
-  <td class="num mono">4/4</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">SIG</td>
-  <td class="score score-hi num mono">86</td>
-  <td class="num mono">9d ago</td>
-  <td class="num mono">109.06</td>
-  <td class="num mono">2.2×</td>
-  <td class="num mono">115.22</td>
-  <td class="num"><span class="mono">+5.7%</span></td>
-  <td class="num mono">−6.0%</td>
-  <td><span class="tag pos">Clean</span></td>
-  <td class="num mono mono">P89</td>
-  <td class="num mono">4/4</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">KDP</td>
-  <td class="score score-hi num mono">85</td>
-  <td class="num mono">4d ago</td>
-  <td class="num mono">34.89</td>
-  <td class="num mono">2.4×</td>
-  <td class="num mono">34.93</td>
-  <td class="num"><span class="mono">+0.1%</span></td>
-  <td class="num mono">−1.3%</td>
-  <td><span class="tag warn" title="No follow-through">Caution</span><span class="flags">No follow-through</span></td>
-  <td class="num mono mono">P82</td>
-  <td class="num mono">4/4</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">ELF</td>
-  <td class="score score-hi num mono">82</td>
-  <td class="num mono">9d ago</td>
-  <td class="num mono">110.21</td>
-  <td class="num mono">1.9×</td>
-  <td class="num mono">115.41</td>
-  <td class="num"><span class="mono">+4.7%</span></td>
-  <td class="num mono">−2.4%</td>
-  <td><span class="tag warn" title="Marginal volume">Caution</span><span class="flags">Marginal volume</span></td>
-  <td class="num mono piotroski-hi">P96</td>
-  <td class="num mono">4/4</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">EQNR</td>
-  <td class="score score-hi num mono">77</td>
-  <td class="num mono">3d ago</td>
-  <td class="num mono">47.01</td>
-  <td class="num mono">1.6×</td>
-  <td class="num mono">47.66</td>
-  <td class="num"><span class="mono">+1.4%</span></td>
-  <td class="num mono">−2.9%</td>
-  <td><span class="tag warn" title="Marginal volume">Caution</span><span class="flags">Marginal volume</span></td>
-  <td class="num mono piotroski-hi">P92</td>
-  <td class="num mono">3/4</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">CNQ</td>
-  <td class="score score-hi num mono">76</td>
-  <td class="num mono">8d ago</td>
-  <td class="num mono">52.57</td>
-  <td class="num mono">1.6×</td>
-  <td class="num mono">54.81</td>
-  <td class="num"><span class="mono">+4.3%</span></td>
-  <td class="num mono">−1.2%</td>
-  <td><span class="tag warn" title="Marginal volume">Caution</span><span class="flags">Marginal volume</span></td>
-  <td class="num mono mono">P90</td>
-  <td class="num mono">4/4</td>
-  <td><span class="dim">Unknown</span></td>
-</tr></tbody>
-</table>
-<p class="dim" style="font-size:11px;margin-top:6px;">
-  Breakouts from the last 20 sessions that have not retested yet. Above level &gt; 10% (red) = extended; avoid chasing and
-  wait for these to move into the Break &amp; Retest table. Failed breakouts (closed &gt; 3% back below the level) are excluded.
-</p>
-
-  <h3 class="subsection">Fake / Failed Breakouts <span class="count">· avoid list, top 8 most recent</span></h3>
-  
-<table class="candidates">
-  <thead><tr>
-    <th>Ticker</th><th>Status</th><th class="num">Broke out</th><th class="num">BO level</th>
-    <th class="num">Post-BO high</th><th class="num">Current</th><th class="num">vs level</th>
-    <th class="num">BO volume</th><th>Why it looks fake</th><th class="num">RS</th><th>Sector</th>
-  </tr></thead>
-  <tbody>
-<tr>
-  <td class="ticker">ADP</td>
-  <td><span class="tag neg">Failed</span></td>
-  <td class="num mono">4d ago</td>
-  <td class="num mono">296.14</td>
-  <td class="num mono">309.40</td>
-  <td class="num mono">285.37</td>
-  <td class="num mono" style="color:var(--sig-neg);">-3.6%</td>
-  <td class="num mono">1.8×</td>
-  <td><span class="flags" style="font-size:11px;">Marginal volume · Back below level</span></td>
-  <td class="num mono dim">P69</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">CHD</td>
-  <td><span class="tag warn">Failing</span></td>
-  <td class="num mono">4d ago</td>
-  <td class="num mono">106.00</td>
-  <td class="num mono">108.93</td>
-  <td class="num mono">104.75</td>
-  <td class="num mono" style="color:var(--sig-neg);">-1.2%</td>
-  <td class="num mono">1.7×</td>
-  <td><span class="flags" style="font-size:11px;">Marginal volume · No follow-through · Back below level</span></td>
-  <td class="num mono dim">P63</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">PG</td>
-  <td><span class="tag warn">Failing</span></td>
-  <td class="num mono">4d ago</td>
-  <td class="num mono">159.98</td>
-  <td class="num mono">166.85</td>
-  <td class="num mono">158.26</td>
-  <td class="num mono" style="color:var(--sig-neg);">-1.1%</td>
-  <td class="num mono">2.4×</td>
-  <td><span class="flags" style="font-size:11px;">Back below level</span></td>
-  <td class="num mono dim">P73</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">ROKU</td>
-  <td><span class="tag warn">Failing</span></td>
-  <td class="num mono">4d ago</td>
-  <td class="num mono">159.89</td>
-  <td class="num mono">160.22</td>
-  <td class="num mono">155.33</td>
-  <td class="num mono" style="color:var(--sig-neg);">-2.9%</td>
-  <td class="num mono">2.9×</td>
-  <td><span class="flags" style="font-size:11px;">No follow-through · Back below level</span></td>
-  <td class="num mono dim">P69</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">PSO</td>
-  <td><span class="tag neg">Failed</span></td>
-  <td class="num mono">8d ago</td>
-  <td class="num mono">18.02</td>
-  <td class="num mono">18.43</td>
-  <td class="num mono">17.32</td>
-  <td class="num mono" style="color:var(--sig-neg);">-3.9%</td>
-  <td class="num mono">1.8×</td>
-  <td><span class="flags" style="font-size:11px;">Marginal volume · No follow-through · Back below level</span></td>
-  <td class="num mono dim">P68</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">DHT</td>
-  <td><span class="tag warn">Failing</span></td>
-  <td class="num mono">12d ago</td>
-  <td class="num mono">25.07</td>
-  <td class="num mono">26.91</td>
-  <td class="num mono">24.46</td>
-  <td class="num mono" style="color:var(--sig-neg);">-2.4%</td>
-  <td class="num mono">1.8×</td>
-  <td><span class="flags" style="font-size:11px;">Marginal volume · Heavy selling since · Back below level</span></td>
-  <td class="num mono piotroski-hi">P97</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">PENG</td>
-  <td><span class="tag neg">Failed</span></td>
-  <td class="num mono">13d ago</td>
-  <td class="num mono">76.10</td>
-  <td class="num mono">80.47</td>
-  <td class="num mono">60.80</td>
-  <td class="num mono" style="color:var(--sig-neg);">-20.1%</td>
-  <td class="num mono">1.6×</td>
-  <td><span class="flags" style="font-size:11px;">Marginal volume · Heavy selling since · Back below level</span></td>
-  <td class="num mono dim">P68</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">PLTR</td>
-  <td><span class="tag neg">Failed</span></td>
-  <td class="num mono">13d ago</td>
-  <td class="num mono">204.44</td>
-  <td class="num mono">212.94</td>
-  <td class="num mono">196.81</td>
-  <td class="num mono" style="color:var(--sig-neg);">-3.7%</td>
-  <td class="num mono">1.6×</td>
-  <td><span class="flags" style="font-size:11px;">Marginal volume · Back below level</span></td>
-  <td class="num mono piotroski-hi">P91</td>
-  <td><span class="dim">Unknown</span></td>
-</tr></tbody>
-</table>
-<p class="dim" style="font-size:11px;margin-top:6px;">
-  Avoid list. Failed = closed &gt; 3% back below the breakout level; Failing = back below it by less than 3%.
-  If you hold one of these, the breakout thesis is broken: tighten or exit. A later reclaim of the level can be re-evaluated fresh.
-</p>
-
-
-  <h2 class="section">Reversal Swing Setups <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(pullback in an uptrend + bullish reversal candle today, top 6)</span></h2>
-  
-<table class="candidates">
-  <thead><tr>
-    <th>Ticker</th><th class="num">Score</th><th>Trigger</th><th class="num">Pullback</th>
-    <th class="num">RSI low → now</th><th class="num">Support</th><th class="num">Vol</th>
-    <th class="num">RS</th><th class="num">Entry</th><th class="num">Stop</th>
-    <th class="num">TP1 (2R)</th><th class="num">Prior high</th><th>Sector</th>
-  </tr></thead>
-  <tbody>
-<tr>
-  <td class="ticker">SCCO</td>
-  <td class="score score-mid num mono">70</td>
-  <td><span class="tag pos">Hammer</span></td>
-  <td class="num mono">−14.1%</td>
-  <td class="num mono">33 → 46</td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num mono">0.8×</td>
-  <td class="num mono dim">P60</td>
-  <td class="num mono">193.91</td>
-  <td class="num mono">179.01</td>
-  <td class="num mono">223.71</td>
-  <td class="num mono">210.38</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">AMD</td>
-  <td class="score score-mid num mono">65</td>
-  <td><span class="tag pos">Hammer</span></td>
-  <td class="num mono">−23.7%</td>
-  <td class="num mono">36 → 54</td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num mono">1.0×</td>
-  <td class="num mono mono">P80</td>
-  <td class="num mono">578.44</td>
-  <td class="num mono">497.57</td>
-  <td class="num mono">740.17</td>
-  <td class="num mono">658.52</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">ERO</td>
-  <td class="score score-mid num mono">64</td>
-  <td><span class="tag pos">Hammer</span></td>
-  <td class="num mono">−24.0%</td>
-  <td class="num mono">31 → 42</td>
-  <td class="num"><span class="dim">—</span></td>
-  <td class="num mono">0.5×</td>
-  <td class="num mono mono">P79</td>
-  <td class="num mono">32.19</td>
-  <td class="num mono">29.37</td>
-  <td class="num mono">37.82</td>
-  <td class="num mono">39.04</td>
-  <td><span class="dim">Unknown</span></td>
-</tr></tbody>
-</table>
-<p class="dim" style="font-size:11px;margin-top:6px;">
-  Pullback-in-uptrend reversals: price above the 200 SMA, down 5–25% from its 20-day high, RSI dipped to ≤ 40, and today printed
-  a bullish reversal candle. Stop = just under the 5-day low. Prior high = natural target. Counter-trend on the short timeframe,
-  so size smaller than for breakouts.
-</p>
-
-
-  <h2 class="section">Multi-Timeframe RSI Momentum <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(monthly &amp; weekly RSI &gt; 60, daily RSI just crossed back above 50 on good volume, top 8)</span></h2>
-  
-<table class="candidates">
-  <thead><tr>
-    <th>Ticker</th><th class="num">Score</th><th class="num">Monthly RSI</th><th class="num">Weekly RSI</th>
-    <th class="num">Daily RSI dip → now</th><th class="num">Crossed 50</th><th class="num">Cross-day vol</th>
-    <th class="num">AccDays</th><th class="num">RS</th><th class="num">Entry</th><th class="num">Stop</th>
-    <th class="num">TP1 (2R)</th><th class="num">TP2 (3R)</th><th>Sector</th>
-  </tr></thead>
-  <tbody>
-<tr>
-  <td class="ticker">ASX</td>
-  <td class="score score-hi num mono">99</td>
-  <td class="num mono score-hi">75</td>
-  <td class="num mono score-hi">60</td>
-  <td class="num mono">37 → 54</td>
-  <td class="num"><span class="streak">today</span></td>
-  <td class="num mono">1.1×</td>
-  <td class="num mono piotroski-hi">7</td>
-  <td class="num mono mono">P84</td>
-  <td class="num mono">43.92</td>
-  <td class="num mono">36.91</td>
-  <td class="num mono">57.95</td>
-  <td class="num mono">64.96</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="ticker">ADI</td>
-  <td class="score score-hi num mono">83</td>
-  <td class="num mono score-hi">74</td>
-  <td class="num mono score-hi">62</td>
-  <td class="num mono">44 → 64</td>
-  <td class="num"><span class="mono">2d ago</span></td>
-  <td class="num mono">1.2×</td>
-  <td class="num mono dim">3</td>
-  <td class="num mono mono">P83</td>
-  <td class="num mono">428.27</td>
-  <td class="num mono">378.18</td>
-  <td class="num mono">528.45</td>
-  <td class="num mono">578.54</td>
-  <td><span class="dim">Unknown</span></td>
-</tr></tbody>
-</table>
-<p class="dim" style="font-size:11px;margin-top:6px;">
-  Higher-timeframe momentum intact (monthly and weekly RSI(14) &gt; 60) while the daily RSI dipped below 50 and has just
-  crossed back above it on at least average volume: the short-term pullback is ending inside a strong trend.
-  Stop = 1% under the 10-session low. Monthly RSI uses the in-progress month, as TradingView does.
-</p>
-
-
-  <h2 class="section">Recent Quality Breakouts <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(top 10 by conviction, appearances, volume, and recency)</span></h2>
-  
+<details class="history"><summary>This week's quality breakouts (8)</summary>
 <table class="candidates">
   <thead>
     <tr>
@@ -1421,8 +369,8 @@ footer {
   <tbody>
 <tr>
   <td class="mono"><span class="dim">2026-10-25</span></td>
-  <td class="ticker">CART</td>
-  <td class="num mono"><span class="dim mono">×1</span></td>
+  <td class="ticker">CART<span class="liq t-vh" title="Liquidity Very high: avg 6.5M shares/day, $361.9M/day. Keeping a position under 1% of ADV ($3.6M) avoids moving the price."><b>Very high</b> · 6.5M sh · $361.9M/d · 1% ADV $3.6M</span></td>
+  <td class="num mono"><span class="mono">×2</span></td>
   <td class="score score-hi num mono">133 <span class="streak" title="Very high volume">▲▲</span></td>
   <td class="patterns"><span class="pattern-tag">52W High</span><span class="pattern-tag">Resistance Break</span></td>
   <td class="num mono">56.44</td>
@@ -1434,22 +382,8 @@ footer {
   <td class="dim">Unknown</td>
 </tr>
 <tr>
-  <td class="mono"><span class="streak">2026-10-29</span></td>
-  <td class="ticker">AVPT</td>
-  <td class="num mono"><span class="dim mono">×1</span></td>
-  <td class="score score-hi num mono">129 <span class="dim" title="High volume">▲</span></td>
-  <td class="patterns"><span class="pattern-tag">52W High</span><span class="pattern-tag">Resistance Break</span></td>
-  <td class="num mono">17.20</td>
-  <td class="num mono">15.87</td>
-  <td class="num mono">19.87</td>
-  <td class="num mono">21.20</td>
-  <td class="num mono">2.0R</td>
-  <td class="num mono dim">—</td>
-  <td class="dim">Unknown</td>
-</tr>
-<tr>
   <td class="mono"><span class="dim">2026-10-25</span></td>
-  <td class="ticker">QLYS</td>
+  <td class="ticker">QLYS<span class="liq t-vh" title="Liquidity Very high: avg 744K shares/day, $151.0M/day. Keeping a position under 1% of ADV ($1.5M) avoids moving the price."><b>Very high</b> · 744K sh · $151.0M/d · 1% ADV $1.5M</span></td>
   <td class="num mono"><span class="mono">×2</span></td>
   <td class="score score-hi num mono">118</td>
   <td class="patterns"><span class="pattern-tag">52W High</span><span class="pattern-tag">Resistance Break</span></td>
@@ -1463,7 +397,7 @@ footer {
 </tr>
 <tr>
   <td class="mono"><span class="dim">2026-10-25</span></td>
-  <td class="ticker">EQNR</td>
+  <td class="ticker">EQNR<span class="liq t-vh" title="Liquidity Very high: avg 4.4M shares/day, $198.3M/day. Keeping a position under 1% of ADV ($2.0M) avoids moving the price."><b>Very high</b> · 4.4M sh · $198.3M/d · 1% ADV $2.0M</span></td>
   <td class="num mono"><span class="dim mono">×1</span></td>
   <td class="score score-hi num mono">101</td>
   <td class="patterns"><span class="pattern-tag">52W High</span><span class="pattern-tag">Resistance Break</span></td>
@@ -1476,8 +410,22 @@ footer {
   <td class="dim">Unknown</td>
 </tr>
 <tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td class="ticker">OSW<span class="liq t-a" title="Liquidity Adequate: avg 711K shares/day, $17.6M/day. Keeping a position under 1% of ADV ($176.2K) avoids moving the price."><b>Adequate</b> · 711K sh · $17.6M/d · 1% ADV $176.2K</span></td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
+  <td class="score score-hi num mono">100</td>
+  <td class="patterns"><span class="pattern-tag">52W High</span><span class="pattern-tag">Resistance Break</span></td>
+  <td class="num mono">29.74</td>
+  <td class="num mono">27.20</td>
+  <td class="num mono">34.81</td>
+  <td class="num mono">37.35</td>
+  <td class="num mono">2.0R</td>
+  <td class="num mono dim">—</td>
+  <td class="dim">Unknown</td>
+</tr>
+<tr>
   <td class="mono"><span class="dim">2026-10-23</span></td>
-  <td class="ticker">PG</td>
+  <td class="ticker">PG<span class="liq t-vh" title="Liquidity Very high: avg 9.9M shares/day, $1.5B/day. Keeping a position under 1% of ADV ($15.4M) avoids moving the price."><b>Very high</b> · 9.9M sh · $1.5B/d · 1% ADV $15.4M</span></td>
   <td class="num mono"><span class="dim mono">×1</span></td>
   <td class="score score-hi num mono">95 <span class="dim" title="High volume">▲</span></td>
   <td class="patterns"><span class="pattern-tag">55D High</span><span class="pattern-tag">Resistance Break</span></td>
@@ -1490,22 +438,8 @@ footer {
   <td class="dim">Unknown</td>
 </tr>
 <tr>
-  <td class="mono"><span class="streak">2026-10-29</span></td>
-  <td class="ticker">RRC</td>
-  <td class="num mono"><span class="dim mono">×1</span></td>
-  <td class="score score-hi num mono">75 <span class="streak" title="Very high volume">▲▲</span></td>
-  <td class="patterns"><span class="pattern-tag">Resistance Break</span></td>
-  <td class="num mono">55.88</td>
-  <td class="num mono">40.21</td>
-  <td class="num mono">87.21</td>
-  <td class="num mono">102.88</td>
-  <td class="num mono">2.0R</td>
-  <td class="num mono dim">—</td>
-  <td class="dim">Unknown</td>
-</tr>
-<tr>
   <td class="mono"><span class="dim">2026-10-23</span></td>
-  <td class="ticker">KDP</td>
+  <td class="ticker">KDP<span class="liq t-vh" title="Liquidity Very high: avg 12.5M shares/day, $420.8M/day. Keeping a position under 1% of ADV ($4.2M) avoids moving the price."><b>Very high</b> · 12.5M sh · $420.8M/d · 1% ADV $4.2M</span></td>
   <td class="num mono"><span class="dim mono">×1</span></td>
   <td class="score score-hi num mono">79 <span class="dim" title="High volume">▲</span></td>
   <td class="patterns"><span class="pattern-tag">55D High</span><span class="pattern-tag">Resistance Break</span></td>
@@ -1518,36 +452,8 @@ footer {
   <td class="dim">Unknown</td>
 </tr>
 <tr>
-  <td class="mono"><span class="streak">2026-10-29</span></td>
-  <td class="ticker">MANH</td>
-  <td class="num mono"><span class="mono">×2</span></td>
-  <td class="score score-hi num mono">77 <span class="dim" title="High volume">▲</span></td>
-  <td class="patterns"><span class="pattern-tag">Resistance Break</span></td>
-  <td class="num mono">239.73</td>
-  <td class="num mono">212.21</td>
-  <td class="num mono">294.78</td>
-  <td class="num mono">322.30</td>
-  <td class="num mono">2.0R</td>
-  <td class="num mono dim">—</td>
-  <td class="dim">Unknown</td>
-</tr>
-<tr>
-  <td class="mono"><span class="streak">2026-10-29</span></td>
-  <td class="ticker">AR</td>
-  <td class="num mono"><span class="dim mono">×1</span></td>
-  <td class="score score-hi num mono">82</td>
-  <td class="patterns"><span class="pattern-tag">55D High</span><span class="pattern-tag">Resistance Break</span></td>
-  <td class="num mono">42.11</td>
-  <td class="num mono">39.15</td>
-  <td class="num mono">48.02</td>
-  <td class="num mono">50.98</td>
-  <td class="num mono">2.0R</td>
-  <td class="num mono dim">—</td>
-  <td class="dim">Unknown</td>
-</tr>
-<tr>
   <td class="mono"><span class="dim">2026-10-23</span></td>
-  <td class="ticker">ADP</td>
+  <td class="ticker">ADP<span class="liq t-vh" title="Liquidity Very high: avg 1.9M shares/day, $544.2M/day. Keeping a position under 1% of ADV ($5.4M) avoids moving the price."><b>Very high</b> · 1.9M sh · $544.2M/d · 1% ADV $5.4M</span></td>
   <td class="num mono"><span class="dim mono">×1</span></td>
   <td class="score score-mid num mono">68</td>
   <td class="patterns"><span class="pattern-tag">55D High</span><span class="pattern-tag">Resistance Break</span></td>
@@ -1558,16 +464,286 @@ footer {
   <td class="num mono">2.0R</td>
   <td class="num mono dim">—</td>
   <td class="dim">Unknown</td>
+</tr>
+<tr>
+  <td class="mono"><span class="dim">2026-10-25</span></td>
+  <td class="ticker">MANH<span class="liq t-vh" title="Liquidity Very high: avg 698K shares/day, $158.1M/day. Keeping a position under 1% of ADV ($1.6M) avoids moving the price."><b>Very high</b> · 698K sh · $158.1M/d · 1% ADV $1.6M</span></td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
+  <td class="score score-mid num mono">61</td>
+  <td class="patterns"><span class="pattern-tag">Resistance Break</span></td>
+  <td class="num mono">238.19</td>
+  <td class="num mono">210.51</td>
+  <td class="num mono">293.54</td>
+  <td class="num mono">321.22</td>
+  <td class="num mono">2.0R</td>
+  <td class="num mono dim">—</td>
+  <td class="dim">Unknown</td>
 </tr></tbody>
 </table>
 <p class="dim" style="font-size:11px;margin-top:6px;">
   * Entry / Stop / TP levels are from the pick date shown (the ticker's peak-scoring signal). Check current price before acting.
   Volume markers: <span class="dim">▲</span> = ≥ 2× avg, <span class="streak">▲▲</span> = ≥ 3× avg.
 </p>
-
-
-  <h2 class="section">Recent Quality Watchlist <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(top 10 past watchlist entries by composite ranking)</span></h2>
-  
+</details></div>
+</details>
+<details class="panel" id="p-watch" style="--pc:#138A8A" open>
+  <summary><span class="p-title">Pre-breakout watch</span><span class="p-desc">Quality setups coiling under a trigger or tested resistance. Set alerts.</span>
+  <span class="p-counts">today <b>15</b> · this week <b>20</b></span></summary>
+  <div class="panel-body"><h3 class="subsection">Swing-ready watchlist <span class="count">· top 8</span></h3>
+<table class="candidates">
+  <thead>
+    <tr>
+      <th>Ticker</th>
+      <th class="num">Score</th>
+      <th class="num">RS</th>
+      <th class="num">Mom</th>
+      <th class="num">AccDays</th>
+      <th class="num">52W%</th>
+      <th class="num">Current</th>
+      <th class="num">Trigger</th>
+      <th class="num">% to Go</th>
+      <th class="num">Stop†</th>
+      <th class="num">TP1†</th>
+      <th class="num">Piotroski</th>
+      <th>Sector</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+  <td class="ticker">AVPT<span class="liq t-h" title="Liquidity High: avg 2.4M shares/day, $36.4M/day. Keeping a position under 1% of ADV ($364.2K) avoids moving the price."><b>High</b> · 2.4M sh · $36.4M/d · 1% ADV $364.2K</span></td>
+  <td class="score score-hi num mono">92</td>
+  <td class="num mono piotroski-hi">P95</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono piotroski-hi">7</td>
+  <td class="num mono">95%</td>
+  <td class="num mono">17.06</td>
+  <td class="num mono">17.47</td>
+  <td class="num streak">+2.4%</td>
+  <td class="num mono">16.25</td>
+  <td class="num mono">19.92</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">DHT<span class="liq t-vh" title="Liquidity Very high: avg 5.1M shares/day, $125.5M/day. Keeping a position under 1% of ADV ($1.3M) avoids moving the price."><b>Very high</b> · 5.1M sh · $125.5M/d · 1% ADV $1.3M</span></td>
+  <td class="score score-hi num mono">89</td>
+  <td class="num mono piotroski-hi">P97</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono piotroski-mid">5</td>
+  <td class="num mono">88%</td>
+  <td class="num mono">25.15</td>
+  <td class="num mono">26.91</td>
+  <td class="num mono">+7.0%</td>
+  <td class="num mono">25.03</td>
+  <td class="num mono">30.68</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">FRSH<span class="liq t-vh" title="Liquidity Very high: avg 7.4M shares/day, $102.8M/day. Keeping a position under 1% of ADV ($1.0M) avoids moving the price."><b>Very high</b> · 7.4M sh · $102.8M/d · 1% ADV $1.0M</span></td>
+  <td class="score score-hi num mono">88</td>
+  <td class="num mono piotroski-hi">P96</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono piotroski-mid">5</td>
+  <td class="num mono">99%</td>
+  <td class="num mono">15.38</td>
+  <td class="num mono">15.51</td>
+  <td class="num streak">+0.8%</td>
+  <td class="num mono">14.42</td>
+  <td class="num mono">17.68</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">OXY<span class="liq t-vh" title="Liquidity Very high: avg 8.2M shares/day, $502.4M/day. Keeping a position under 1% of ADV ($5.0M) avoids moving the price."><b>Very high</b> · 8.2M sh · $502.4M/d · 1% ADV $5.0M</span></td>
+  <td class="score score-hi num mono">83</td>
+  <td class="num mono mono">P85</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono piotroski-mid">5</td>
+  <td class="num mono">83%</td>
+  <td class="num mono">62.47</td>
+  <td class="num mono">64.96</td>
+  <td class="num mono">+4.0%</td>
+  <td class="num mono">60.41</td>
+  <td class="num mono">74.05</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">AR<span class="liq t-vh" title="Liquidity Very high: avg 4.4M shares/day, $168.1M/day. Keeping a position under 1% of ADV ($1.7M) avoids moving the price."><b>Very high</b> · 4.4M sh · $168.1M/d · 1% ADV $1.7M</span></td>
+  <td class="score score-hi num mono">76</td>
+  <td class="num mono mono">P89</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono piotroski-mid">6</td>
+  <td class="num mono">73%</td>
+  <td class="num mono">41.28</td>
+  <td class="num mono">42.75</td>
+  <td class="num mono">+3.6%</td>
+  <td class="num mono">39.76</td>
+  <td class="num mono">48.73</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr></tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  † Stop / TP are pending — they only become active once price breaks the Trigger level. Set an alert at the Trigger.
+  Mom = momentum confluence passes (RSI 50-75, ADX ≥ 20, Weekly MACD +, 52W pos ≥ 60%). AccDays = IBD-style accumulation days in last 25 sessions (close in upper 25% of day's range with above-average volume).
+</p>
+<h3 class="subsection">Near resistance <span class="count">· within 3% of a level tested ≥ 2×, top 10</span></h3>
+<table class="candidates">
+  <thead><tr>
+    <th>Ticker</th><th class="num">Score</th><th class="num">Current</th><th class="num">Resistance</th>
+    <th class="num">Below by</th><th class="num">Touches</th><th class="num">Volume</th>
+    <th class="num">RS</th><th class="num">Mom</th><th class="num">AccDays</th>
+    <th class="num">Support below</th><th>Sector</th>
+  </tr></thead>
+  <tbody>
+<tr>
+  <td class="ticker">TWLO<span class="liq t-vh" title="Liquidity Very high: avg 4.1M shares/day, $1.1B/day. Keeping a position under 1% of ADV ($11.5M) avoids moving the price."><b>Very high</b> · 4.1M sh · $1.1B/d · 1% ADV $11.5M</span></td>
+  <td class="score score-hi num mono">100</td>
+  <td class="num mono">236.71</td>
+  <td class="num mono">237.66</td>
+  <td class="num mono">0.4%</td>
+  <td class="num mono">×2</td>
+  <td class="num"><span class="tag pos">Tightening</span></td>
+  <td class="num mono piotroski-hi">P92</td>
+  <td class="num mono">2/4</td>
+  <td class="num mono piotroski-mid">6</td>
+  <td class="num mono">179.74</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">FLYW<span class="liq t-a" title="Liquidity Adequate: avg 1.2M shares/day, $21.8M/day. Keeping a position under 1% of ADV ($217.6K) avoids moving the price."><b>Adequate</b> · 1.2M sh · $21.8M/d · 1% ADV $217.6K</span></td>
+  <td class="score score-hi num mono">99</td>
+  <td class="num mono">18.93</td>
+  <td class="num mono">18.94</td>
+  <td class="num mono">0.1%</td>
+  <td class="num mono">×3</td>
+  <td class="num"><span class="tag pos">Tightening</span></td>
+  <td class="num mono mono">P78</td>
+  <td class="num mono">3/4</td>
+  <td class="num mono dim">3</td>
+  <td class="num mono">16.86</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">WMT<span class="liq t-vh" title="Liquidity Very high: avg 19.1M shares/day, $2.2B/day. Keeping a position under 1% of ADV ($21.9M) avoids moving the price."><b>Very high</b> · 19.1M sh · $2.2B/d · 1% ADV $21.9M</span></td>
+  <td class="score score-hi num mono">99</td>
+  <td class="num mono">121.13</td>
+  <td class="num mono">122.16</td>
+  <td class="num mono">0.8%</td>
+  <td class="num mono">×2</td>
+  <td class="num"><span class="tag pos">Tightening</span></td>
+  <td class="num mono mono">P76</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono dim">3</td>
+  <td class="num mono">117.00</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">PAYS<span class="liq t-a" title="Liquidity Adequate: avg 917K shares/day, $13.6M/day. Keeping a position under 1% of ADV ($136.1K) avoids moving the price."><b>Adequate</b> · 917K sh · $13.6M/d · 1% ADV $136.1K</span></td>
+  <td class="score score-hi num mono">88</td>
+  <td class="num mono">13.97</td>
+  <td class="num mono">14.37</td>
+  <td class="num mono">2.8%</td>
+  <td class="num mono">×2</td>
+  <td class="num"><span class="dim">—</span></td>
+  <td class="num mono piotroski-hi">P99</td>
+  <td class="num mono">3/4</td>
+  <td class="num mono piotroski-mid">5</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">FANG<span class="liq t-vh" title="Liquidity Very high: avg 2.1M shares/day, $403.3M/day. Keeping a position under 1% of ADV ($4.0M) avoids moving the price."><b>Very high</b> · 2.1M sh · $403.3M/d · 1% ADV $4.0M</span></td>
+  <td class="score score-hi num mono">83</td>
+  <td class="num mono">206.22</td>
+  <td class="num mono">211.59</td>
+  <td class="num mono">2.6%</td>
+  <td class="num mono">×4</td>
+  <td class="num"><span class="tag pos">Tightening</span></td>
+  <td class="num mono dim">P74</td>
+  <td class="num mono">2/4</td>
+  <td class="num mono dim">0</td>
+  <td class="num mono">181.88</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">CVE<span class="liq t-vh" title="Liquidity Very high: avg 6.7M shares/day, $214.3M/day. Keeping a position under 1% of ADV ($2.1M) avoids moving the price."><b>Very high</b> · 6.7M sh · $214.3M/d · 1% ADV $2.1M</span></td>
+  <td class="score score-hi num mono">83</td>
+  <td class="num mono">31.87</td>
+  <td class="num mono">32.28</td>
+  <td class="num mono">1.3%</td>
+  <td class="num mono">×2</td>
+  <td class="num"><span class="tag pos">Tightening</span></td>
+  <td class="num mono mono">P84</td>
+  <td class="num mono">1/4</td>
+  <td class="num mono dim">3</td>
+  <td class="num mono">30.29</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">RGLD<span class="liq t-vh" title="Liquidity Very high: avg 582K shares/day, $136.4M/day. Keeping a position under 1% of ADV ($1.4M) avoids moving the price."><b>Very high</b> · 582K sh · $136.4M/d · 1% ADV $1.4M</span></td>
+  <td class="score score-hi num mono">82</td>
+  <td class="num mono">241.95</td>
+  <td class="num mono">242.25</td>
+  <td class="num mono">0.1%</td>
+  <td class="num mono">×2</td>
+  <td class="num"><span class="dim">—</span></td>
+  <td class="num mono mono">P86</td>
+  <td class="num mono">2/4</td>
+  <td class="num mono dim">1</td>
+  <td class="num mono">227.97</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">SMCI<span class="liq t-vh" title="Liquidity Very high: avg 34.7M shares/day, $1.3B/day. Keeping a position under 1% of ADV ($12.9M) avoids moving the price."><b>Very high</b> · 34.7M sh · $1.3B/d · 1% ADV $12.9M</span></td>
+  <td class="score score-hi num mono">81</td>
+  <td class="num mono">34.96</td>
+  <td class="num mono">35.50</td>
+  <td class="num mono">1.5%</td>
+  <td class="num mono">×2</td>
+  <td class="num"><span class="tag pos">Tightening</span></td>
+  <td class="num mono mono">P85</td>
+  <td class="num mono">1/4</td>
+  <td class="num mono dim">1</td>
+  <td class="num mono">25.55</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">TREX<span class="liq t-h" title="Liquidity High: avg 1.6M shares/day, $76.8M/day. Keeping a position under 1% of ADV ($767.6K) avoids moving the price."><b>High</b> · 1.6M sh · $76.8M/d · 1% ADV $767.6K</span></td>
+  <td class="score score-hi num mono">80</td>
+  <td class="num mono">49.54</td>
+  <td class="num mono">50.65</td>
+  <td class="num mono">2.2%</td>
+  <td class="num mono">×2</td>
+  <td class="num"><span class="dim">—</span></td>
+  <td class="num mono dim">P71</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono piotroski-hi">7</td>
+  <td class="num mono">45.17</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">SMTC<span class="liq t-vh" title="Liquidity Very high: avg 3.6M shares/day, $569.9M/day. Keeping a position under 1% of ADV ($5.7M) avoids moving the price."><b>Very high</b> · 3.6M sh · $569.9M/d · 1% ADV $5.7M</span></td>
+  <td class="score score-hi num mono">79</td>
+  <td class="num mono">146.97</td>
+  <td class="num mono">149.09</td>
+  <td class="num mono">1.4%</td>
+  <td class="num mono">×3</td>
+  <td class="num"><span class="dim">—</span></td>
+  <td class="num mono mono">P83</td>
+  <td class="num mono">2/4</td>
+  <td class="num mono dim">0</td>
+  <td class="num mono">143.97</td>
+  <td><span class="dim">Unknown</span></td>
+</tr></tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  Breakout candidates pressing a ceiling tested ≥ 2 times. Set an alert at the Resistance level and only act on a close above it
+  with volume ≥ 1.5× average. Tightening = volume contracting under the level (supply drying up, VCP-like).
+</p>
+<details class="history"><summary>This week's quality watchlist (10)</summary>
 <table class="candidates">
   <thead>
     <tr>
@@ -1588,23 +764,8 @@ footer {
   </thead>
   <tbody>
 <tr>
-  <td class="mono"><span class="streak">2026-10-29</span></td>
-  <td class="ticker">FIGS</td>
-  <td class="num mono"><span class="mono">×2</span></td>
-  <td class="score score-hi num mono">93</td>
-  <td class="num mono piotroski-hi">P100</td>
-  <td class="num mono">3/4</td>
-  <td class="num mono">9</td>
-  <td class="num mono">20.66</td>
-  <td class="num mono">20.88</td>
-  <td class="num mono">19.42</td>
-  <td class="num mono">23.80</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
   <td class="mono"><span class="dim">2026-10-25</span></td>
-  <td class="ticker">DT</td>
+  <td class="ticker">DT<span class="liq t-vh" title="Liquidity Very high: avg 6.9M shares/day, $436.3M/day. Keeping a position under 1% of ADV ($4.4M) avoids moving the price."><b>Very high</b> · 6.9M sh · $436.3M/d · 1% ADV $4.4M</span></td>
   <td class="num mono"><span class="streak">×3</span></td>
   <td class="score score-hi num mono">93</td>
   <td class="num mono piotroski-hi">P98</td>
@@ -1618,8 +779,23 @@ footer {
   <td><span class="dim">Unknown</span></td>
 </tr>
 <tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td class="ticker">RRC<span class="liq t-vh" title="Liquidity Very high: avg 5.1M shares/day, $251.6M/day. Keeping a position under 1% of ADV ($2.5M) avoids moving the price."><b>Very high</b> · 5.1M sh · $251.6M/d · 1% ADV $2.5M</span></td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
+  <td class="score score-hi num mono">92</td>
+  <td class="num mono piotroski-hi">P98</td>
+  <td class="num mono">3/4</td>
+  <td class="num mono">9</td>
+  <td class="num mono">54.32</td>
+  <td class="num mono">56.90</td>
+  <td class="num mono">52.92</td>
+  <td class="num mono">64.87</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
   <td class="mono"><span class="dim">2026-10-25</span></td>
-  <td class="ticker">TWLO</td>
+  <td class="ticker">TWLO<span class="liq t-vh" title="Liquidity Very high: avg 4.1M shares/day, $1.1B/day. Keeping a position under 1% of ADV ($11.5M) avoids moving the price."><b>Very high</b> · 4.1M sh · $1.1B/d · 1% ADV $11.5M</span></td>
   <td class="num mono"><span class="dim mono">×1</span></td>
   <td class="score score-hi num mono">91</td>
   <td class="num mono piotroski-hi">P96</td>
@@ -1634,7 +810,7 @@ footer {
 </tr>
 <tr>
   <td class="mono"><span class="dim">2026-10-23</span></td>
-  <td class="ticker">P</td>
+  <td class="ticker">P<span class="liq t-vh" title="Liquidity Very high: avg 3.9M shares/day, $549.8M/day. Keeping a position under 1% of ADV ($5.5M) avoids moving the price."><b>Very high</b> · 3.9M sh · $549.8M/d · 1% ADV $5.5M</span></td>
   <td class="num mono"><span class="streak">×3</span></td>
   <td class="score score-hi num mono">85</td>
   <td class="num mono piotroski-hi">P100</td>
@@ -1649,13 +825,28 @@ footer {
 </tr>
 <tr>
   <td class="mono"><span class="streak">2026-10-29</span></td>
-  <td class="ticker">DHT</td>
+  <td class="ticker">AVPT<span class="liq t-h" title="Liquidity High: avg 2.4M shares/day, $36.4M/day. Keeping a position under 1% of ADV ($364.2K) avoids moving the price."><b>High</b> · 2.4M sh · $36.4M/d · 1% ADV $364.2K</span></td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
+  <td class="score score-hi num mono">92</td>
+  <td class="num mono piotroski-hi">P95</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono">7</td>
+  <td class="num mono">17.06</td>
+  <td class="num mono">17.47</td>
+  <td class="num mono">16.25</td>
+  <td class="num mono">19.92</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td class="ticker">DHT<span class="liq t-vh" title="Liquidity Very high: avg 5.1M shares/day, $125.5M/day. Keeping a position under 1% of ADV ($1.3M) avoids moving the price."><b>Very high</b> · 5.1M sh · $125.5M/d · 1% ADV $1.3M</span></td>
   <td class="num mono"><span class="streak">×3</span></td>
-  <td class="score score-hi num mono">88</td>
+  <td class="score score-hi num mono">89</td>
   <td class="num mono piotroski-hi">P97</td>
   <td class="num mono">4/4</td>
   <td class="num mono">5</td>
-  <td class="num mono">24.46</td>
+  <td class="num mono">25.15</td>
   <td class="num mono">26.91</td>
   <td class="num mono">25.03</td>
   <td class="num mono">30.68</td>
@@ -1664,7 +855,37 @@ footer {
 </tr>
 <tr>
   <td class="mono"><span class="dim">2026-10-25</span></td>
-  <td class="ticker">FRO</td>
+  <td class="ticker">FIGS<span class="liq t-h" title="Liquidity High: avg 4.3M shares/day, $75.9M/day. Keeping a position under 1% of ADV ($759.2K) avoids moving the price."><b>High</b> · 4.3M sh · $75.9M/d · 1% ADV $759.2K</span></td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
+  <td class="score score-hi num mono">89</td>
+  <td class="num mono piotroski-hi">P100</td>
+  <td class="num mono">3/4</td>
+  <td class="num mono">7</td>
+  <td class="num mono">20.20</td>
+  <td class="num mono">20.86</td>
+  <td class="num mono">19.40</td>
+  <td class="num mono">23.78</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td class="ticker">PAGP<span class="liq t-h" title="Liquidity High: avg 1.9M shares/day, $50.7M/day. Keeping a position under 1% of ADV ($507.0K) avoids moving the price."><b>High</b> · 1.9M sh · $50.7M/d · 1% ADV $507.0K</span></td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
+  <td class="score score-hi num mono">88</td>
+  <td class="num mono mono">P84</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono">8</td>
+  <td class="num mono">28.80</td>
+  <td class="num mono">28.93</td>
+  <td class="num mono">26.90</td>
+  <td class="num mono">32.98</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="dim">2026-10-25</span></td>
+  <td class="ticker">FRO<span class="liq t-vh" title="Liquidity Very high: avg 4.4M shares/day, $237.2M/day. Keeping a position under 1% of ADV ($2.4M) avoids moving the price."><b>Very high</b> · 4.4M sh · $237.2M/d · 1% ADV $2.4M</span></td>
   <td class="num mono"><span class="streak">×3</span></td>
   <td class="score score-hi num mono">86</td>
   <td class="num mono piotroski-hi">P96</td>
@@ -1678,62 +899,17 @@ footer {
   <td><span class="dim">Unknown</span></td>
 </tr>
 <tr>
-  <td class="mono"><span class="dim">2026-10-25</span></td>
-  <td class="ticker">PAYS</td>
-  <td class="num mono"><span class="streak">×3</span></td>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td class="ticker">KDP<span class="liq t-vh" title="Liquidity Very high: avg 12.5M shares/day, $420.8M/day. Keeping a position under 1% of ADV ($4.2M) avoids moving the price."><b>Very high</b> · 12.5M sh · $420.8M/d · 1% ADV $4.2M</span></td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
   <td class="score score-hi num mono">86</td>
-  <td class="num mono piotroski-hi">P100</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono">3</td>
-  <td class="num mono">14.92</td>
-  <td class="num mono">16.15</td>
-  <td class="num mono">15.02</td>
-  <td class="num mono">18.41</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="mono"><span class="streak">2026-10-29</span></td>
-  <td class="ticker">FRSH</td>
-  <td class="num mono"><span class="dim mono">×1</span></td>
-  <td class="score score-hi num mono">88</td>
-  <td class="num mono piotroski-hi">P95</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono">5</td>
-  <td class="num mono">15.38</td>
-  <td class="num mono">15.51</td>
-  <td class="num mono">14.42</td>
-  <td class="num mono">17.68</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="mono"><span class="streak">2026-10-29</span></td>
-  <td class="ticker">KDP</td>
-  <td class="num mono"><span class="dim mono">×1</span></td>
-  <td class="score score-hi num mono">85</td>
-  <td class="num mono mono">P82</td>
+  <td class="num mono mono">P84</td>
   <td class="num mono">4/4</td>
   <td class="num mono">7</td>
-  <td class="num mono">34.93</td>
+  <td class="num mono">35.03</td>
   <td class="num mono">35.40</td>
   <td class="num mono">32.92</td>
   <td class="num mono">40.36</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="mono"><span class="streak">2026-10-29</span></td>
-  <td class="ticker">CART</td>
-  <td class="num mono"><span class="mono">×2</span></td>
-  <td class="score score-hi num mono">86</td>
-  <td class="num mono piotroski-hi">P96</td>
-  <td class="num mono">4/4</td>
-  <td class="num mono">4</td>
-  <td class="num mono">58.42</td>
-  <td class="num mono">62.00</td>
-  <td class="num mono">57.66</td>
-  <td class="num mono">70.68</td>
   <td class="num mono dim">—</td>
   <td><span class="dim">Unknown</span></td>
 </tr></tbody>
@@ -1742,10 +918,756 @@ footer {
   * Levels from the pick date (ticker's peak-scoring day). Check current price before setting alerts.
   † Pending levels — active only if price breaks the Trigger.
 </p>
-
-
-  <h2 class="section">Recent Quality Supertrend <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(top 10 past Supertrend-long entries by composite ranking)</span></h2>
-  
+</details><details class="history"><summary>This week's quality near-resistance names (10)</summary>
+<table class="candidates">
+  <thead><tr>
+    <th>Pick date</th><th>Setup</th><th>Ticker</th><th class="num">Seen</th><th class="num">Best score</th>
+    <th class="num">Close*</th><th class="num">Level / entry*</th><th class="num">Stop*</th>
+    <th class="num">Target*</th><th>Sector</th>
+  </tr></thead>
+  <tbody>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Near resistance</span></td>
+  <td class="ticker">TWLO<span class="liq t-vh" title="Liquidity Very high: avg 4.1M shares/day, $1.1B/day. Keeping a position under 1% of ADV ($11.5M) avoids moving the price."><b>Very high</b> · 4.1M sh · $1.1B/d · 1% ADV $11.5M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">100</td>
+  <td class="num mono">236.71</td>
+  <td class="num mono">237.66</td>
+  <td class="num mono">—</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Near resistance</span></td>
+  <td class="ticker">FLYW<span class="liq t-a" title="Liquidity Adequate: avg 1.2M shares/day, $21.8M/day. Keeping a position under 1% of ADV ($217.6K) avoids moving the price."><b>Adequate</b> · 1.2M sh · $21.8M/d · 1% ADV $217.6K</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">99</td>
+  <td class="num mono">18.93</td>
+  <td class="num mono">18.94</td>
+  <td class="num mono">—</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Near resistance</span></td>
+  <td class="ticker">WMT<span class="liq t-vh" title="Liquidity Very high: avg 19.1M shares/day, $2.2B/day. Keeping a position under 1% of ADV ($21.9M) avoids moving the price."><b>Very high</b> · 19.1M sh · $2.2B/d · 1% ADV $21.9M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">99</td>
+  <td class="num mono">121.13</td>
+  <td class="num mono">122.16</td>
+  <td class="num mono">—</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Near resistance</span></td>
+  <td class="ticker">PAYS<span class="liq t-a" title="Liquidity Adequate: avg 917K shares/day, $13.6M/day. Keeping a position under 1% of ADV ($136.1K) avoids moving the price."><b>Adequate</b> · 917K sh · $13.6M/d · 1% ADV $136.1K</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">88</td>
+  <td class="num mono">13.97</td>
+  <td class="num mono">14.37</td>
+  <td class="num mono">—</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Near resistance</span></td>
+  <td class="ticker">FANG<span class="liq t-vh" title="Liquidity Very high: avg 2.1M shares/day, $403.3M/day. Keeping a position under 1% of ADV ($4.0M) avoids moving the price."><b>Very high</b> · 2.1M sh · $403.3M/d · 1% ADV $4.0M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">83</td>
+  <td class="num mono">206.22</td>
+  <td class="num mono">211.59</td>
+  <td class="num mono">—</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Near resistance</span></td>
+  <td class="ticker">CVE<span class="liq t-vh" title="Liquidity Very high: avg 6.7M shares/day, $214.3M/day. Keeping a position under 1% of ADV ($2.1M) avoids moving the price."><b>Very high</b> · 6.7M sh · $214.3M/d · 1% ADV $2.1M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">83</td>
+  <td class="num mono">31.87</td>
+  <td class="num mono">32.28</td>
+  <td class="num mono">—</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Near resistance</span></td>
+  <td class="ticker">RGLD<span class="liq t-vh" title="Liquidity Very high: avg 582K shares/day, $136.4M/day. Keeping a position under 1% of ADV ($1.4M) avoids moving the price."><b>Very high</b> · 582K sh · $136.4M/d · 1% ADV $1.4M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">82</td>
+  <td class="num mono">241.95</td>
+  <td class="num mono">242.25</td>
+  <td class="num mono">—</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Near resistance</span></td>
+  <td class="ticker">SMCI<span class="liq t-vh" title="Liquidity Very high: avg 34.7M shares/day, $1.3B/day. Keeping a position under 1% of ADV ($12.9M) avoids moving the price."><b>Very high</b> · 34.7M sh · $1.3B/d · 1% ADV $12.9M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">81</td>
+  <td class="num mono">34.96</td>
+  <td class="num mono">35.50</td>
+  <td class="num mono">—</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Near resistance</span></td>
+  <td class="ticker">TREX<span class="liq t-h" title="Liquidity High: avg 1.6M shares/day, $76.8M/day. Keeping a position under 1% of ADV ($767.6K) avoids moving the price."><b>High</b> · 1.6M sh · $76.8M/d · 1% ADV $767.6K</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">80</td>
+  <td class="num mono">49.54</td>
+  <td class="num mono">50.65</td>
+  <td class="num mono">—</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Near resistance</span></td>
+  <td class="ticker">SMTC<span class="liq t-vh" title="Liquidity Very high: avg 3.6M shares/day, $569.9M/day. Keeping a position under 1% of ADV ($5.7M) avoids moving the price."><b>Very high</b> · 3.6M sh · $569.9M/d · 1% ADV $5.7M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">79</td>
+  <td class="num mono">146.97</td>
+  <td class="num mono">149.09</td>
+  <td class="num mono">—</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr></tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">* From the ticker's best-scoring day this week. Re-check today's chart before acting.
+Liquidity shown is today's.</p>
+</details></div>
+</details>
+<details class="panel" id="p-retest" style="--pc:#C8961E" open>
+  <summary><span class="p-title">Break &amp; retest</span><span class="p-desc">Recent breakouts: high-probability retests, retests, holders, and fakeouts to avoid.</span>
+  <span class="p-counts">today <b>15</b> · this week <b>10</b></span></summary>
+  <div class="panel-body"><h3 class="subsection"><span class="tag hp">★</span> High-probability: old resistance retested as support <span class="count">· tested ≥ 2× before the break, held, bounced today, zero fakeout flags</span></h3><div class="empty">No high-probability retests today (needs: old resistance tested ≥ 2×, broken on volume, retested as support, bounce today, zero fakeout flags).</div><h3 class="subsection">Break &amp; retest <span class="count">· top 8</span></h3>
+<table class="candidates">
+  <thead><tr>
+    <th>Ticker</th><th class="num">Score</th><th class="num">Broke out</th><th class="num">BO level</th>
+    <th class="num">BO volume</th><th class="num">Post-BO high</th><th class="num">Pullback</th>
+    <th class="num">Current</th><th class="num">Status</th><th class="num">Prior tests</th>
+    <th>Fakeout risk</th><th class="num">RS</th>
+    <th class="num">Stop</th><th class="num">TP1 (2R)</th><th>Sector</th>
+  </tr></thead>
+  <tbody>
+<tr>
+  <td class="ticker">RRC<span class="liq t-vh" title="Liquidity Very high: avg 5.1M shares/day, $251.6M/day. Keeping a position under 1% of ADV ($2.5M) avoids moving the price."><b>Very high</b> · 5.1M sh · $251.6M/d · 1% ADV $2.5M</span></td>
+  <td class="score score-hi num mono">114</td>
+  <td class="num mono">2d ago</td>
+  <td class="num mono">53.65</td>
+  <td class="num mono">4.1×</td>
+  <td class="num mono">56.90</td>
+  <td class="num mono">−4.5%</td>
+  <td class="num mono">54.32</td>
+  <td class="num"><span class="dim">Testing</span></td>
+  <td class="num mono">×0</td>
+  <td><span class="tag pos">Clean</span></td>
+  <td class="num mono piotroski-hi">P98</td>
+  <td class="num mono">52.44</td>
+  <td class="num mono">58.08</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">CART<span class="liq t-vh" title="Liquidity Very high: avg 6.5M shares/day, $361.9M/day. Keeping a position under 1% of ADV ($3.6M) avoids moving the price."><b>Very high</b> · 6.5M sh · $361.9M/d · 1% ADV $3.6M</span></td>
+  <td class="score score-hi num mono">112</td>
+  <td class="num mono">3d ago</td>
+  <td class="num mono">57.98</td>
+  <td class="num mono">8.4×</td>
+  <td class="num mono">62.00</td>
+  <td class="num mono">−7.3%</td>
+  <td class="num mono">57.46</td>
+  <td class="num"><span class="dim">Testing</span></td>
+  <td class="num mono">×0</td>
+  <td><span class="tag warn" title="Back below level">Caution</span><span class="flags">Back below level</span></td>
+  <td class="num mono piotroski-hi">P95</td>
+  <td class="num mono">55.88</td>
+  <td class="num mono">60.62</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">MANH<span class="liq t-vh" title="Liquidity Very high: avg 698K shares/day, $158.1M/day. Keeping a position under 1% of ADV ($1.6M) avoids moving the price."><b>Very high</b> · 698K sh · $158.1M/d · 1% ADV $1.6M</span></td>
+  <td class="score score-hi num mono">97</td>
+  <td class="num mono">7d ago</td>
+  <td class="num mono">231.63</td>
+  <td class="num mono">1.5×</td>
+  <td class="num mono">254.00</td>
+  <td class="num mono">−4.8%</td>
+  <td class="num mono">241.67</td>
+  <td class="num"><span class="tag pos">Bounce today</span></td>
+  <td class="num mono">×0</td>
+  <td><span class="tag neg" title="Marginal volume; Heavy selling since">High risk</span><span class="flags">Marginal volume · Heavy selling since</span></td>
+  <td class="num mono piotroski-hi">P94</td>
+  <td class="num mono">227.00</td>
+  <td class="num mono">271.01</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">ELF<span class="liq t-vh" title="Liquidity Very high: avg 1.2M shares/day, $130.4M/day. Keeping a position under 1% of ADV ($1.3M) avoids moving the price."><b>Very high</b> · 1.2M sh · $130.4M/d · 1% ADV $1.3M</span></td>
+  <td class="score score-hi num mono">97</td>
+  <td class="num mono">10d ago</td>
+  <td class="num mono">110.21</td>
+  <td class="num mono">1.9×</td>
+  <td class="num mono">118.29</td>
+  <td class="num mono">−4.4%</td>
+  <td class="num mono">113.05</td>
+  <td class="num"><span class="dim">Testing</span></td>
+  <td class="num mono">×1</td>
+  <td><span class="tag warn" title="Marginal volume">Caution</span><span class="flags">Marginal volume</span></td>
+  <td class="num mono piotroski-hi">P96</td>
+  <td class="num mono">107.49</td>
+  <td class="num mono">124.17</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">DHT<span class="liq t-vh" title="Liquidity Very high: avg 5.1M shares/day, $125.5M/day. Keeping a position under 1% of ADV ($1.3M) avoids moving the price."><b>Very high</b> · 5.1M sh · $125.5M/d · 1% ADV $1.3M</span></td>
+  <td class="score score-hi num mono">97</td>
+  <td class="num mono">13d ago</td>
+  <td class="num mono">25.07</td>
+  <td class="num mono">1.8×</td>
+  <td class="num mono">26.91</td>
+  <td class="num mono">−6.6%</td>
+  <td class="num mono">25.15</td>
+  <td class="num"><span class="tag pos">Bounce today</span></td>
+  <td class="num mono">×0</td>
+  <td><span class="tag neg" title="Marginal volume; Heavy selling since">High risk</span><span class="flags">Marginal volume · Heavy selling since</span></td>
+  <td class="num mono piotroski-hi">P97</td>
+  <td class="num mono">23.49</td>
+  <td class="num mono">28.47</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">SU<span class="liq t-vh" title="Liquidity Very high: avg 3.5M shares/day, $258.9M/day. Keeping a position under 1% of ADV ($2.6M) avoids moving the price."><b>Very high</b> · 3.5M sh · $258.9M/d · 1% ADV $2.6M</span></td>
+  <td class="score score-hi num mono">96</td>
+  <td class="num mono">8d ago</td>
+  <td class="num mono">76.73</td>
+  <td class="num mono">1.7×</td>
+  <td class="num mono">80.25</td>
+  <td class="num mono">−3.4%</td>
+  <td class="num mono">77.54</td>
+  <td class="num"><span class="tag pos">Bounce today</span></td>
+  <td class="num mono">×0</td>
+  <td><span class="tag neg" title="Weak breakout close; Marginal volume">High risk</span><span class="flags">Weak breakout close · Marginal volume</span></td>
+  <td class="num mono mono">P89</td>
+  <td class="num mono">74.60</td>
+  <td class="num mono">83.42</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">EQNR<span class="liq t-vh" title="Liquidity Very high: avg 4.4M shares/day, $198.3M/day. Keeping a position under 1% of ADV ($2.0M) avoids moving the price."><b>Very high</b> · 4.4M sh · $198.3M/d · 1% ADV $2.0M</span></td>
+  <td class="score score-hi num mono">92</td>
+  <td class="num mono">4d ago</td>
+  <td class="num mono">47.01</td>
+  <td class="num mono">1.6×</td>
+  <td class="num mono">49.08</td>
+  <td class="num mono">−4.0%</td>
+  <td class="num mono">47.14</td>
+  <td class="num"><span class="dim">Testing</span></td>
+  <td class="num mono">×0</td>
+  <td><span class="tag warn" title="Marginal volume">Caution</span><span class="flags">Marginal volume</span></td>
+  <td class="num mono piotroski-hi">P93</td>
+  <td class="num mono">45.92</td>
+  <td class="num mono">49.58</td>
+  <td><span class="dim">Unknown</span></td>
+</tr></tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  Break &amp; retest: the stock broke a 55-session high on volume, ran, then pulled back to the old breakout level and is holding it
+  (old resistance acting as new support). "Bounce today" = closed up from the retest, the confirmation many traders wait for.
+  Stop = 2% below the lower of the retest low or breakout level. Prior tests = swing highs at this level before the breakout.
+</p>
+<h3 class="subsection">Holding above breakout <span class="count">· not yet retested, top 8</span></h3>
+<table class="candidates">
+  <thead><tr>
+    <th>Ticker</th><th class="num">Score</th><th class="num">Broke out</th><th class="num">BO level</th>
+    <th class="num">BO volume</th><th class="num">Current</th><th class="num">Above level</th>
+    <th class="num">Off high</th><th>Fakeout risk</th><th class="num">RS</th><th class="num">Mom</th><th>Sector</th>
+  </tr></thead>
+  <tbody>
+<tr>
+  <td class="ticker">AVPT<span class="liq t-h" title="Liquidity High: avg 2.4M shares/day, $36.4M/day. Keeping a position under 1% of ADV ($364.2K) avoids moving the price."><b>High</b> · 2.4M sh · $36.4M/d · 1% ADV $364.2K</span></td>
+  <td class="score score-hi num mono">91</td>
+  <td class="num mono">1d ago</td>
+  <td class="num mono">17.06</td>
+  <td class="num mono">2.4×</td>
+  <td class="num mono">17.06</td>
+  <td class="num"><span class="mono">+0.0%</span></td>
+  <td class="num mono">−2.4%</td>
+  <td><span class="tag warn" title="No follow-through">Caution</span><span class="flags">No follow-through</span></td>
+  <td class="num mono piotroski-hi">P95</td>
+  <td class="num mono">4/4</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">SSL<span class="liq t-h" title="Liquidity High: avg 1.6M shares/day, $26.1M/day. Keeping a position under 1% of ADV ($260.6K) avoids moving the price."><b>High</b> · 1.6M sh · $26.1M/d · 1% ADV $260.6K</span></td>
+  <td class="score score-hi num mono">87</td>
+  <td class="num mono">5d ago</td>
+  <td class="num mono">16.34</td>
+  <td class="num mono">1.8×</td>
+  <td class="num mono">17.07</td>
+  <td class="num"><span class="mono">+4.5%</span></td>
+  <td class="num mono">−6.2%</td>
+  <td><span class="tag warn" title="Marginal volume">Caution</span><span class="flags">Marginal volume</span></td>
+  <td class="num mono piotroski-hi">P100</td>
+  <td class="num mono">4/4</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">KDP<span class="liq t-vh" title="Liquidity Very high: avg 12.5M shares/day, $420.8M/day. Keeping a position under 1% of ADV ($4.2M) avoids moving the price."><b>Very high</b> · 12.5M sh · $420.8M/d · 1% ADV $4.2M</span></td>
+  <td class="score score-hi num mono">86</td>
+  <td class="num mono">5d ago</td>
+  <td class="num mono">34.89</td>
+  <td class="num mono">2.4×</td>
+  <td class="num mono">35.03</td>
+  <td class="num"><span class="mono">+0.4%</span></td>
+  <td class="num mono">−1.0%</td>
+  <td><span class="tag warn" title="No follow-through">Caution</span><span class="flags">No follow-through</span></td>
+  <td class="num mono mono">P84</td>
+  <td class="num mono">4/4</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">SIG<span class="liq t-h" title="Liquidity High: avg 802K shares/day, $89.0M/day. Keeping a position under 1% of ADV ($890.4K) avoids moving the price."><b>High</b> · 802K sh · $89.0M/d · 1% ADV $890.4K</span></td>
+  <td class="score score-hi num mono">86</td>
+  <td class="num mono">9d ago</td>
+  <td class="num mono">109.06</td>
+  <td class="num mono">2.2×</td>
+  <td class="num mono">115.22</td>
+  <td class="num"><span class="mono">+5.7%</span></td>
+  <td class="num mono">−6.0%</td>
+  <td><span class="tag pos">Clean</span></td>
+  <td class="num mono mono">P88</td>
+  <td class="num mono">4/4</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">OSW<span class="liq t-a" title="Liquidity Adequate: avg 711K shares/day, $17.6M/day. Keeping a position under 1% of ADV ($176.2K) avoids moving the price."><b>Adequate</b> · 711K sh · $17.6M/d · 1% ADV $176.2K</span></td>
+  <td class="score score-hi num mono">85</td>
+  <td class="num mono">1d ago</td>
+  <td class="num mono">27.22</td>
+  <td class="num mono">2.5×</td>
+  <td class="num mono">29.74</td>
+  <td class="num"><span class="mono">+9.3%</span></td>
+  <td class="num mono">−1.3%</td>
+  <td><span class="tag pos">Clean</span></td>
+  <td class="num mono mono">P81</td>
+  <td class="num mono">3/4</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">DOCU<span class="liq t-vh" title="Liquidity Very high: avg 2.5M shares/day, $190.2M/day. Keeping a position under 1% of ADV ($1.9M) avoids moving the price."><b>Very high</b> · 2.5M sh · $190.2M/d · 1% ADV $1.9M</span></td>
+  <td class="score score-hi num mono">80</td>
+  <td class="num mono">10d ago</td>
+  <td class="num mono">75.31</td>
+  <td class="num mono">1.7×</td>
+  <td class="num mono">81.35</td>
+  <td class="num"><span class="mono">+8.0%</span></td>
+  <td class="num mono">−5.3%</td>
+  <td><span class="tag warn" title="Marginal volume">Caution</span><span class="flags">Marginal volume</span></td>
+  <td class="num mono piotroski-hi">P98</td>
+  <td class="num mono">4/4</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">FTV<span class="liq t-vh" title="Liquidity Very high: avg 2.5M shares/day, $146.4M/day. Keeping a position under 1% of ADV ($1.5M) avoids moving the price."><b>Very high</b> · 2.5M sh · $146.4M/d · 1% ADV $1.5M</span></td>
+  <td class="score score-hi num mono">79</td>
+  <td class="num mono">1d ago</td>
+  <td class="num mono">62.62</td>
+  <td class="num mono">2.8×</td>
+  <td class="num mono">65.30</td>
+  <td class="num"><span class="mono">+4.3%</span></td>
+  <td class="num mono">−2.6%</td>
+  <td><span class="tag warn" title="Weak breakout close">Caution</span><span class="flags">Weak breakout close</span></td>
+  <td class="num mono dim">P72</td>
+  <td class="num mono">3/4</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">CNQ<span class="liq t-vh" title="Liquidity Very high: avg 5.3M shares/day, $275.5M/day. Keeping a position under 1% of ADV ($2.8M) avoids moving the price."><b>Very high</b> · 5.3M sh · $275.5M/d · 1% ADV $2.8M</span></td>
+  <td class="score score-hi num mono">78</td>
+  <td class="num mono">9d ago</td>
+  <td class="num mono">52.57</td>
+  <td class="num mono">1.6×</td>
+  <td class="num mono">54.83</td>
+  <td class="num"><span class="mono">+4.3%</span></td>
+  <td class="num mono">−1.2%</td>
+  <td><span class="tag warn" title="Marginal volume">Caution</span><span class="flags">Marginal volume</span></td>
+  <td class="num mono piotroski-hi">P92</td>
+  <td class="num mono">4/4</td>
+  <td><span class="dim">Unknown</span></td>
+</tr></tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  Breakouts from the last 20 sessions that have not retested yet. Above level &gt; 10% (red) = extended; avoid chasing and
+  wait for these to move into the Break &amp; Retest table. Failed breakouts (closed &gt; 3% back below the level) are excluded.
+</p>
+<h3 class="subsection">Fake / failed breakouts <span class="count">· avoid list</span></h3>
+<table class="candidates">
+  <thead><tr>
+    <th>Ticker</th><th>Status</th><th class="num">Broke out</th><th class="num">BO level</th>
+    <th class="num">Post-BO high</th><th class="num">Current</th><th class="num">vs level</th>
+    <th class="num">BO volume</th><th>Why it looks fake</th><th class="num">RS</th><th>Sector</th>
+  </tr></thead>
+  <tbody>
+<tr>
+  <td class="ticker">AR<span class="liq t-vh" title="Liquidity Very high: avg 4.4M shares/day, $168.1M/day. Keeping a position under 1% of ADV ($1.7M) avoids moving the price."><b>Very high</b> · 4.4M sh · $168.1M/d · 1% ADV $1.7M</span></td>
+  <td><span class="tag warn">Failing</span></td>
+  <td class="num mono">1d ago</td>
+  <td class="num mono">42.10</td>
+  <td class="num mono">42.75</td>
+  <td class="num mono">41.28</td>
+  <td class="num mono" style="color:var(--sig-neg);">-1.9%</td>
+  <td class="num mono">1.6×</td>
+  <td><span class="flags" style="font-size:11px;">Weak breakout close · Marginal volume · No follow-through · Back below level</span></td>
+  <td class="num mono mono">P89</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">PG<span class="liq t-vh" title="Liquidity Very high: avg 9.9M shares/day, $1.5B/day. Keeping a position under 1% of ADV ($15.4M) avoids moving the price."><b>Very high</b> · 9.9M sh · $1.5B/d · 1% ADV $15.4M</span></td>
+  <td><span class="tag warn">Failing</span></td>
+  <td class="num mono">4d ago</td>
+  <td class="num mono">159.98</td>
+  <td class="num mono">166.85</td>
+  <td class="num mono">158.26</td>
+  <td class="num mono" style="color:var(--sig-neg);">-1.1%</td>
+  <td class="num mono">2.4×</td>
+  <td><span class="flags" style="font-size:11px;">Back below level</span></td>
+  <td class="num mono dim">P73</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">ADP<span class="liq t-vh" title="Liquidity Very high: avg 1.9M shares/day, $544.2M/day. Keeping a position under 1% of ADV ($5.4M) avoids moving the price."><b>Very high</b> · 1.9M sh · $544.2M/d · 1% ADV $5.4M</span></td>
+  <td><span class="tag neg">Failed</span></td>
+  <td class="num mono">5d ago</td>
+  <td class="num mono">296.14</td>
+  <td class="num mono">309.40</td>
+  <td class="num mono">285.14</td>
+  <td class="num mono" style="color:var(--sig-neg);">-3.7%</td>
+  <td class="num mono">1.8×</td>
+  <td><span class="flags" style="font-size:11px;">Marginal volume · Back below level</span></td>
+  <td class="num mono dim">P71</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">ROKU<span class="liq t-vh" title="Liquidity Very high: avg 2.1M shares/day, $325.5M/day. Keeping a position under 1% of ADV ($3.3M) avoids moving the price."><b>Very high</b> · 2.1M sh · $325.5M/d · 1% ADV $3.3M</span></td>
+  <td><span class="tag warn">Failing</span></td>
+  <td class="num mono">5d ago</td>
+  <td class="num mono">159.89</td>
+  <td class="num mono">160.22</td>
+  <td class="num mono">155.87</td>
+  <td class="num mono" style="color:var(--sig-neg);">-2.5%</td>
+  <td class="num mono">2.9×</td>
+  <td><span class="flags" style="font-size:11px;">No follow-through · Back below level</span></td>
+  <td class="num mono dim">P72</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">PSO<span class="liq t-a" title="Liquidity Adequate: avg 752K shares/day, $13.1M/day. Keeping a position under 1% of ADV ($131.1K) avoids moving the price."><b>Adequate</b> · 752K sh · $13.1M/d · 1% ADV $131.1K</span></td>
+  <td><span class="tag neg">Failed</span></td>
+  <td class="num mono">9d ago</td>
+  <td class="num mono">18.02</td>
+  <td class="num mono">18.43</td>
+  <td class="num mono">17.43</td>
+  <td class="num mono" style="color:var(--sig-neg);">-3.2%</td>
+  <td class="num mono">1.8×</td>
+  <td><span class="flags" style="font-size:11px;">Marginal volume · No follow-through · Back below level</span></td>
+  <td class="num mono dim">P70</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">PENG<span class="liq t-vh" title="Liquidity Very high: avg 5.4M shares/day, $356.4M/day. Keeping a position under 1% of ADV ($3.6M) avoids moving the price."><b>Very high</b> · 5.4M sh · $356.4M/d · 1% ADV $3.6M</span></td>
+  <td><span class="tag neg">Failed</span></td>
+  <td class="num mono">13d ago</td>
+  <td class="num mono">76.10</td>
+  <td class="num mono">80.47</td>
+  <td class="num mono">60.80</td>
+  <td class="num mono" style="color:var(--sig-neg);">-20.1%</td>
+  <td class="num mono">1.6×</td>
+  <td><span class="flags" style="font-size:11px;">Marginal volume · Heavy selling since · Back below level</span></td>
+  <td class="num mono dim">P70</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">PLTR<span class="liq t-vh" title="Liquidity Very high: avg 22.2M shares/day, $4.4B/day. Keeping a position under 1% of ADV ($43.8M) avoids moving the price."><b>Very high</b> · 22.2M sh · $4.4B/d · 1% ADV $43.8M</span></td>
+  <td><span class="tag neg">Failed</span></td>
+  <td class="num mono">14d ago</td>
+  <td class="num mono">204.44</td>
+  <td class="num mono">212.94</td>
+  <td class="num mono">193.87</td>
+  <td class="num mono" style="color:var(--sig-neg);">-5.2%</td>
+  <td class="num mono">1.6×</td>
+  <td><span class="flags" style="font-size:11px;">Marginal volume · Back below level</span></td>
+  <td class="num mono piotroski-hi">P92</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">AVT<span class="liq t-vh" title="Liquidity Very high: avg 1.3M shares/day, $121.9M/day. Keeping a position under 1% of ADV ($1.2M) avoids moving the price."><b>Very high</b> · 1.3M sh · $121.9M/d · 1% ADV $1.2M</span></td>
+  <td><span class="tag neg">Failed</span></td>
+  <td class="num mono">18d ago</td>
+  <td class="num mono">104.58</td>
+  <td class="num mono">108.63</td>
+  <td class="num mono">93.57</td>
+  <td class="num mono" style="color:var(--sig-neg);">-10.5%</td>
+  <td class="num mono">1.6×</td>
+  <td><span class="flags" style="font-size:11px;">Marginal volume · Back below level</span></td>
+  <td class="num mono dim">P62</td>
+  <td><span class="dim">Unknown</span></td>
+</tr></tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  Avoid list. Failed = closed &gt; 3% back below the breakout level; Failing = back below it by less than 3%.
+  If you hold one of these, the breakout thesis is broken: tighten or exit. A later reclaim of the level can be re-evaluated fresh.
+</p>
+<details class="history"><summary>This week's quality breakouts-in-progress (10)</summary>
+<table class="candidates">
+  <thead><tr>
+    <th>Pick date</th><th>Setup</th><th>Ticker</th><th class="num">Seen</th><th class="num">Best score</th>
+    <th class="num">Close*</th><th class="num">Level / entry*</th><th class="num">Stop*</th>
+    <th class="num">Target*</th><th>Sector</th>
+  </tr></thead>
+  <tbody>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Break &amp; retest</span></td>
+  <td class="ticker">RRC<span class="liq t-vh" title="Liquidity Very high: avg 5.1M shares/day, $251.6M/day. Keeping a position under 1% of ADV ($2.5M) avoids moving the price."><b>Very high</b> · 5.1M sh · $251.6M/d · 1% ADV $2.5M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">114</td>
+  <td class="num mono">54.32</td>
+  <td class="num mono">53.65</td>
+  <td class="num mono">52.44</td>
+  <td class="num mono">58.08</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Break &amp; retest</span></td>
+  <td class="ticker">CART<span class="liq t-vh" title="Liquidity Very high: avg 6.5M shares/day, $361.9M/day. Keeping a position under 1% of ADV ($3.6M) avoids moving the price."><b>Very high</b> · 6.5M sh · $361.9M/d · 1% ADV $3.6M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">112</td>
+  <td class="num mono">57.46</td>
+  <td class="num mono">57.98</td>
+  <td class="num mono">55.88</td>
+  <td class="num mono">60.62</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Break &amp; retest</span></td>
+  <td class="ticker">MANH<span class="liq t-vh" title="Liquidity Very high: avg 698K shares/day, $158.1M/day. Keeping a position under 1% of ADV ($1.6M) avoids moving the price."><b>Very high</b> · 698K sh · $158.1M/d · 1% ADV $1.6M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">97</td>
+  <td class="num mono">241.67</td>
+  <td class="num mono">231.63</td>
+  <td class="num mono">227.00</td>
+  <td class="num mono">271.01</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Break &amp; retest</span></td>
+  <td class="ticker">ELF<span class="liq t-vh" title="Liquidity Very high: avg 1.2M shares/day, $130.4M/day. Keeping a position under 1% of ADV ($1.3M) avoids moving the price."><b>Very high</b> · 1.2M sh · $130.4M/d · 1% ADV $1.3M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">97</td>
+  <td class="num mono">113.05</td>
+  <td class="num mono">110.21</td>
+  <td class="num mono">107.49</td>
+  <td class="num mono">124.17</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Break &amp; retest</span></td>
+  <td class="ticker">DHT<span class="liq t-vh" title="Liquidity Very high: avg 5.1M shares/day, $125.5M/day. Keeping a position under 1% of ADV ($1.3M) avoids moving the price."><b>Very high</b> · 5.1M sh · $125.5M/d · 1% ADV $1.3M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">97</td>
+  <td class="num mono">25.15</td>
+  <td class="num mono">25.07</td>
+  <td class="num mono">23.49</td>
+  <td class="num mono">28.47</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Break &amp; retest</span></td>
+  <td class="ticker">SU<span class="liq t-vh" title="Liquidity Very high: avg 3.5M shares/day, $258.9M/day. Keeping a position under 1% of ADV ($2.6M) avoids moving the price."><b>Very high</b> · 3.5M sh · $258.9M/d · 1% ADV $2.6M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">96</td>
+  <td class="num mono">77.54</td>
+  <td class="num mono">76.73</td>
+  <td class="num mono">74.60</td>
+  <td class="num mono">83.42</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Break &amp; retest</span></td>
+  <td class="ticker">EQNR<span class="liq t-vh" title="Liquidity Very high: avg 4.4M shares/day, $198.3M/day. Keeping a position under 1% of ADV ($2.0M) avoids moving the price."><b>Very high</b> · 4.4M sh · $198.3M/d · 1% ADV $2.0M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">92</td>
+  <td class="num mono">47.14</td>
+  <td class="num mono">47.01</td>
+  <td class="num mono">45.92</td>
+  <td class="num mono">49.58</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Holding above BO</span></td>
+  <td class="ticker">AVPT<span class="liq t-h" title="Liquidity High: avg 2.4M shares/day, $36.4M/day. Keeping a position under 1% of ADV ($364.2K) avoids moving the price."><b>High</b> · 2.4M sh · $36.4M/d · 1% ADV $364.2K</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">91</td>
+  <td class="num mono">17.06</td>
+  <td class="num mono">17.06</td>
+  <td class="num mono">—</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Holding above BO</span></td>
+  <td class="ticker">SSL<span class="liq t-h" title="Liquidity High: avg 1.6M shares/day, $26.1M/day. Keeping a position under 1% of ADV ($260.6K) avoids moving the price."><b>High</b> · 1.6M sh · $26.1M/d · 1% ADV $260.6K</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">87</td>
+  <td class="num mono">17.07</td>
+  <td class="num mono">16.34</td>
+  <td class="num mono">—</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Holding above BO</span></td>
+  <td class="ticker">KDP<span class="liq t-vh" title="Liquidity Very high: avg 12.5M shares/day, $420.8M/day. Keeping a position under 1% of ADV ($4.2M) avoids moving the price."><b>Very high</b> · 12.5M sh · $420.8M/d · 1% ADV $4.2M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">86</td>
+  <td class="num mono">35.03</td>
+  <td class="num mono">34.89</td>
+  <td class="num mono">—</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr></tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">* From the ticker's best-scoring day this week. Re-check today's chart before acting.
+Liquidity shown is today's.</p>
+</details></div>
+</details>
+<details class="panel" id="p-trend" style="--pc:#7B4FBF" open>
+  <summary><span class="p-title">Trend following (Supertrend)</span><span class="p-desc">Fresh daily Supertrend long flips (ATR 10 × 2.5, ≤ 20d).</span>
+  <span class="p-counts">today <b>6</b> · this week <b>10</b></span></summary>
+  <div class="panel-body"><h3 class="subsection">Today's Supertrend longs <span class="count">· top 6</span></h3>
+<table class="candidates">
+  <thead>
+    <tr>
+      <th>Ticker</th>
+      <th class="num">Score</th>
+      <th class="num">Flip Age</th>
+      <th class="num">RS</th>
+      <th class="num">Mom</th>
+      <th class="num">AccDays</th>
+      <th class="num">Current</th>
+      <th class="num">ST Stop</th>
+      <th class="num">% Above Stop</th>
+      <th class="num">Piotroski</th>
+      <th>Sector</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+  <td class="ticker">OKTA<span class="liq t-vh" title="Liquidity Very high: avg 3.0M shares/day, $642.7M/day. Keeping a position under 1% of ADV ($6.4M) avoids moving the price."><b>Very high</b> · 3.0M sh · $642.7M/d · 1% ADV $6.4M</span></td>
+  <td class="score score-hi num mono">94</td>
+  <td class="num"><span class="mono">3d</span></td>
+  <td class="num mono piotroski-hi">P99</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono dim">0</td>
+  <td class="num mono">217.68</td>
+  <td class="num mono">196.39</td>
+  <td class="num mono">+10.8%</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">STNG<span class="liq t-h" title="Liquidity High: avg 1.1M shares/day, $97.8M/day. Keeping a position under 1% of ADV ($978.1K) avoids moving the price."><b>High</b> · 1.1M sh · $97.8M/d · 1% ADV $978.1K</span></td>
+  <td class="score score-hi num mono">78</td>
+  <td class="num"><span class="dim mono">15d</span></td>
+  <td class="num mono piotroski-hi">P95</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono piotroski-mid">6</td>
+  <td class="num mono">93.93</td>
+  <td class="num mono">82.51</td>
+  <td class="num mono">+13.8%</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">CART<span class="liq t-vh" title="Liquidity Very high: avg 6.5M shares/day, $361.9M/day. Keeping a position under 1% of ADV ($3.6M) avoids moving the price."><b>Very high</b> · 6.5M sh · $361.9M/d · 1% ADV $3.6M</span></td>
+  <td class="score score-hi num mono">76</td>
+  <td class="num"><span class="dim mono">14d</span></td>
+  <td class="num mono piotroski-hi">P95</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono piotroski-mid">4</td>
+  <td class="num mono">57.46</td>
+  <td class="num mono">52.81</td>
+  <td class="num mono">+8.8%</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">AR<span class="liq t-vh" title="Liquidity Very high: avg 4.4M shares/day, $168.1M/day. Keeping a position under 1% of ADV ($1.7M) avoids moving the price."><b>Very high</b> · 4.4M sh · $168.1M/d · 1% ADV $1.7M</span></td>
+  <td class="score score-hi num mono">75</td>
+  <td class="num"><span class="dim mono">13d</span></td>
+  <td class="num mono mono">P89</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono piotroski-mid">6</td>
+  <td class="num mono">41.28</td>
+  <td class="num mono">38.87</td>
+  <td class="num mono">+6.2%</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">ESTC<span class="liq t-vh" title="Liquidity Very high: avg 1.8M shares/day, $178.3M/day. Keeping a position under 1% of ADV ($1.8M) avoids moving the price."><b>Very high</b> · 1.8M sh · $178.3M/d · 1% ADV $1.8M</span></td>
+  <td class="score score-hi num mono">75</td>
+  <td class="num"><span class="dim mono">14d</span></td>
+  <td class="num mono piotroski-hi">P98</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono dim">1</td>
+  <td class="num mono">101.90</td>
+  <td class="num mono">95.87</td>
+  <td class="num mono">+6.3%</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">MANH<span class="liq t-vh" title="Liquidity Very high: avg 698K shares/day, $158.1M/day. Keeping a position under 1% of ADV ($1.6M) avoids moving the price."><b>Very high</b> · 698K sh · $158.1M/d · 1% ADV $1.6M</span></td>
+  <td class="score score-hi num mono">75</td>
+  <td class="num"><span class="dim mono">13d</span></td>
+  <td class="num mono piotroski-hi">P94</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono dim">3</td>
+  <td class="num mono">241.67</td>
+  <td class="num mono">224.75</td>
+  <td class="num mono">+7.5%</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr></tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  Supertrend (ATR 10, mult 2.5) matches TradingView free tier and your Positional Trading Tool. The ST Stop line trails upward as the trend continues — exit when price closes below it. Flip Age in days since the long signal fired; fresher flips (≤ 3 days) are typically the best risk/reward entries.
+</p>
+<details class="history"><summary>This week's quality Supertrend names (10)</summary>
 <table class="candidates">
   <thead>
     <tr>
@@ -1766,7 +1688,7 @@ footer {
   <tbody>
 <tr>
   <td class="mono"><span class="dim">2026-10-25</span></td>
-  <td class="ticker">CRWD</td>
+  <td class="ticker">CRWD<span class="liq t-vh" title="Liquidity Very high: avg 8.5M shares/day, $2.1B/day. Keeping a position under 1% of ADV ($21.5M) avoids moving the price."><b>Very high</b> · 8.5M sh · $2.1B/d · 1% ADV $21.5M</span></td>
   <td class="num mono"><span class="mono">×2</span></td>
   <td class="score score-hi num mono">96</td>
   <td class="num mono">0d</td>
@@ -1780,7 +1702,7 @@ footer {
 </tr>
 <tr>
   <td class="mono"><span class="dim">2026-10-25</span></td>
-  <td class="ticker">TREX</td>
+  <td class="ticker">TREX<span class="liq t-h" title="Liquidity High: avg 1.6M shares/day, $76.8M/day. Keeping a position under 1% of ADV ($767.6K) avoids moving the price."><b>High</b> · 1.6M sh · $76.8M/d · 1% ADV $767.6K</span></td>
   <td class="num mono"><span class="mono">×2</span></td>
   <td class="score score-hi num mono">90</td>
   <td class="num mono">3d</td>
@@ -1794,7 +1716,7 @@ footer {
 </tr>
 <tr>
   <td class="mono"><span class="dim">2026-10-23</span></td>
-  <td class="ticker">MHK</td>
+  <td class="ticker">MHK<span class="liq t-vh" title="Liquidity Very high: avg 1.2M shares/day, $143.7M/day. Keeping a position under 1% of ADV ($1.4M) avoids moving the price."><b>Very high</b> · 1.2M sh · $143.7M/d · 1% ADV $1.4M</span></td>
   <td class="num mono"><span class="dim mono">×1</span></td>
   <td class="score score-hi num mono">91</td>
   <td class="num mono">0d</td>
@@ -1808,7 +1730,7 @@ footer {
 </tr>
 <tr>
   <td class="mono"><span class="streak">2026-10-29</span></td>
-  <td class="ticker">SWKS</td>
+  <td class="ticker">SWKS<span class="liq t-vh" title="Liquidity Very high: avg 6.8M shares/day, $555.4M/day. Keeping a position under 1% of ADV ($5.6M) avoids moving the price."><b>Very high</b> · 6.8M sh · $555.4M/d · 1% ADV $5.6M</span></td>
   <td class="num mono"><span class="dim mono">×1</span></td>
   <td class="score score-hi num mono">94</td>
   <td class="num mono">0d</td>
@@ -1822,25 +1744,25 @@ footer {
 </tr>
 <tr>
   <td class="mono"><span class="streak">2026-10-29</span></td>
-  <td class="ticker">OKTA</td>
+  <td class="ticker">OKTA<span class="liq t-vh" title="Liquidity Very high: avg 3.0M shares/day, $642.7M/day. Keeping a position under 1% of ADV ($6.4M) avoids moving the price."><b>Very high</b> · 3.0M sh · $642.7M/d · 1% ADV $6.4M</span></td>
   <td class="num mono"><span class="dim mono">×1</span></td>
-  <td class="score score-hi num mono">95</td>
-  <td class="num mono">2d</td>
+  <td class="score score-hi num mono">94</td>
+  <td class="num mono">3d</td>
   <td class="num mono piotroski-hi">P99</td>
   <td class="num mono">4/4</td>
   <td class="num mono">0</td>
-  <td class="num mono">222.66</td>
+  <td class="num mono">217.68</td>
   <td class="num mono">196.39</td>
   <td class="num mono dim">—</td>
   <td><span class="dim">Unknown</span></td>
 </tr>
 <tr>
   <td class="mono"><span class="streak">2026-10-29</span></td>
-  <td class="ticker">ADI</td>
+  <td class="ticker">ADI<span class="liq t-vh" title="Liquidity Very high: avg 3.4M shares/day, $1.4B/day. Keeping a position under 1% of ADV ($13.8M) avoids moving the price."><b>Very high</b> · 3.4M sh · $1.4B/d · 1% ADV $13.8M</span></td>
   <td class="num mono"><span class="dim mono">×1</span></td>
   <td class="score score-hi num mono">89</td>
   <td class="num mono">1d</td>
-  <td class="num mono mono">P83</td>
+  <td class="num mono mono">P82</td>
   <td class="num mono">3/4</td>
   <td class="num mono">3</td>
   <td class="num mono">428.27</td>
@@ -1850,7 +1772,7 @@ footer {
 </tr>
 <tr>
   <td class="mono"><span class="dim">2026-10-23</span></td>
-  <td class="ticker">EXPD</td>
+  <td class="ticker">EXPD<span class="liq t-vh" title="Liquidity Very high: avg 1.1M shares/day, $210.9M/day. Keeping a position under 1% of ADV ($2.1M) avoids moving the price."><b>Very high</b> · 1.1M sh · $210.9M/d · 1% ADV $2.1M</span></td>
   <td class="num mono"><span class="streak">×3</span></td>
   <td class="score score-hi num mono">81</td>
   <td class="num mono">6d</td>
@@ -1864,7 +1786,7 @@ footer {
 </tr>
 <tr>
   <td class="mono"><span class="dim">2026-10-23</span></td>
-  <td class="ticker">ANF</td>
+  <td class="ticker">ANF<span class="liq t-vh" title="Liquidity Very high: avg 1.2M shares/day, $188.1M/day. Keeping a position under 1% of ADV ($1.9M) avoids moving the price."><b>Very high</b> · 1.2M sh · $188.1M/d · 1% ADV $1.9M</span></td>
   <td class="num mono"><span class="streak">×3</span></td>
   <td class="score score-hi num mono">85</td>
   <td class="num mono">7d</td>
@@ -1878,7 +1800,7 @@ footer {
 </tr>
 <tr>
   <td class="mono"><span class="dim">2026-10-23</span></td>
-  <td class="ticker">FRSH</td>
+  <td class="ticker">FRSH<span class="liq t-vh" title="Liquidity Very high: avg 7.4M shares/day, $102.8M/day. Keeping a position under 1% of ADV ($1.0M) avoids moving the price."><b>Very high</b> · 7.4M sh · $102.8M/d · 1% ADV $1.0M</span></td>
   <td class="num mono"><span class="streak">×3</span></td>
   <td class="score score-hi num mono">78</td>
   <td class="num mono">15d</td>
@@ -1892,7 +1814,7 @@ footer {
 </tr>
 <tr>
   <td class="mono"><span class="dim">2026-10-25</span></td>
-  <td class="ticker">RRC</td>
+  <td class="ticker">RRC<span class="liq t-vh" title="Liquidity Very high: avg 5.1M shares/day, $251.6M/day. Keeping a position under 1% of ADV ($2.5M) avoids moving the price."><b>Very high</b> · 5.1M sh · $251.6M/d · 1% ADV $2.5M</span></td>
   <td class="num mono"><span class="mono">×2</span></td>
   <td class="score score-hi num mono">75</td>
   <td class="num mono">13d</td>
@@ -1908,10 +1830,488 @@ footer {
 <p class="dim" style="font-size:11px;margin-top:6px;">
   * Values from the pick date (ticker's peak-scoring day). Re-check today's chart before acting — the Supertrend trailing stop will have moved since.
 </p>
-
-
-  <h2 class="section">Recent Quality Recovery <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11px;">(top 10 past recovery entries by composite ranking)</span></h2>
-  
+</details></div>
+</details>
+<details class="panel" id="p-pullback" style="--pc:#2E7D5B" open>
+  <summary><span class="p-title">Pullback &amp; reversal</span><span class="p-desc">Buying dips in uptrends: support tests, reversal candles, RSI resets.</span>
+  <span class="p-counts">today <b>13</b> · this week <b>10</b></span></summary>
+  <div class="panel-body"><h3 class="subsection">Near support <span class="count">· within 3% above a level tested ≥ 2×, top 10</span></h3>
+<table class="candidates">
+  <thead><tr>
+    <th>Ticker</th><th class="num">Score</th><th class="num">Current</th><th class="num">Support</th>
+    <th class="num">Above by</th><th class="num">Touches</th><th class="num">Confluence</th>
+    <th class="num">Volume</th><th class="num">RS</th><th class="num">Stop</th>
+    <th class="num">Target (resistance)</th><th>Sector</th>
+  </tr></thead>
+  <tbody>
+<tr>
+  <td class="ticker">DV<span class="liq t-a" title="Liquidity Adequate: avg 1.8M shares/day, $24.3M/day. Keeping a position under 1% of ADV ($243.1K) avoids moving the price."><b>Adequate</b> · 1.8M sh · $24.3M/d · 1% ADV $243.1K</span></td>
+  <td class="score score-hi num mono">92</td>
+  <td class="num mono">13.53</td>
+  <td class="num mono">13.43</td>
+  <td class="num mono">0.7%</td>
+  <td class="num mono">×9</td>
+  <td class="num"><span class="tag pos">50 SMA</span></td>
+  <td class="num"><span class="dim">—</span></td>
+  <td class="num mono mono">P83</td>
+  <td class="num mono">13.03</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">AVNT<span class="liq t-h" title="Liquidity High: avg 864K shares/day, $34.5M/day. Keeping a position under 1% of ADV ($344.7K) avoids moving the price."><b>High</b> · 864K sh · $34.5M/d · 1% ADV $344.7K</span></td>
+  <td class="score score-hi num mono">88</td>
+  <td class="num mono">42.19</td>
+  <td class="num mono">42.07</td>
+  <td class="num mono">0.3%</td>
+  <td class="num mono">×2</td>
+  <td class="num"><span class="tag pos">50 SMA</span></td>
+  <td class="num"><span class="tag pos">Dry-up</span></td>
+  <td class="num mono mono">P79</td>
+  <td class="num mono">40.81</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">RAMP<span class="liq t-h" title="Liquidity High: avg 1.5M shares/day, $57.3M/day. Keeping a position under 1% of ADV ($573.3K) avoids moving the price."><b>High</b> · 1.5M sh · $57.3M/d · 1% ADV $573.3K</span></td>
+  <td class="score score-hi num mono">86</td>
+  <td class="num mono">38.14</td>
+  <td class="num mono">37.73</td>
+  <td class="num mono">1.1%</td>
+  <td class="num mono">×15</td>
+  <td class="num"><span class="tag pos">50 SMA</span></td>
+  <td class="num"><span class="tag pos">Dry-up</span></td>
+  <td class="num mono dim">P62</td>
+  <td class="num mono">36.60</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">TTE<span class="liq t-vh" title="Liquidity Very high: avg 2.5M shares/day, $220.4M/day. Keeping a position under 1% of ADV ($2.2M) avoids moving the price."><b>Very high</b> · 2.5M sh · $220.4M/d · 1% ADV $2.2M</span></td>
+  <td class="score score-hi num mono">81</td>
+  <td class="num mono">92.88</td>
+  <td class="num mono">92.73</td>
+  <td class="num mono">0.2%</td>
+  <td class="num mono">×3</td>
+  <td class="num"><span class="dim">—</span></td>
+  <td class="num"><span class="tag pos">Dry-up</span></td>
+  <td class="num mono mono">P77</td>
+  <td class="num mono">89.95</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">EXPD<span class="liq t-vh" title="Liquidity Very high: avg 1.1M shares/day, $210.9M/day. Keeping a position under 1% of ADV ($2.1M) avoids moving the price."><b>Very high</b> · 1.1M sh · $210.9M/d · 1% ADV $2.1M</span></td>
+  <td class="score score-hi num mono">76</td>
+  <td class="num mono">197.45</td>
+  <td class="num mono">193.43</td>
+  <td class="num mono">2.0%</td>
+  <td class="num mono">×2</td>
+  <td class="num"><span class="tag pos">50 SMA</span></td>
+  <td class="num"><span class="tag pos">Dry-up</span></td>
+  <td class="num mono mono">P77</td>
+  <td class="num mono">187.63</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">VNOM<span class="liq t-h" title="Liquidity High: avg 2.0M shares/day, $89.6M/day. Keeping a position under 1% of ADV ($896.3K) avoids moving the price."><b>High</b> · 2.0M sh · $89.6M/d · 1% ADV $896.3K</span></td>
+  <td class="score score-hi num mono">76</td>
+  <td class="num mono">46.46</td>
+  <td class="num mono">45.87</td>
+  <td class="num mono">1.3%</td>
+  <td class="num mono">×3</td>
+  <td class="num"><span class="dim">—</span></td>
+  <td class="num"><span class="tag pos">Dry-up</span></td>
+  <td class="num mono mono">P79</td>
+  <td class="num mono">44.49</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">ACA<span class="liq t-h" title="Liquidity High: avg 644K shares/day, $94.7M/day. Keeping a position under 1% of ADV ($947.1K) avoids moving the price."><b>High</b> · 644K sh · $94.7M/d · 1% ADV $947.1K</span></td>
+  <td class="score score-hi num mono">74</td>
+  <td class="num mono">149.15</td>
+  <td class="num mono">145.66</td>
+  <td class="num mono">2.3%</td>
+  <td class="num mono">×11</td>
+  <td class="num"><span class="tag pos">50 SMA</span></td>
+  <td class="num"><span class="dim">—</span></td>
+  <td class="num mono dim">P67</td>
+  <td class="num mono">141.29</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">DVN<span class="liq t-vh" title="Liquidity Very high: avg 8.4M shares/day, $416.0M/day. Keeping a position under 1% of ADV ($4.2M) avoids moving the price."><b>Very high</b> · 8.4M sh · $416.0M/d · 1% ADV $4.2M</span></td>
+  <td class="score score-hi num mono">71</td>
+  <td class="num mono">50.59</td>
+  <td class="num mono">49.93</td>
+  <td class="num mono">1.3%</td>
+  <td class="num mono">×3</td>
+  <td class="num"><span class="dim">—</span></td>
+  <td class="num"><span class="dim">—</span></td>
+  <td class="num mono mono">P89</td>
+  <td class="num mono">48.43</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">AMD<span class="liq t-vh" title="Liquidity Very high: avg 19.1M shares/day, $11.0B/day. Keeping a position under 1% of ADV ($110.0M) avoids moving the price."><b>Very high</b> · 19.1M sh · $11.0B/d · 1% ADV $110.0M</span></td>
+  <td class="score score-hi num mono">71</td>
+  <td class="num mono">566.42</td>
+  <td class="num mono">562.23</td>
+  <td class="num mono">0.7%</td>
+  <td class="num mono">×2</td>
+  <td class="num"><span class="dim">—</span></td>
+  <td class="num"><span class="dim">—</span></td>
+  <td class="num mono mono">P86</td>
+  <td class="num mono">545.36</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">MSFT<span class="liq t-vh" title="Liquidity Very high: avg 20.3M shares/day, $10.8B/day. Keeping a position under 1% of ADV ($107.6M) avoids moving the price."><b>Very high</b> · 20.3M sh · $10.8B/d · 1% ADV $107.6M</span></td>
+  <td class="score score-hi num mono">71</td>
+  <td class="num mono">524.67</td>
+  <td class="num mono">515.76</td>
+  <td class="num mono">1.7%</td>
+  <td class="num mono">×2</td>
+  <td class="num"><span class="tag pos">50 SMA</span></td>
+  <td class="num"><span class="dim">—</span></td>
+  <td class="num mono mono">P75</td>
+  <td class="num mono">500.29</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr></tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  Buy-the-dip candidates: price is resting just above a horizontal level tested ≥ 2 times, inside a rising 200 SMA uptrend.
+  Wait for a bounce candle off the level before entering. Stop = 3% below support; target = next resistance.
+  Dry-up = last 5 sessions' volume &lt; 80% of the prior 20 (sellers exhausting).
+  <span class="tag hp">★ High prob</span> = this support is an old resistance the stock just broke out of (see Recent Breakouts &amp; Retests).
+</p>
+<h3 class="subsection">Reversal swing setups <span class="count">· top 6</span></h3>
+<table class="candidates">
+  <thead><tr>
+    <th>Ticker</th><th class="num">Score</th><th>Trigger</th><th class="num">Pullback</th>
+    <th class="num">RSI low → now</th><th class="num">Support</th><th class="num">Vol</th>
+    <th class="num">RS</th><th class="num">Entry</th><th class="num">Stop</th>
+    <th class="num">TP1 (2R)</th><th class="num">Prior high</th><th>Sector</th>
+  </tr></thead>
+  <tbody>
+<tr>
+  <td class="ticker">MGNI<span class="liq t-h" title="Liquidity High: avg 1.6M shares/day, $37.5M/day. Keeping a position under 1% of ADV ($375.3K) avoids moving the price."><b>High</b> · 1.6M sh · $37.5M/d · 1% ADV $375.3K</span></td>
+  <td class="score score-mid num mono">64</td>
+  <td><span class="tag pos">Bullish engulfing</span></td>
+  <td class="num mono">−17.4%</td>
+  <td class="num mono">33 → 37</td>
+  <td class="num"><span class="dim">—</span></td>
+  <td class="num mono">0.5×</td>
+  <td class="num mono dim">P72</td>
+  <td class="num mono">22.02</td>
+  <td class="num mono">21.17</td>
+  <td class="num mono">23.73</td>
+  <td class="num mono">25.90</td>
+  <td><span class="dim">Unknown</span></td>
+</tr></tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  Pullback-in-uptrend reversals: price above the 200 SMA, down 5–25% from its 20-day high, RSI dipped to ≤ 40, and today printed
+  a bullish reversal candle. Stop = just under the 5-day low. Prior high = natural target. Counter-trend on the short timeframe,
+  so size smaller than for breakouts.
+</p>
+<h3 class="subsection">Multi-timeframe RSI momentum <span class="count">· monthly &amp; weekly RSI &gt; 60, daily RSI back above 50 on good volume</span></h3>
+<table class="candidates">
+  <thead><tr>
+    <th>Ticker</th><th class="num">Score</th><th class="num">Monthly RSI</th><th class="num">Weekly RSI</th>
+    <th class="num">Daily RSI dip → now</th><th class="num">Crossed 50</th><th class="num">Cross-day vol</th>
+    <th class="num">AccDays</th><th class="num">RS</th><th class="num">Entry</th><th class="num">Stop</th>
+    <th class="num">TP1 (2R)</th><th class="num">TP2 (3R)</th><th>Sector</th>
+  </tr></thead>
+  <tbody>
+<tr>
+  <td class="ticker">ADI<span class="liq t-vh" title="Liquidity Very high: avg 3.4M shares/day, $1.4B/day. Keeping a position under 1% of ADV ($13.8M) avoids moving the price."><b>Very high</b> · 3.4M sh · $1.4B/d · 1% ADV $13.8M</span></td>
+  <td class="score score-hi num mono">83</td>
+  <td class="num mono score-hi">74</td>
+  <td class="num mono score-hi">62</td>
+  <td class="num mono">44 → 64</td>
+  <td class="num"><span class="mono">2d ago</span></td>
+  <td class="num mono">1.2×</td>
+  <td class="num mono dim">3</td>
+  <td class="num mono mono">P82</td>
+  <td class="num mono">428.27</td>
+  <td class="num mono">378.18</td>
+  <td class="num mono">528.45</td>
+  <td class="num mono">578.54</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">IEX<span class="liq t-vh" title="Liquidity Very high: avg 737K shares/day, $172.6M/day. Keeping a position under 1% of ADV ($1.7M) avoids moving the price."><b>Very high</b> · 737K sh · $172.6M/d · 1% ADV $1.7M</span></td>
+  <td class="score score-hi num mono">76</td>
+  <td class="num mono score-hi">66</td>
+  <td class="num mono score-hi">63</td>
+  <td class="num mono">41 → 57</td>
+  <td class="num"><span class="mono">2d ago</span></td>
+  <td class="num mono">1.4×</td>
+  <td class="num mono piotroski-hi">7</td>
+  <td class="num mono dim">P61</td>
+  <td class="num mono">237.14</td>
+  <td class="num mono">220.83</td>
+  <td class="num mono">269.76</td>
+  <td class="num mono">286.07</td>
+  <td><span class="dim">Unknown</span></td>
+</tr></tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  Higher-timeframe momentum intact (monthly and weekly RSI(14) &gt; 60) while the daily RSI dipped below 50 and has just
+  crossed back above it on at least average volume: the short-term pullback is ending inside a strong trend.
+  Stop = 1% under the 10-session low. Monthly RSI uses the in-progress month, as TradingView does.
+</p>
+<details class="history"><summary>This week's quality pullback names (10)</summary>
+<table class="candidates">
+  <thead><tr>
+    <th>Pick date</th><th>Setup</th><th>Ticker</th><th class="num">Seen</th><th class="num">Best score</th>
+    <th class="num">Close*</th><th class="num">Level / entry*</th><th class="num">Stop*</th>
+    <th class="num">Target*</th><th>Sector</th>
+  </tr></thead>
+  <tbody>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Near support</span></td>
+  <td class="ticker">DV<span class="liq t-a" title="Liquidity Adequate: avg 1.8M shares/day, $24.3M/day. Keeping a position under 1% of ADV ($243.1K) avoids moving the price."><b>Adequate</b> · 1.8M sh · $24.3M/d · 1% ADV $243.1K</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">92</td>
+  <td class="num mono">13.53</td>
+  <td class="num mono">13.43</td>
+  <td class="num mono">13.03</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Near support</span></td>
+  <td class="ticker">AVNT<span class="liq t-h" title="Liquidity High: avg 864K shares/day, $34.5M/day. Keeping a position under 1% of ADV ($344.7K) avoids moving the price."><b>High</b> · 864K sh · $34.5M/d · 1% ADV $344.7K</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">88</td>
+  <td class="num mono">42.19</td>
+  <td class="num mono">42.07</td>
+  <td class="num mono">40.81</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Near support</span></td>
+  <td class="ticker">RAMP<span class="liq t-h" title="Liquidity High: avg 1.5M shares/day, $57.3M/day. Keeping a position under 1% of ADV ($573.3K) avoids moving the price."><b>High</b> · 1.5M sh · $57.3M/d · 1% ADV $573.3K</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">86</td>
+  <td class="num mono">38.14</td>
+  <td class="num mono">37.73</td>
+  <td class="num mono">36.60</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">MTF RSI</span></td>
+  <td class="ticker">ADI<span class="liq t-vh" title="Liquidity Very high: avg 3.4M shares/day, $1.4B/day. Keeping a position under 1% of ADV ($13.8M) avoids moving the price."><b>Very high</b> · 3.4M sh · $1.4B/d · 1% ADV $13.8M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">83</td>
+  <td class="num mono">428.27</td>
+  <td class="num mono">428.27</td>
+  <td class="num mono">378.18</td>
+  <td class="num mono">528.45</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Near support</span></td>
+  <td class="ticker">TTE<span class="liq t-vh" title="Liquidity Very high: avg 2.5M shares/day, $220.4M/day. Keeping a position under 1% of ADV ($2.2M) avoids moving the price."><b>Very high</b> · 2.5M sh · $220.4M/d · 1% ADV $2.2M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">81</td>
+  <td class="num mono">92.88</td>
+  <td class="num mono">92.73</td>
+  <td class="num mono">89.95</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Near support</span></td>
+  <td class="ticker">EXPD<span class="liq t-vh" title="Liquidity Very high: avg 1.1M shares/day, $210.9M/day. Keeping a position under 1% of ADV ($2.1M) avoids moving the price."><b>Very high</b> · 1.1M sh · $210.9M/d · 1% ADV $2.1M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">76</td>
+  <td class="num mono">197.45</td>
+  <td class="num mono">193.43</td>
+  <td class="num mono">187.63</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Near support</span></td>
+  <td class="ticker">VNOM<span class="liq t-h" title="Liquidity High: avg 2.0M shares/day, $89.6M/day. Keeping a position under 1% of ADV ($896.3K) avoids moving the price."><b>High</b> · 2.0M sh · $89.6M/d · 1% ADV $896.3K</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">76</td>
+  <td class="num mono">46.46</td>
+  <td class="num mono">45.87</td>
+  <td class="num mono">44.49</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">MTF RSI</span></td>
+  <td class="ticker">IEX<span class="liq t-vh" title="Liquidity Very high: avg 737K shares/day, $172.6M/day. Keeping a position under 1% of ADV ($1.7M) avoids moving the price."><b>Very high</b> · 737K sh · $172.6M/d · 1% ADV $1.7M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">76</td>
+  <td class="num mono">237.14</td>
+  <td class="num mono">237.14</td>
+  <td class="num mono">220.83</td>
+  <td class="num mono">269.76</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Near support</span></td>
+  <td class="ticker">ACA<span class="liq t-h" title="Liquidity High: avg 644K shares/day, $94.7M/day. Keeping a position under 1% of ADV ($947.1K) avoids moving the price."><b>High</b> · 644K sh · $94.7M/d · 1% ADV $947.1K</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">74</td>
+  <td class="num mono">149.15</td>
+  <td class="num mono">145.66</td>
+  <td class="num mono">141.29</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Near support</span></td>
+  <td class="ticker">DVN<span class="liq t-vh" title="Liquidity Very high: avg 8.4M shares/day, $416.0M/day. Keeping a position under 1% of ADV ($4.2M) avoids moving the price."><b>Very high</b> · 8.4M sh · $416.0M/d · 1% ADV $4.2M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">71</td>
+  <td class="num mono">50.59</td>
+  <td class="num mono">49.93</td>
+  <td class="num mono">48.43</td>
+  <td class="num mono">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr></tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">* From the ticker's best-scoring day this week. Re-check today's chart before acting.
+Liquidity shown is today's.</p>
+</details></div>
+</details>
+<details class="panel" id="p-recovery" style="--pc:#D9731A" open>
+  <summary><span class="p-title">Recovery</span><span class="p-desc">Coming out of a correction: 20 EMA just crossed above 200 EMA, not yet extended.</span>
+  <span class="p-counts">today <b>6</b> · this week <b>10</b></span></summary>
+  <div class="panel-body"><h3 class="subsection">Today's recovery setups <span class="count">· top 6</span></h3>
+<table class="candidates">
+  <thead>
+    <tr>
+      <th>Ticker</th>
+      <th class="num">Score</th>
+      <th class="num">Cross Age</th>
+      <th class="num">EMA Gap</th>
+      <th class="num">RS</th>
+      <th class="num">Mom</th>
+      <th class="num">AccDays</th>
+      <th class="num">Current</th>
+      <th class="num">20 EMA</th>
+      <th class="num">200 EMA</th>
+      <th class="num">Piotroski</th>
+      <th>Sector</th>
+    </tr>
+  </thead>
+  <tbody>
+<tr>
+  <td class="ticker">EPAM<span class="liq t-vh" title="Liquidity Very high: avg 949K shares/day, $117.1M/day. Keeping a position under 1% of ADV ($1.2M) avoids moving the price."><b>Very high</b> · 949K sh · $117.1M/d · 1% ADV $1.2M</span></td>
+  <td class="score score-hi num mono">114</td>
+  <td class="num"><span class="streak">2d ago</span></td>
+  <td class="num"><span class="streak">+1.3%</span></td>
+  <td class="num mono piotroski-hi">P91</td>
+  <td class="num mono">3/4</td>
+  <td class="num mono piotroski-mid">4</td>
+  <td class="num mono">136.23</td>
+  <td class="num mono">125.40</td>
+  <td class="num mono">123.84</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">VNOM<span class="liq t-h" title="Liquidity High: avg 2.0M shares/day, $89.6M/day. Keeping a position under 1% of ADV ($896.3K) avoids moving the price."><b>High</b> · 2.0M sh · $89.6M/d · 1% ADV $896.3K</span></td>
+  <td class="score score-hi num mono">112</td>
+  <td class="num"><span class="mono">7d ago</span></td>
+  <td class="num"><span class="streak">+2.9%</span></td>
+  <td class="num mono mono">P79</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono piotroski-hi">8</td>
+  <td class="num mono">46.46</td>
+  <td class="num mono">44.72</td>
+  <td class="num mono">43.47</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">TYL<span class="liq t-vh" title="Liquidity Very high: avg 654K shares/day, $235.7M/day. Keeping a position under 1% of ADV ($2.4M) avoids moving the price."><b>Very high</b> · 654K sh · $235.7M/d · 1% ADV $2.4M</span></td>
+  <td class="score score-hi num mono">112</td>
+  <td class="num"><span class="streak">3d ago</span></td>
+  <td class="num"><span class="streak">+0.6%</span></td>
+  <td class="num mono piotroski-hi">P91</td>
+  <td class="num mono">3/4</td>
+  <td class="num mono dim">1</td>
+  <td class="num mono">373.55</td>
+  <td class="num mono">362.25</td>
+  <td class="num mono">360.09</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">ROP<span class="liq t-vh" title="Liquidity Very high: avg 837K shares/day, $336.5M/day. Keeping a position under 1% of ADV ($3.4M) avoids moving the price."><b>Very high</b> · 837K sh · $336.5M/d · 1% ADV $3.4M</span></td>
+  <td class="score score-hi num mono">106</td>
+  <td class="num"><span class="streak">4d ago</span></td>
+  <td class="num"><span class="mono">+3.8%</span></td>
+  <td class="num mono mono">P81</td>
+  <td class="num mono">3/4</td>
+  <td class="num mono piotroski-mid">6</td>
+  <td class="num mono">441.63</td>
+  <td class="num mono">404.82</td>
+  <td class="num mono">389.98</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">WMT<span class="liq t-vh" title="Liquidity Very high: avg 19.1M shares/day, $2.2B/day. Keeping a position under 1% of ADV ($21.9M) avoids moving the price."><b>Very high</b> · 19.1M sh · $2.2B/d · 1% ADV $21.9M</span></td>
+  <td class="score score-hi num mono">106</td>
+  <td class="num"><span class="mono">6d ago</span></td>
+  <td class="num"><span class="streak">+2.2%</span></td>
+  <td class="num mono mono">P76</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono dim">3</td>
+  <td class="num mono">121.13</td>
+  <td class="num mono">116.07</td>
+  <td class="num mono">113.57</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">AR<span class="liq t-vh" title="Liquidity Very high: avg 4.4M shares/day, $168.1M/day. Keeping a position under 1% of ADV ($1.7M) avoids moving the price."><b>Very high</b> · 4.4M sh · $168.1M/d · 1% ADV $1.7M</span></td>
+  <td class="score score-hi num mono">105</td>
+  <td class="num"><span class="mono">10d ago</span></td>
+  <td class="num"><span class="mono">+6.4%</span></td>
+  <td class="num mono mono">P89</td>
+  <td class="num mono">4/4</td>
+  <td class="num mono piotroski-mid">6</td>
+  <td class="num mono">41.28</td>
+  <td class="num mono">38.81</td>
+  <td class="num mono">36.48</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr></tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  "Coming out of correction" — 20 EMA just crossed above 200 EMA from below. Looser gates than other sections (RS ≥ 60, sector top 7) because recovery stocks had recent weakness and RS is still rebuilding. Prefer rows with Cross Age ≤ 10 days and EMA Gap ≤ 5% — the stock is still close to the inflection, not yet extended.
+</p>
+<details class="history"><summary>This week's quality recovery names (10)</summary>
 <table class="candidates">
   <thead>
     <tr>
@@ -1933,7 +2333,7 @@ footer {
   <tbody>
 <tr>
   <td class="mono"><span class="dim">2026-10-22</span></td>
-  <td class="ticker">VNOM</td>
+  <td class="ticker">VNOM<span class="liq t-h" title="Liquidity High: avg 2.0M shares/day, $89.6M/day. Keeping a position under 1% of ADV ($896.3K) avoids moving the price."><b>High</b> · 2.0M sh · $89.6M/d · 1% ADV $896.3K</span></td>
   <td class="num mono"><span class="streak">×4</span></td>
   <td class="score score-hi num mono">122</td>
   <td class="num mono">3d</td>
@@ -1948,7 +2348,7 @@ footer {
 </tr>
 <tr>
   <td class="mono"><span class="dim">2026-10-23</span></td>
-  <td class="ticker">OLLI</td>
+  <td class="ticker">OLLI<span class="liq t-vh" title="Liquidity Very high: avg 1.6M shares/day, $145.0M/day. Keeping a position under 1% of ADV ($1.5M) avoids moving the price."><b>Very high</b> · 1.6M sh · $145.0M/d · 1% ADV $1.5M</span></td>
   <td class="num mono"><span class="mono">×2</span></td>
   <td class="score score-hi num mono">117</td>
   <td class="num mono">2d</td>
@@ -1963,7 +2363,7 @@ footer {
 </tr>
 <tr>
   <td class="mono"><span class="dim">2026-10-22</span></td>
-  <td class="ticker">RRC</td>
+  <td class="ticker">RRC<span class="liq t-vh" title="Liquidity Very high: avg 5.1M shares/day, $251.6M/day. Keeping a position under 1% of ADV ($2.5M) avoids moving the price."><b>Very high</b> · 5.1M sh · $251.6M/d · 1% ADV $2.5M</span></td>
   <td class="num mono"><span class="streak">×3</span></td>
   <td class="score score-hi num mono">107</td>
   <td class="num mono">10d</td>
@@ -1978,7 +2378,7 @@ footer {
 </tr>
 <tr>
   <td class="mono"><span class="dim">2026-10-25</span></td>
-  <td class="ticker">G</td>
+  <td class="ticker">G<span class="liq t-h" title="Liquidity High: avg 1.9M shares/day, $68.9M/day. Keeping a position under 1% of ADV ($689.1K) avoids moving the price."><b>High</b> · 1.9M sh · $68.9M/d · 1% ADV $689.1K</span></td>
   <td class="num mono"><span class="streak">×3</span></td>
   <td class="score score-hi num mono">114</td>
   <td class="num mono">2d</td>
@@ -1992,38 +2392,8 @@ footer {
   <td><span class="dim">Unknown</span></td>
 </tr>
 <tr>
-  <td class="mono"><span class="streak">2026-10-29</span></td>
-  <td class="ticker">ROP</td>
-  <td class="num mono"><span class="mono">×2</span></td>
-  <td class="score score-hi num mono">112</td>
-  <td class="num mono">3d</td>
-  <td class="num mono">+3.0%</td>
-  <td class="num mono mono">P81</td>
-  <td class="num mono">3/4</td>
-  <td class="num mono">6</td>
-  <td class="num mono">440.66</td>
-  <td class="num mono">400.95</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
-  <td class="mono"><span class="streak">2026-10-29</span></td>
-  <td class="ticker">EPAM</td>
-  <td class="num mono"><span class="dim mono">×1</span></td>
-  <td class="score score-hi num mono">115</td>
-  <td class="num mono">2d</td>
-  <td class="num mono">+1.3%</td>
-  <td class="num mono piotroski-hi">P92</td>
-  <td class="num mono">3/4</td>
-  <td class="num mono">4</td>
-  <td class="num mono">136.23</td>
-  <td class="num mono">125.40</td>
-  <td class="num mono dim">—</td>
-  <td><span class="dim">Unknown</span></td>
-</tr>
-<tr>
   <td class="mono"><span class="dim">2026-10-25</span></td>
-  <td class="ticker">TREX</td>
+  <td class="ticker">TREX<span class="liq t-h" title="Liquidity High: avg 1.6M shares/day, $76.8M/day. Keeping a position under 1% of ADV ($767.6K) avoids moving the price."><b>High</b> · 1.6M sh · $76.8M/d · 1% ADV $767.6K</span></td>
   <td class="num mono"><span class="mono">×2</span></td>
   <td class="score score-hi num mono">110</td>
   <td class="num mono">5d</td>
@@ -2037,8 +2407,23 @@ footer {
   <td><span class="dim">Unknown</span></td>
 </tr>
 <tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td class="ticker">EPAM<span class="liq t-vh" title="Liquidity Very high: avg 949K shares/day, $117.1M/day. Keeping a position under 1% of ADV ($1.2M) avoids moving the price."><b>Very high</b> · 949K sh · $117.1M/d · 1% ADV $1.2M</span></td>
+  <td class="num mono"><span class="dim mono">×1</span></td>
+  <td class="score score-hi num mono">114</td>
+  <td class="num mono">2d</td>
+  <td class="num mono">+1.3%</td>
+  <td class="num mono piotroski-hi">P91</td>
+  <td class="num mono">3/4</td>
+  <td class="num mono">4</td>
+  <td class="num mono">136.23</td>
+  <td class="num mono">125.40</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
   <td class="mono"><span class="dim">2026-10-25</span></td>
-  <td class="ticker">COST</td>
+  <td class="ticker">COST<span class="liq t-vh" title="Liquidity Very high: avg 2.1M shares/day, $2.0B/day. Keeping a position under 1% of ADV ($20.4M) avoids moving the price."><b>Very high</b> · 2.1M sh · $2.0B/d · 1% ADV $20.4M</span></td>
   <td class="num mono"><span class="streak">×3</span></td>
   <td class="score score-hi num mono">108</td>
   <td class="num mono">4d</td>
@@ -2053,7 +2438,7 @@ footer {
 </tr>
 <tr>
   <td class="mono"><span class="dim">2026-10-23</span></td>
-  <td class="ticker">LOGI</td>
+  <td class="ticker">LOGI<span class="liq t-vh" title="Liquidity Very high: avg 1.1M shares/day, $113.4M/day. Keeping a position under 1% of ADV ($1.1M) avoids moving the price."><b>Very high</b> · 1.1M sh · $113.4M/d · 1% ADV $1.1M</span></td>
   <td class="num mono"><span class="dim mono">×1</span></td>
   <td class="score score-hi num mono">109</td>
   <td class="num mono">4d</td>
@@ -2068,7 +2453,7 @@ footer {
 </tr>
 <tr>
   <td class="mono"><span class="dim">2026-10-23</span></td>
-  <td class="ticker">SPOT</td>
+  <td class="ticker">SPOT<span class="liq t-vh" title="Liquidity Very high: avg 1.7M shares/day, $930.0M/day. Keeping a position under 1% of ADV ($9.3M) avoids moving the price."><b>Very high</b> · 1.7M sh · $930.0M/d · 1% ADV $9.3M</span></td>
   <td class="num mono"><span class="mono">×2</span></td>
   <td class="score score-hi num mono">108</td>
   <td class="num mono">2d</td>
@@ -2080,25 +2465,356 @@ footer {
   <td class="num mono">529.74</td>
   <td class="num mono dim">—</td>
   <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="dim">2026-10-23</span></td>
+  <td class="ticker">LYFT<span class="liq t-vh" title="Liquidity Very high: avg 9.9M shares/day, $163.1M/day. Keeping a position under 1% of ADV ($1.6M) avoids moving the price."><b>Very high</b> · 9.9M sh · $163.1M/d · 1% ADV $1.6M</span></td>
+  <td class="num mono"><span class="mono">×2</span></td>
+  <td class="score score-hi num mono">109</td>
+  <td class="num mono">3d</td>
+  <td class="num mono">+1.4%</td>
+  <td class="num mono mono">P77</td>
+  <td class="num mono">3/4</td>
+  <td class="num mono">5</td>
+  <td class="num mono">17.43</td>
+  <td class="num mono">16.39</td>
+  <td class="num mono dim">—</td>
+  <td><span class="dim">Unknown</span></td>
 </tr></tbody>
 </table>
 <p class="dim" style="font-size:11px;margin-top:6px;">
   * Values from the pick date (ticker's peak-scoring day). Re-check today's chart — the 20 EMA will have moved since.
 </p>
-
-
-  <div class="secondary">
-    <div>
-      <h2 class="section">Sector Distribution</h2>
-      <ul class="sector-list"><li><span>Unknown</span><span class="mono">4</span></li></ul>
-    </div>
-    <div>
-      <h2 class="section">Funnel</h2>
-      <ul class="funnel-list"><li><span class="step-name">Eligible pool</span><span class="step-count mono">491</span></li><li><span class="step-name">Skipped (no data)</span><span class="step-count mono">0</span></li><li><span class="step-name">Dropped by liquidity filter (price ≥ $10, vol ≥ 500K, $vol ≥ $10M)</span><span class="step-count mono">25</span></li><li><span class="step-name">Passed trend filter</span><span class="step-count mono">128</span></li><li><span class="step-name">Passed behavioral filter</span><span class="step-count mono">127</span></li><li><span class="step-name">Passed momentum confluence</span><span class="step-count mono">99</span></li><li><span class="step-name">— Pattern triggered (→ breakouts)</span><span class="step-count mono">7</span></li><li><span class="step-name">— No pattern yet (→ watchlist pool)</span><span class="step-count mono">89</span></li><li><span class="step-name">— Supertrend long state (→ supertrend pool)</span><span class="step-count mono">85</span></li><li><span class="step-name">— 20/200 EMA recovery (→ recovery pool)</span><span class="step-count mono">26</span></li><li><span class="step-name">Dropped by RS gate (breakouts)</span><span class="step-count mono">3</span></li><li><span class="step-name">Dropped by sector gate (breakouts)</span><span class="step-count mono">0</span></li><li><span class="step-name">Final breakout signals (archived)</span><span class="step-count mono">4</span></li><li><span class="step-name">Final watchlist entries (archived)</span><span class="step-count mono">61</span></li><li><span class="step-name">Final supertrend entries (archived)</span><span class="step-count mono">56</span></li><li><span class="step-name">Final recovery entries (archived)</span><span class="step-count mono">23</span></li><li><span class="step-name">Elite breakouts qualified</span><span class="step-count mono">3</span></li><li><span class="step-name">Elite watchlist qualified</span><span class="step-count mono">4</span></li><li><span class="step-name">Elite supertrend qualified (fresh ≤ 20d flip)</span><span class="step-count mono">21</span></li><li><span class="step-name">Recovery qualified (looser gates: RS≥60, sec≤7)</span><span class="step-count mono">23</span></li><li><span class="step-name">Breakouts shown (top 5)</span><span class="step-count mono">3</span></li><li><span class="step-name">Watchlist shown (top 8)</span><span class="step-count mono">4</span></li><li><span class="step-name">Supertrend shown (top 6)</span><span class="step-count mono">6</span></li><li><span class="step-name">Recovery shown (top 6)</span><span class="step-count mono">6</span></li><li><span class="step-name">Quality base (behavioral + above rising 200 SMA)</span><span class="step-count mono">191</span></li><li><span class="step-name">— Near support / resistance (raw)</span><span class="step-count mono">95</span></li><li><span class="step-name">— Recent breakouts not failed (raw)</span><span class="step-count mono">31</span></li><li><span class="step-name">— Reversal candle triggers (raw)</span><span class="step-count mono">4</span></li><li><span class="step-name">Support: gated → qualified → shown</span><span class="step-count mono">36 → 29 → 10</span></li><li><span class="step-name">Resistance: gated → qualified → shown</span><span class="step-count mono">14 → 14 → 10</span></li><li><span class="step-name">Break &amp; retest: gated → qualified → shown</span><span class="step-count mono">4 → 4 → 4</span></li><li><span class="step-name">Holding above: gated → qualified → shown</span><span class="step-count mono">14 → 12 → 8</span></li><li><span class="step-name">★ High-probability retests shown</span><span class="step-count mono">0</span></li><li><span class="step-name">Fake / failed breakouts: gated → shown</span><span class="step-count mono">10 → 8</span></li><li><span class="step-name">MTF RSI: raw → gated → qualified → shown</span><span class="step-count mono">3 → 2 → 2 → 2</span></li><li><span class="step-name">Reversal: gated → qualified → shown</span><span class="step-count mono">3 → 3 → 3</span></li></ul>
-    </div>
-  </div>
+</details></div>
+</details>
+<details class="panel" id="p-positional" style="--pc:#1F3A5F" open>
+  <summary><span class="p-title">Positional: quality at a fair price</span><span class="p-desc">Financially strong companies at a fair valuation, in an uptrend but not overextended.</span>
+  <span class="p-counts">today <b>8</b> · this week <b>10</b></span></summary>
+  <div class="panel-body"><h3 class="subsection">Today's positional candidates <span class="count">· top 8</span></h3>
+<table class="candidates">
+  <thead><tr>
+    <th>Ticker</th><th class="num">Score</th><th>Valuation</th><th class="num">Fwd P/E</th><th class="num">PEG</th>
+    <th class="num">FCF yield</th><th class="num">ROE</th><th class="num">Net margin</th><th class="num">Rev growth</th>
+    <th class="num">Debt/Eq</th><th class="num">Mkt cap</th><th class="num">vs 200 SMA</th><th class="num">RSI</th>
+    <th class="num">Current</th><th class="num">Add zone (50 SMA)</th><th class="num">Stop</th>
+    <th class="num">Target</th><th>Sector</th>
+  </tr></thead>
+  <tbody>
+<tr>
+  <td class="ticker">CF<span class="liq t-vh" title="Liquidity Very high: avg 2.3M shares/day, $267.3M/day. Keeping a position under 1% of ADV ($2.7M) avoids moving the price."><b>Very high</b> · 2.3M sh · $267.3M/d · 1% ADV $2.7M</span></td>
+  <td class="score score-hi num mono">108</td>
+  <td><span class="tag pos">Undervalued</span></td>
+  <td class="num mono">10.3</td>
+  <td class="num mono">0.51</td>
+  <td class="num mono">7.2%</td>
+  <td class="num mono">30%</td>
+  <td class="num mono">27%</td>
+  <td class="num mono">18%</td>
+  <td class="num mono">0.41×</td>
+  <td class="num mono">$17.8B</td>
+  <td class="num mono">+3.4%</td>
+  <td class="num mono">51</td>
+  <td class="num mono">119.92</td>
+  <td class="num mono">123.51</td>
+  <td class="num mono">112.51</td>
+  <td class="num mono">141.96</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">KEYS<span class="liq t-vh" title="Liquidity Very high: avg 1.3M shares/day, $442.0M/day. Keeping a position under 1% of ADV ($4.4M) avoids moving the price."><b>Very high</b> · 1.3M sh · $442.0M/d · 1% ADV $4.4M</span></td>
+  <td class="score score-hi num mono">103</td>
+  <td><span class="tag pos">Undervalued</span></td>
+  <td class="num mono">23.9</td>
+  <td class="num mono">0.67</td>
+  <td class="num mono">3.3%</td>
+  <td class="num mono">21%</td>
+  <td class="num mono">19%</td>
+  <td class="num mono">36%</td>
+  <td class="num mono">0.42×</td>
+  <td class="num mono">$56.7B</td>
+  <td class="num mono">+4.9%</td>
+  <td class="num mono">44</td>
+  <td class="num mono">331.61</td>
+  <td class="num mono">341.04</td>
+  <td class="num mono">306.75</td>
+  <td class="num mono">389.93</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">ASML<span class="liq t-vh" title="Liquidity Very high: avg 1.5M shares/day, $2.5B/day. Keeping a position under 1% of ADV ($25.2M) avoids moving the price."><b>Very high</b> · 1.5M sh · $2.5B/d · 1% ADV $25.2M</span></td>
+  <td class="score score-hi num mono">101</td>
+  <td><span class="tag pos">Undervalued</span></td>
+  <td class="num mono">26.7</td>
+  <td class="num mono">0.89</td>
+  <td class="num mono">1.6%</td>
+  <td class="num mono">66%</td>
+  <td class="num mono">34%</td>
+  <td class="num mono">55%</td>
+  <td class="num mono">0.09×</td>
+  <td class="num mono">$647.1B</td>
+  <td class="num mono">+5.1%</td>
+  <td class="num mono">49</td>
+  <td class="num mono">1676.45</td>
+  <td class="num mono">1708.41</td>
+  <td class="num mono">1547.85</td>
+  <td class="num mono">1999.96</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">NVDA<span class="liq t-vh" title="Liquidity Very high: avg 97.4M shares/day, $21.8B/day. Keeping a position under 1% of ADV ($217.6M) avoids moving the price."><b>Very high</b> · 97.4M sh · $21.8B/d · 1% ADV $217.6M</span></td>
+  <td class="score score-hi num mono">100</td>
+  <td><span class="tag pos">Undervalued</span></td>
+  <td class="num mono">13.4</td>
+  <td class="num mono">0.26</td>
+  <td class="num mono">0.8%</td>
+  <td class="num mono">117%</td>
+  <td class="num mono">64%</td>
+  <td class="num mono">106%</td>
+  <td class="num mono">0.17×</td>
+  <td class="num mono">$5.2T</td>
+  <td class="num mono">+4.5%</td>
+  <td class="num mono">42</td>
+  <td class="num mono">213.46</td>
+  <td class="num mono">221.99</td>
+  <td class="num mono">198.15</td>
+  <td class="num mono">243.37</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">ABNB<span class="liq t-vh" title="Liquidity Very high: avg 3.3M shares/day, $558.5M/day. Keeping a position under 1% of ADV ($5.6M) avoids moving the price."><b>Very high</b> · 3.3M sh · $558.5M/d · 1% ADV $5.6M</span></td>
+  <td class="score score-hi num mono">100</td>
+  <td><span class="tag ">Fair</span></td>
+  <td class="num mono">26.9</td>
+  <td class="num mono">1.40</td>
+  <td class="num mono">3.2%</td>
+  <td class="num mono">35%</td>
+  <td class="num mono">20%</td>
+  <td class="num mono">16%</td>
+  <td class="num mono">0.32×</td>
+  <td class="num mono">$99.9B</td>
+  <td class="num mono">+13.4%</td>
+  <td class="num mono">46</td>
+  <td class="num mono">166.04</td>
+  <td class="num mono">171.20</td>
+  <td class="num mono">142.03</td>
+  <td class="num mono">193.45</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">OXY<span class="liq t-vh" title="Liquidity Very high: avg 8.2M shares/day, $502.4M/day. Keeping a position under 1% of ADV ($5.0M) avoids moving the price."><b>Very high</b> · 8.2M sh · $502.4M/d · 1% ADV $5.0M</span></td>
+  <td class="score score-hi num mono">97</td>
+  <td><span class="tag pos">Undervalued</span></td>
+  <td class="num mono">12.5</td>
+  <td class="num mono">0.94</td>
+  <td class="num mono">6.1%</td>
+  <td class="num mono">11%</td>
+  <td class="num mono">30%</td>
+  <td class="num mono">53%</td>
+  <td class="num mono">0.35×</td>
+  <td class="num mono">$62.5B</td>
+  <td class="num mono">+11.6%</td>
+  <td class="num mono">57</td>
+  <td class="num mono">62.47</td>
+  <td class="num mono">60.12</td>
+  <td class="num mono">54.29</td>
+  <td class="num mono">67.45</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">ERO<span class="liq t-h" title="Liquidity High: avg 1.2M shares/day, $41.6M/day. Keeping a position under 1% of ADV ($415.8K) avoids moving the price."><b>High</b> · 1.2M sh · $41.6M/d · 1% ADV $415.8K</span></td>
+  <td class="score score-hi num mono">93</td>
+  <td><span class="tag pos">Undervalued</span></td>
+  <td class="num mono">6.3</td>
+  <td class="num mono">—</td>
+  <td class="num mono">1.4%</td>
+  <td class="num mono">31%</td>
+  <td class="num mono">30%</td>
+  <td class="num mono">74%</td>
+  <td class="num mono">0.47×</td>
+  <td class="num mono">$3.3B</td>
+  <td class="num mono">+1.6%</td>
+  <td class="num mono">39</td>
+  <td class="num mono">31.12</td>
+  <td class="num mono">35.62</td>
+  <td class="num mono">29.73</td>
+  <td class="num mono">40.83</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="ticker">LAUR<span class="liq t-h" title="Liquidity High: avg 1.1M shares/day, $43.1M/day. Keeping a position under 1% of ADV ($431.0K) avoids moving the price."><b>High</b> · 1.1M sh · $43.1M/d · 1% ADV $431.0K</span></td>
+  <td class="score score-hi num mono">92</td>
+  <td><span class="tag ">Fair</span></td>
+  <td class="num mono">15.0</td>
+  <td class="num mono">1.05</td>
+  <td class="num mono">6.8%</td>
+  <td class="num mono">29%</td>
+  <td class="num mono">18%</td>
+  <td class="num mono">18%</td>
+  <td class="num mono">0.64×</td>
+  <td class="num mono">$5.0B</td>
+  <td class="num mono">+2.4%</td>
+  <td class="num mono">36</td>
+  <td class="num mono">36.41</td>
+  <td class="num mono">37.68</td>
+  <td class="num mono">34.50</td>
+  <td class="num mono">40.92</td>
+  <td><span class="dim">Unknown</span></td>
+</tr></tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">
+  Positional ideas (weeks to months): profitable, cash-generative, moderately levered companies at PEG ≤ 2 (or forward P/E ≤ 30
+  when PEG is unavailable), in a long-term uptrend but not stretched: ≤ 15% above the 200 SMA, ≤ 8% above the 50 SMA, RSI ≤ 65.
+  Add zone = the 50 SMA, where pullbacks often find buyers. Stop = 3% under the 200 SMA. Target = 52-week high (or +20%).
+  Fundamentals come from Yahoo Finance (refreshed weekly) and can be stale or wrong: verify in the company's filings before
+  committing capital.
+</p>
+<details class="history"><summary>This week's quality positional names (10)</summary>
+<table class="candidates">
+  <thead><tr>
+    <th>Pick date</th><th>Setup</th><th>Ticker</th><th class="num">Seen</th><th class="num">Best score</th>
+    <th class="num">Close*</th><th class="num">Level / entry*</th><th class="num">Stop*</th>
+    <th class="num">Target*</th><th>Sector</th>
+  </tr></thead>
+  <tbody>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Positional</span></td>
+  <td class="ticker">CF<span class="liq t-vh" title="Liquidity Very high: avg 2.3M shares/day, $267.3M/day. Keeping a position under 1% of ADV ($2.7M) avoids moving the price."><b>Very high</b> · 2.3M sh · $267.3M/d · 1% ADV $2.7M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">108</td>
+  <td class="num mono">119.92</td>
+  <td class="num mono">119.92</td>
+  <td class="num mono">112.51</td>
+  <td class="num mono">141.96</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Positional</span></td>
+  <td class="ticker">KEYS<span class="liq t-vh" title="Liquidity Very high: avg 1.3M shares/day, $442.0M/day. Keeping a position under 1% of ADV ($4.4M) avoids moving the price."><b>Very high</b> · 1.3M sh · $442.0M/d · 1% ADV $4.4M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">103</td>
+  <td class="num mono">331.61</td>
+  <td class="num mono">331.61</td>
+  <td class="num mono">306.75</td>
+  <td class="num mono">389.93</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Positional</span></td>
+  <td class="ticker">ASML<span class="liq t-vh" title="Liquidity Very high: avg 1.5M shares/day, $2.5B/day. Keeping a position under 1% of ADV ($25.2M) avoids moving the price."><b>Very high</b> · 1.5M sh · $2.5B/d · 1% ADV $25.2M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">101</td>
+  <td class="num mono">1676.45</td>
+  <td class="num mono">1676.45</td>
+  <td class="num mono">1547.85</td>
+  <td class="num mono">1999.96</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Positional</span></td>
+  <td class="ticker">NVDA<span class="liq t-vh" title="Liquidity Very high: avg 97.4M shares/day, $21.8B/day. Keeping a position under 1% of ADV ($217.6M) avoids moving the price."><b>Very high</b> · 97.4M sh · $21.8B/d · 1% ADV $217.6M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">100</td>
+  <td class="num mono">213.46</td>
+  <td class="num mono">213.46</td>
+  <td class="num mono">198.15</td>
+  <td class="num mono">243.37</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Positional</span></td>
+  <td class="ticker">ABNB<span class="liq t-vh" title="Liquidity Very high: avg 3.3M shares/day, $558.5M/day. Keeping a position under 1% of ADV ($5.6M) avoids moving the price."><b>Very high</b> · 3.3M sh · $558.5M/d · 1% ADV $5.6M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">100</td>
+  <td class="num mono">166.04</td>
+  <td class="num mono">166.04</td>
+  <td class="num mono">142.03</td>
+  <td class="num mono">193.45</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Positional</span></td>
+  <td class="ticker">OXY<span class="liq t-vh" title="Liquidity Very high: avg 8.2M shares/day, $502.4M/day. Keeping a position under 1% of ADV ($5.0M) avoids moving the price."><b>Very high</b> · 8.2M sh · $502.4M/d · 1% ADV $5.0M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">97</td>
+  <td class="num mono">62.47</td>
+  <td class="num mono">62.47</td>
+  <td class="num mono">54.29</td>
+  <td class="num mono">67.45</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Positional</span></td>
+  <td class="ticker">ERO<span class="liq t-h" title="Liquidity High: avg 1.2M shares/day, $41.6M/day. Keeping a position under 1% of ADV ($415.8K) avoids moving the price."><b>High</b> · 1.2M sh · $41.6M/d · 1% ADV $415.8K</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">93</td>
+  <td class="num mono">31.12</td>
+  <td class="num mono">31.12</td>
+  <td class="num mono">29.73</td>
+  <td class="num mono">40.83</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Positional</span></td>
+  <td class="ticker">LAUR<span class="liq t-h" title="Liquidity High: avg 1.1M shares/day, $43.1M/day. Keeping a position under 1% of ADV ($431.0K) avoids moving the price."><b>High</b> · 1.1M sh · $43.1M/d · 1% ADV $431.0K</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">92</td>
+  <td class="num mono">36.41</td>
+  <td class="num mono">36.41</td>
+  <td class="num mono">34.50</td>
+  <td class="num mono">40.92</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Positional</span></td>
+  <td class="ticker">CGAU<span class="liq t-a" title="Liquidity Adequate: avg 1.0M shares/day, $22.0M/day. Keeping a position under 1% of ADV ($220.1K) avoids moving the price."><b>Adequate</b> · 1.0M sh · $22.0M/d · 1% ADV $220.1K</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">90</td>
+  <td class="num mono">20.54</td>
+  <td class="num mono">20.54</td>
+  <td class="num mono">18.37</td>
+  <td class="num mono">24.52</td>
+  <td><span class="dim">Unknown</span></td>
+</tr>
+<tr>
+  <td class="mono"><span class="streak">2026-10-29</span></td>
+  <td><span class="tag">Positional</span></td>
+  <td class="ticker">LIN<span class="liq t-vh" title="Liquidity Very high: avg 2.0M shares/day, $975.9M/day. Keeping a position under 1% of ADV ($9.8M) avoids moving the price."><b>Very high</b> · 2.0M sh · $975.9M/d · 1% ADV $9.8M</span></td>
+  <td class="num mono">×1</td>
+  <td class="score score-hi num mono">80</td>
+  <td class="num mono">501.90</td>
+  <td class="num mono">501.90</td>
+  <td class="num mono">477.79</td>
+  <td class="num mono">548.20</td>
+  <td><span class="dim">Unknown</span></td>
+</tr></tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">* From the ticker's best-scoring day this week. Re-check today's chart before acting.
+Liquidity shown is today's.</p>
+</details></div>
+</details>
 
   
+<details class="panel" id="p-diag" style="--pc:#6B6B75">
+  <summary><span class="p-title">Diagnostics</span><span class="p-desc">Sector distribution and the full filter funnel.</span>
+  <span class="p-counts">today <b>0</b></span></summary>
+  <div class="panel-body">
+  <div class="secondary">
+    <div><h3 class="subsection">Sector distribution</h3><ul class="sector-list"><li><span>Unknown</span><span class="mono">2</span></li></ul></div>
+    <div><h3 class="subsection">Funnel (where candidates drop out)</h3><ul class="funnel-list"><li><span class="step-name">Eligible pool</span><span class="step-count mono">491</span></li><li><span class="step-name">Skipped (no data)</span><span class="step-count mono">0</span></li><li><span class="step-name">Dropped by liquidity filter (price ≥ $10, vol ≥ 500K, $vol ≥ $10M)</span><span class="step-count mono">25</span></li><li><span class="step-name">Passed trend filter</span><span class="step-count mono">128</span></li><li><span class="step-name">Passed behavioral filter</span><span class="step-count mono">128</span></li><li><span class="step-name">Passed momentum confluence</span><span class="step-count mono">96</span></li><li><span class="step-name">— Pattern triggered (→ breakouts)</span><span class="step-count mono">2</span></li><li><span class="step-name">— No pattern yet (→ watchlist pool)</span><span class="step-count mono">86</span></li><li><span class="step-name">— Supertrend long state (→ supertrend pool)</span><span class="step-count mono">85</span></li><li><span class="step-name">— 20/200 EMA recovery (→ recovery pool)</span><span class="step-count mono">27</span></li><li><span class="step-name">Dropped by RS gate (breakouts)</span><span class="step-count mono">0</span></li><li><span class="step-name">Dropped by sector gate (breakouts)</span><span class="step-count mono">0</span></li><li><span class="step-name">Final breakout signals (archived)</span><span class="step-count mono">2</span></li><li><span class="step-name">Final watchlist entries (archived)</span><span class="step-count mono">59</span></li><li><span class="step-name">Final supertrend entries (archived)</span><span class="step-count mono">60</span></li><li><span class="step-name">Final recovery entries (archived)</span><span class="step-count mono">24</span></li><li><span class="step-name">Elite breakouts qualified</span><span class="step-count mono">1</span></li><li><span class="step-name">Elite watchlist qualified</span><span class="step-count mono">5</span></li><li><span class="step-name">Elite supertrend qualified (fresh ≤ 20d flip)</span><span class="step-count mono">19</span></li><li><span class="step-name">Recovery qualified (looser gates: RS≥60, sec≤7)</span><span class="step-count mono">24</span></li><li><span class="step-name">Breakouts shown (top 5)</span><span class="step-count mono">1</span></li><li><span class="step-name">Watchlist shown (top 8)</span><span class="step-count mono">5</span></li><li><span class="step-name">Supertrend shown (top 6)</span><span class="step-count mono">6</span></li><li><span class="step-name">Recovery shown (top 6)</span><span class="step-count mono">6</span></li><li><span class="step-name">Quality base (behavioral + above rising 200 SMA)</span><span class="step-count mono">186</span></li><li><span class="step-name">— Near support / resistance (raw)</span><span class="step-count mono">92</span></li><li><span class="step-name">— Recent breakouts not failed (raw)</span><span class="step-count mono">34</span></li><li><span class="step-name">— Reversal candle triggers (raw)</span><span class="step-count mono">2</span></li><li><span class="step-name">Support: gated → qualified → shown</span><span class="step-count mono">35 → 29 → 10</span></li><li><span class="step-name">Resistance: gated → qualified → shown</span><span class="step-count mono">13 → 13 → 10</span></li><li><span class="step-name">Break &amp; retest: gated → qualified → shown</span><span class="step-count mono">7 → 7 → 7</span></li><li><span class="step-name">Holding above: gated → qualified → shown</span><span class="step-count mono">14 → 12 → 8</span></li><li><span class="step-name">★ High-probability retests shown</span><span class="step-count mono">0</span></li><li><span class="step-name">Fake / failed breakouts: gated → shown</span><span class="step-count mono">8 → 8</span></li><li><span class="step-name">MTF RSI: raw → gated → qualified → shown</span><span class="step-count mono">2 → 2 → 2 → 2</span></li><li><span class="step-name">Positional: candidates → no fundamentals → pass → shown</span><span class="step-count mono">186 → 66 → 17 → 8</span></li><li><span class="step-name">Reversal: gated → qualified → shown</span><span class="step-count mono">1 → 1 → 1</span></li></ul></div>
+  </div></div>
+</details>
+  <details class="panel" id="p-method" style="--pc:#6B6B75">
+    <summary><span class="p-title">Methodology</span><span class="p-desc">How every score, gate and section works.</span></summary>
+    <div class="panel-body">
 <section class="methodology">
   <h2 class="section">Methodology</h2>
 
@@ -2269,6 +2985,24 @@ footer {
   </details>
 
   <details class="method-block">
+    <summary>Liquidity levels and the Positional (quality at a fair price) section</summary>
+    <div class="method-body">
+      <p><strong>Liquidity line under each ticker.</strong> Tier from the 20-session average dollar volume: Very high ≥ $100M/day, High ≥ $25M, Adequate ≥ $10M (the minimum to appear at all). Then average shares/day, average dollar volume/day, and <strong>1% of ADV</strong>: keeping your position below about 1% of a stock's average daily dollar volume means you can get in and out without moving the price, even on a fast exit. Hover the line for the full sentence.</p>
+      <p><strong>Positional candidates</strong> come from the quality base (liquid, no crash gaps, above a rising 200 SMA) and must pass three groups of hard gates, then get scored.</p>
+      <table class="method-table">
+        <thead><tr><th>Group</th><th>Hard gates</th><th>Score (points)</th></tr></thead>
+        <tbody>
+          <tr><td>Financial quality</td><td>ROE ≥ 10%, net margin &gt; 0, free cash flow &gt; 0, debt/equity ≤ 2.0×</td><td>ROE 4–12, margin 2–10, revenue growth 0–10, debt 2–8, positive FCF 10 (max 50)</td></tr>
+          <tr><td>Fair valuation</td><td>Forward P/E &gt; 0; PEG ≤ 2.0, or forward P/E ≤ 30 when PEG is missing</td><td>PEG 5–15 (or forward P/E 0–10), FCF yield 0–10, forward P/E below trailing +5 (max 30). Label: Undervalued if PEG ≤ 1 (or forward P/E ≤ 15), else Fair</td></tr>
+          <tr><td>Not overextended</td><td>0–15% above 200 SMA, ≤ 8% above 50 SMA, daily RSI ≤ 65, weekly RSI ≤ 70</td><td>Closeness to 200 SMA 3–10, RSI 40–55 sweet spot 10 (max 20)</td></tr>
+          <tr><td>Context</td><td>RS percentile ≥ 40</td><td>RS ÷ 5 (max 20), sector strength (max 12)</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Data source and caveats.</strong> Fundamentals come from Yahoo Finance via yfinance, cached in <code>data/fundamentals_cache.json</code> and refreshed weekly, at most 120 tickers per run (failed lookups retry after 3 days). The section fills in over the first few runs. Yahoo's figures can be stale, restated or missing; treat this as a shortlist and verify valuation in the filings before committing capital. A low PEG can also reflect a growth forecast that will not materialise.</p>
+    </div>
+  </details>
+
+  <details class="method-block">
     <summary>Fake-breakout detection, high-probability retests, liquidity filter, multi-timeframe RSI</summary>
     <div class="method-body">
       <p><strong>Liquidity filter (all sections).</strong> Before any pipeline runs, a ticker needs a price ≥ $10, a 20-session average volume ≥ 500K shares and average dollar volume ≥ $10M. Thin names produce unreliable breakouts, wide spreads and slippage. The funnel shows how many were dropped.</p>
@@ -2382,12 +3116,21 @@ footer {
     </div>
   </details>
 </section>
-
+</div>
+  </details>
 
   <footer>
     <div>Eligible universe last refreshed: 2026-10-29</div>
     <div>Not investment advice. For personal research use.</div>
   </footer>
 </div>
+<script>
+  function openFromHash() {
+    var id = location.hash.slice(1), el = id && document.getElementById(id);
+    if (el && el.tagName === "DETAILS") { el.open = true; }
+  }
+  window.addEventListener("hashchange", openFromHash);
+  openFromHash();
+</script>
 </body>
 </html>
