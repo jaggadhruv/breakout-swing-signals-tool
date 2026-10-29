@@ -39,7 +39,9 @@ breakout-swing-tool/
 │   ├── signals_archive.json           Breakout signals, rolling 7 d
 │   ├── watchlist_archive.json         Watchlist entries, rolling 7 d
 │   ├── supertrend_archive.json        Supertrend-long entries, rolling 7 d
-│   └── recovery_archive.json          Recovery entries, rolling 7 d
+│   ├── recovery_archive.json          Recovery entries, rolling 7 d
+│   ├── setups_archive.json            S/R, retest, holding, reversal, MTF RSI, positional; rolling 7 d
+│   └── fundamentals_cache.json        Yahoo fundamentals per ticker, refreshed weekly
 ├── reports/YYYY-MM-DD.html            One report per run (committed)
 ├── index.html                         Copy of the latest report (GitHub Pages landing)
 ├── requirements.txt                   pandas, numpy, requests, yfinance==0.2.65
@@ -56,7 +58,7 @@ rendering testable without network access.
 ## 3. Runtime: the daily workflow
 
 `.github/workflows/daily-scan.yml`, cron `0 22 * * 1-5` (22:00 UTC, Mon–Fri, after the
-US close in both EST and EDT), plus manual `workflow_dispatch`. Timeout 20 min.
+US close in both EST and EDT), plus manual `workflow_dispatch`. Timeout 30 min.
 
 1. Checkout, set up Python 3.11, `pip install -r requirements.txt`
 2. Fail fast if `input/manual_universe.csv` is missing
@@ -129,6 +131,11 @@ guard:** if the last bar's volume is under 30% of the prior 20-day average, the 
 dropped as an incomplete session (protects manual runs during market hours). Fetched
 frames are cached in `price_cache` and reused by Pass 1b, Pass 1c and breadth.
 
+**Liquidity levels.** `liquidity_profile()` stores, for every fetched ticker, a tier
+(Very high ≥ $100M/day, High ≥ $25M, Adequate ≥ $10M), average shares/day, average
+dollar volume and 1% of ADV. Before rendering, these are attached to every displayed
+row (including weekly lists) and shown under the ticker.
+
 **Liquidity filter (every section).** Right after fetching, `passes_liquidity()`
 requires price ≥ $10, 20-session average volume ≥ 500K shares and average dollar
 volume ≥ $10M. Failing tickers go into an `illiquid` set that Pass 1b and Pass 1c
@@ -198,6 +205,16 @@ volume, no follow-through, heavy selling since, back below level) and
 extended > 5%, gap-and-fade); an Adverse regime adds a flag after breadth is known.
 Retest and holding rows lose 5 points per flag.
 
+**Positional candidates.** Every quality-base member is also recorded with its
+extension metrics (% above 200 SMA and 50 SMA, daily and weekly RSI). After Pass 1c,
+`refresh_fundamentals()` fetches missing or stale entries (> 7 days; failed lookups
+retry after 3 days) via `yf.Ticker(t).info`, at most 120 per run, into
+`fundamentals_cache.json`. Pass 2f runs `evaluate_positional()`: hard gates for
+financial quality (ROE ≥ 10%, positive margin and FCF, D/E ≤ 2×), fair valuation
+(PEG ≤ 2, or forward P/E ≤ 30 without PEG) and not overextended (0–15% above the 200
+SMA, ≤ 8% above the 50 SMA, RSI ≤ 65, weekly RSI ≤ 70), then scores quality (≤ 50),
+valuation (≤ 30), extension (≤ 20), RS ÷ 5 and sector.
+
 **High-probability retest** = retest + bounce today + resistance_touches ≥ 2 +
 zero fake flags. It gets +15 score and a gold ★ row, both in its own subsection and
 in Near Support when the support level matches the broken resistance.
@@ -218,6 +235,7 @@ RS percentiles are computed once, across the full universe (see Pass 1c).
 | Reversal swing | ≥ 55 | rank ≤ 7 | `compute_reversal_score` | 147 |
 | Fake / failed breakouts | ≥ 60 | none | most recent first | — |
 | MTF RSI momentum | ≥ 60 | rank ≤ 7 | `compute_mtf_rsi_score` | 147 |
+| Positional | ≥ 40 | none | `evaluate_positional` + RS ÷ 5 + sector | 132 |
 
 Score components (see docstrings and the report's Methodology section for detail):
 
@@ -260,9 +278,11 @@ Applied only to the four "Today's" sections. Archives are unaffected.
 | ★ High-Probability Retests | subset of Break & Retest rows | (within 8) |
 | Fake / Failed Breakouts | RS ≥ 60 | 8 |
 | Multi-Timeframe RSI Momentum | score ≥ 60 | 8 |
+| Positional | score ≥ 70 | 8 |
 
-The S/R, retest and reversal sections are recomputed from price history daily and
-are **not archived** (no Recent Quality history).
+The S/R, retest, holding, reversal, MTF RSI and positional rows are archived in
+`setups_archive.json` (all gated rows, not only displayed ones) and ranked by
+`compute_recent_setups()` into each panel's weekly quality list.
 
 "Sector ≤ 4" passes when sector rank is unknown (`sector_rank_ok()`).
 
@@ -277,6 +297,8 @@ are **not archived** (no Recent Quality history).
 | `watchlist_archive.json` | `update_watchlist_archive()` | 7 d | Recent Quality Watchlist |
 | `supertrend_archive.json` | `update_supertrend_archive()` | 7 d | Recent Quality Supertrend |
 | `recovery_archive.json` | `update_recovery_archive()` | 7 d | Recent Quality Recovery |
+| `setups_archive.json` | `update_setups_archive()` | 7 d | Weekly lists for S/R, retest/holding, pullback, positional |
+| `fundamentals_cache.json` | `refresh_fundamentals()` | refreshed per ticker every 7 d | Positional section |
 
 Each archive update drops entries older than `ARCHIVE_RETENTION_DAYS` and replaces any
 same-day entries, so re-running a scan on the same date is idempotent. Missing files
@@ -291,15 +313,31 @@ volume or accumulation bonus`; show top 10.
 
 ## 7. Report (`report.py`)
 
-`render()` assembles one self-contained HTML file (embedded CSS, no external assets):
-masthead and breadth panel, four Today's sections, Support & Resistance (two
-tables), Recent Breakouts & Retests (high-probability, retest, holding, fake/failed
-tables), Reversal Swing Setups, Multi-Timeframe RSI Momentum, four Recent
-Quality sections, sector
-breakdown, funnel (counts at every gate, so you can see where candidates drop out),
-and collapsible Methodology blocks. Each section has its own table renderer
-(`_render_*_table`). Adding a section means: a renderer, a `render()` keyword argument,
-a template line, funnel rows, and a methodology block.
+`render()` assembles one self-contained HTML file (embedded CSS, a 6-line anchor
+script, no external assets):
+
+1. Masthead and colour-coded breadth panel
+2. **At a glance**: one card per strategy panel with today's and this week's counts;
+   clicking a card opens and jumps to the panel
+3. **Strategy panels** (`<details>`, colour per `PANEL_COLORS`), each holding its
+   today tables and a collapsible weekly quality list. Panels with nothing today start
+   collapsed.
+
+| Panel | Colour | Today tables | Weekly list(s) |
+|---|---|---|---|
+| Breakouts | blue | Today's breakouts | `signals_archive` |
+| Pre-breakout watch | teal | Watchlist, Near resistance | `watchlist_archive`, setups: resistance |
+| Break & retest | gold | ★ High-probability, Break & retest, Holding above, Fake/failed | setups: retest, holding |
+| Trend following | purple | Supertrend longs | `supertrend_archive` |
+| Pullback & reversal | green | Near support, Reversal swing, MTF RSI | setups: support, reversal, mtf_rsi |
+| Recovery | orange | Recovery setups | `recovery_archive` |
+| Positional | navy | Quality at a fair price | setups: positional |
+
+4. Diagnostics (sector distribution, funnel) and Methodology, both collapsed.
+
+Every ticker cell goes through `_tk()`, which appends the liquidity line. Adding a
+section means: a table renderer, a `render()` keyword argument, a line in the
+`panels` list (or a new panel tuple and colour), funnel rows, and a methodology block.
 
 ---
 
@@ -327,6 +365,9 @@ pipeline. The ones you are most likely to touch:
 | `HP_MIN_RESISTANCE_TOUCHES` / `FAKE_FLAG_PENALTY` | 2 / 5 | High-probability rule and fakeout penalty |
 | `MTF_RSI_MONTHLY_MIN` / `_WEEKLY_MIN` / `_DAILY_LEVEL` | 60 / 60 / 50 | Multi-timeframe RSI thresholds |
 | `PRICE_HISTORY_PERIOD` | "3y" | Must stay ≥ 2y for monthly RSI |
+| `LIQUIDITY_TIERS` | 100M / 25M / 10M | Tier labels on the liquidity line |
+| `POS_MAX_PEG` / `POS_MAX_PCT_ABOVE_200SMA` / `POS_MAX_DAILY_RSI` | 2.0 / 15 / 65 | Positional valuation and extension limits |
+| `FUNDAMENTALS_MAX_REFRESH_PER_RUN` | 120 | Yahoo lookups per run (runtime vs cache fill speed) |
 
 When a section is empty, read the funnel before tuning: it shows whether candidates
 died at pattern detection, a base gate, or the elite filter.
@@ -367,8 +408,12 @@ There is no unit-test suite yet. Two checks are used before every release:
 - **Monthly RSI uses the in-progress month** (as TradingView does) and 3 years of
   history, so early-month values can move and may differ from charting tools by a
   few points.
-- **S/R, retest, reversal and MTF RSI have no history archive.** Add one following the
-  recovery archive pattern if needed.
+- **Fundamentals depend on Yahoo's unofficial `info` endpoint.** It is slow (one call
+  per ticker) and occasionally fails or rate-limits; the cache and per-run cap contain
+  this, but a Yahoo outage simply leaves the Positional panel thin. Figures can be
+  stale or restated: verify in filings.
+- **Positional fills gradually.** With ~250 quality-base names and a 120-per-run cap,
+  the cache is complete after about three runs.
 - **Tight elite Supertrend combination.** A fresh flip after a pullback often still
   has a negative weekly MACD, so "flip ≤ 20 d" plus "momentum 4/4" can leave the
   section empty in otherwise healthy markets. Loosen `ELITE_MOMENTUM_PASSES_MIN` first

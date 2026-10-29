@@ -44,6 +44,8 @@ SIGNALS_ARCHIVE_PATH = Path("data/signals_archive.json")
 WATCHLIST_ARCHIVE_PATH = Path("data/watchlist_archive.json")
 SUPERTREND_ARCHIVE_PATH = Path("data/supertrend_archive.json")
 RECOVERY_ARCHIVE_PATH = Path("data/recovery_archive.json")
+SETUPS_ARCHIVE_PATH = Path("data/setups_archive.json")          # S/R, retest, reversal, RSI, positional
+FUNDAMENTALS_CACHE_PATH = Path("data/fundamentals_cache.json")
 REPORTS_DIR = Path("reports")
 
 YFINANCE_DELAY_SECONDS = 0.3
@@ -172,6 +174,36 @@ MTF_RSI_RS_MIN            = 60
 MTF_RSI_SECTOR_RANK_MAX   = 7
 MTF_RSI_MIN_SHOW_SCORE    = 60
 MAX_MTF_RSI_SHOWN         = 8
+
+# Liquidity tiers shown on every suggestion (20-session average dollar volume)
+LIQUIDITY_TIERS = [(100_000_000, "Very high"), (25_000_000, "High"), (MIN_AVG_DOLLAR_VOLUME, "Adequate")]
+
+# 7-day quality lists for the setup types that previously had no history.
+# Threshold = best score a ticker must reach this week to appear in the list.
+SETUP_QUALITY_THRESHOLDS = {
+    "resistance": 70, "support": 70, "retest": 70, "holding": 70,
+    "reversal": 65, "mtf_rsi": 70, "positional": 75,
+}
+
+# ----------------------------------------------------------------------------
+# Positional: financially strong companies at a fair valuation, not overextended
+# ----------------------------------------------------------------------------
+FUNDAMENTALS_MAX_AGE_DAYS        = 7     # refresh weekly
+FUNDAMENTALS_ERROR_RETRY_DAYS    = 3     # retry failed lookups after 3 days
+FUNDAMENTALS_MAX_REFRESH_PER_RUN = 120   # keeps the daily run inside the CI timeout
+FUNDAMENTALS_DELAY_SECONDS       = 0.5
+POS_MIN_ROE                      = 0.10  # 10%
+POS_MAX_DEBT_TO_EQUITY           = 200   # Yahoo reports D/E in percent (200 = 2.0×)
+POS_MAX_PEG                      = 2.0
+POS_MAX_FORWARD_PE_NO_PEG        = 30    # fallback when PEG is unavailable
+POS_MAX_PCT_ABOVE_200SMA         = 15.0  # not overextended vs long-term trend
+POS_MAX_PCT_ABOVE_50SMA          = 8.0   # not stretched vs medium-term trend
+POS_MAX_DAILY_RSI                = 65
+POS_MAX_WEEKLY_RSI               = 70
+POS_RS_MIN                       = 40    # trend matters less for positional; avoid clear laggards
+POS_SECTOR_RANK_MAX              = 11    # no sector gate (valuation-led)
+POS_MIN_SHOW_SCORE               = 70
+MAX_POSITIONAL_SHOWN             = 8
 
 # Layer 4: trend context filter — a stock passes if all four hold
 TREND_ABOVE_50_SMA = True
@@ -1286,6 +1318,208 @@ def passes_liquidity(prices: pd.DataFrame) -> tuple[bool, dict]:
     return ok, {"close": close, "avg_vol": avg_vol, "avg_dollar_vol": avg_dollar}
 
 
+def liquidity_profile(ctx: dict) -> dict:
+    """Display-ready liquidity levels for a ticker (from passes_liquidity ctx)."""
+    dollar = ctx.get("avg_dollar_vol", 0.0)
+    tier = next((name for floor, name in LIQUIDITY_TIERS if dollar >= floor), "Below minimum")
+    return {
+        "tier": tier,
+        "avg_vol": ctx.get("avg_vol", 0.0),
+        "avg_dollar_vol": dollar,
+        "one_pct_adv": dollar * 0.01,   # position-size ceiling to avoid moving the price
+    }
+
+
+# ---------------- Fundamentals (positional section) ----------------
+
+def load_fundamentals_cache() -> dict:
+    if not FUNDAMENTALS_CACHE_PATH.exists():
+        return {}
+    try:
+        return json.loads(FUNDAMENTALS_CACHE_PATH.read_text())
+    except Exception:
+        return {}
+
+
+def save_fundamentals_cache(cache: dict) -> None:
+    FUNDAMENTALS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    FUNDAMENTALS_CACHE_PATH.write_text(json.dumps(cache, indent=1, sort_keys=True))
+
+
+def fetch_fundamentals(ticker: str) -> dict | None:
+    """Valuation and quality fields from Yahoo's info endpoint. None on failure."""
+    try:
+        info = yf.Ticker(ticker).info or {}
+    except Exception:
+        return None
+    if len(info) < 10:
+        return None
+    def num(key):
+        v = info.get(key)
+        return float(v) if isinstance(v, (int, float)) and v == v else None  # drop NaN
+    peg = num("pegRatio") or num("trailingPegRatio")
+    return {
+        "trailing_pe": num("trailingPE"), "forward_pe": num("forwardPE"), "peg": peg,
+        "roe": num("returnOnEquity"), "profit_margin": num("profitMargins"),
+        "revenue_growth": num("revenueGrowth"), "earnings_growth": num("earningsGrowth"),
+        "debt_to_equity": num("debtToEquity"), "free_cashflow": num("freeCashflow"),
+        "market_cap": num("marketCap"),
+    }
+
+
+def refresh_fundamentals(cache: dict, tickers: list[str], today_str: str) -> tuple[int, int]:
+    """Refresh missing/stale cache entries (capped per run). Returns (refreshed, failed)."""
+    today = datetime.strptime(today_str, "%Y-%m-%d").date()
+    def stale(t):
+        e = cache.get(t)
+        if not e:
+            return True
+        try:
+            age = (today - datetime.strptime(e["fetched"], "%Y-%m-%d").date()).days
+        except (KeyError, ValueError):
+            return True
+        return age >= (FUNDAMENTALS_ERROR_RETRY_DAYS if e.get("error") else FUNDAMENTALS_MAX_AGE_DAYS)
+    todo = sorted((t for t in tickers if stale(t)), key=lambda t: (t in cache, cache.get(t, {}).get("fetched", "")))
+    refreshed = failed = 0
+    for t in todo[:FUNDAMENTALS_MAX_REFRESH_PER_RUN]:
+        f = fetch_fundamentals(t)
+        time.sleep(FUNDAMENTALS_DELAY_SECONDS)
+        if f is None:
+            cache[t] = {"fetched": today_str, "error": True}
+            failed += 1
+        else:
+            cache[t] = {**f, "fetched": today_str}
+            refreshed += 1
+    return refreshed, failed
+
+
+def evaluate_positional(f: dict, tech: dict) -> dict | None:
+    """Quality + valuation + extension. Returns scored components or None if it
+    fails a hard gate (unprofitable, over-levered, expensive, overextended)."""
+    roe, margin, fcf = f.get("roe"), f.get("profit_margin"), f.get("free_cashflow")
+    de, growth = f.get("debt_to_equity"), f.get("revenue_growth")
+    fpe, tpe, peg, mcap = f.get("forward_pe"), f.get("trailing_pe"), f.get("peg"), f.get("market_cap")
+
+    # Hard gates: financially sound
+    if roe is None or margin is None or roe < POS_MIN_ROE or margin <= 0:
+        return None
+    if fcf is not None and fcf <= 0:
+        return None
+    if de is not None and de > POS_MAX_DEBT_TO_EQUITY:
+        return None
+    # Hard gates: fair valuation
+    if fpe is None or fpe <= 0:
+        return None
+    if peg is not None and peg > 0:
+        if peg > POS_MAX_PEG:
+            return None
+        valuation_label = "Undervalued" if peg <= 1.0 else "Fair"
+    else:
+        peg = None
+        if fpe > POS_MAX_FORWARD_PE_NO_PEG:
+            return None
+        valuation_label = "Undervalued" if fpe <= 15 else "Fair"
+    # Hard gates: not overextended
+    if not (0 <= tech["pct_above_200"] <= POS_MAX_PCT_ABOVE_200SMA):
+        return None
+    if tech["pct_above_50"] > POS_MAX_PCT_ABOVE_50SMA:
+        return None
+    if tech["rsi"] > POS_MAX_DAILY_RSI or (tech["weekly_rsi"] is not None and tech["weekly_rsi"] > POS_MAX_WEEKLY_RSI):
+        return None
+
+    quality = (12 if roe >= 0.20 else 8 if roe >= 0.15 else 4)
+    quality += (10 if margin >= 0.20 else 6 if margin >= 0.10 else 2)
+    if growth is not None:
+        quality += (10 if growth >= 0.15 else 6 if growth >= 0.05 else 2 if growth > 0 else 0)
+    if de is not None:
+        quality += (8 if de <= 50 else 5 if de <= 100 else 2)
+    if fcf is not None and fcf > 0:
+        quality += 10
+
+    fcf_yield = (fcf / mcap) if (fcf and mcap) else None
+    valuation = 0
+    if peg is not None:
+        valuation += 15 if peg <= 1.0 else 10 if peg <= 1.5 else 5
+    else:
+        valuation += 10 if fpe <= 15 else 5 if fpe <= 25 else 0
+    if fcf_yield is not None:
+        valuation += 10 if fcf_yield >= 0.05 else 6 if fcf_yield >= 0.03 else 3 if fcf_yield >= 0.015 else 0
+    if tpe and fpe < tpe:
+        valuation += 5   # earnings expected to grow
+
+    ext = (10 if tech["pct_above_200"] <= 5 else 6 if tech["pct_above_200"] <= 10 else 3)
+    ext += (10 if 40 <= tech["rsi"] <= 55 else 5 if tech["rsi"] <= 65 else 0)
+    return {"quality_pts": quality, "valuation_pts": valuation, "extension_pts": ext,
+            "valuation_label": valuation_label, "fcf_yield": fcf_yield, "peg_used": peg}
+
+
+# ---------------- Generic 7-day archive for setup types without their own ----------------
+
+def load_setups_archive() -> list[dict]:
+    if not SETUPS_ARCHIVE_PATH.exists():
+        return []
+    try:
+        return json.loads(SETUPS_ARCHIVE_PATH.read_text()).get("entries", [])
+    except Exception:
+        return []
+
+
+def save_setups_archive(entries: list[dict]) -> None:
+    SETUPS_ARCHIVE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SETUPS_ARCHIVE_PATH.write_text(json.dumps({"entries": entries}, indent=1))
+
+
+def update_setups_archive(entries: list[dict], rows_by_setup: dict[str, list[dict]], today_str: str) -> list[dict]:
+    cutoff = (datetime.utcnow() - timedelta(days=ARCHIVE_RETENTION_DAYS)).strftime("%Y-%m-%d")
+    entries = [e for e in entries if e.get("date", "") >= cutoff and e.get("date") != today_str]
+    level_key = {"support": "level", "resistance": "level", "retest": "breakout_level", "holding": "breakout_level",
+                 "reversal": "entry", "mtf_rsi": "entry", "positional": "close"}
+    for setup, rows in rows_by_setup.items():
+        for r in rows:
+            entries.append({
+                "date": today_str, "setup": setup, "ticker": r["ticker"],
+                "sector": r.get("sector", "Unknown"), "sector_rank": r.get("sector_rank"),
+                "score": r["score"], "close": r.get("close"), "level": r.get(level_key[setup]),
+                "stop": r.get("stop"), "target": r.get("target", r.get("tp1")),
+                "high_probability": bool(r.get("high_probability")),
+            })
+    return entries
+
+
+def compute_recent_setups(entries: list[dict], setups: list[str], n: int = 10) -> list[dict]:
+    """Best day per (setup, ticker) this week, above the setup's quality threshold,
+    ranked by best score + recency + repeat appearances."""
+    today = datetime.utcnow().date()
+    best: dict[tuple, dict] = {}
+    for e in entries:
+        if e.get("setup") not in setups:
+            continue
+        key = (e["setup"], e["ticker"])
+        agg = best.get(key)
+        if agg is None:
+            best[key] = {**e, "best_score": e["score"], "best_score_date": e["date"],
+                         "latest_date": e["date"], "appearances": 1}
+            continue
+        agg["appearances"] += 1
+        agg["latest_date"] = max(agg["latest_date"], e["date"])
+        agg["high_probability"] = agg["high_probability"] or e.get("high_probability", False)
+        if e["score"] > agg["best_score"]:
+            agg.update({k: e[k] for k in ("close", "level", "stop", "target", "sector_rank")})
+            agg["best_score"], agg["best_score_date"] = e["score"], e["date"]
+    out = []
+    for agg in best.values():
+        if agg["best_score"] < SETUP_QUALITY_THRESHOLDS.get(agg["setup"], 70):
+            continue
+        try:
+            days = (today - datetime.strptime(agg["latest_date"], "%Y-%m-%d").date()).days
+        except ValueError:
+            days = 99
+        agg["keep_score"] = round(agg["best_score"] + (15 if days <= 2 else 5 if days <= 5 else 0)
+                                  + min(agg["appearances"] * 2, 15), 1)
+        out.append(agg)
+    return sorted(out, key=lambda a: a["keep_score"], reverse=True)[:n]
+
+
 def compute_mtf_rsi_score(*, m: dict, rs_percentile: float, sector_rank: int | None,
                           accumulation_days: int) -> float:
     score = min((m["monthly_rsi"] - 60) * 1.5, 15) + min((m["weekly_rsi"] - 60) * 1.5, 15)
@@ -1741,6 +1975,7 @@ def main() -> None:
     raw_recovery: list[dict] = []
     ticker_rs: dict[str, float] = {}
     illiquid: set[str] = set()
+    liquidity_info: dict[str, dict] = {}
 
     for i, entry in enumerate(eligible):
         ticker = entry["ticker"]
@@ -1754,7 +1989,8 @@ def main() -> None:
         price_cache[ticker] = prices
 
         # Liquidity filter — applies to every section (Pass 1b/1c skip these too)
-        liq_ok, _ = passes_liquidity(prices)
+        liq_ok, liq_ctx = passes_liquidity(prices)
+        liquidity_info[ticker] = liquidity_profile(liq_ctx)
         if not liq_ok:
             illiquid.add(ticker)
             continue
@@ -1927,6 +2163,7 @@ def main() -> None:
     raw_retest: list[dict] = []
     raw_reversal: list[dict] = []
     raw_mtf_rsi: list[dict] = []
+    raw_positional: list[dict] = []
     quality_base_pass = 0
 
     for ticker, prices in price_cache.items():
@@ -1956,6 +2193,22 @@ def main() -> None:
         if not (close_s.iloc[-1] > sma200.iloc[-1] and sma200.iloc[-1] > sma200.iloc[-21]):
             continue
         quality_base_pass += 1
+
+        # Positional candidate: record extension metrics; fundamentals checked after the loop
+        sma50_now = float(close_s.rolling(50).mean().iloc[-1])
+        close_now = float(close_s.iloc[-1])
+        weekly_close = close_s.resample("W-FRI").last().dropna()
+        raw_positional.append({
+            "ticker": ticker, "entry": entry_info,
+            "close": close_now, "sma50": sma50_now, "sma200": float(sma200.iloc[-1]),
+            "high_252": float(prices["High"].iloc[-252:].max()),
+            "tech": {
+                "pct_above_200": (close_now / float(sma200.iloc[-1]) - 1) * 100,
+                "pct_above_50": (close_now / sma50_now - 1) * 100,
+                "rsi": float(patterns.rsi(close_s, 14).iloc[-1]),
+                "weekly_rsi": float(patterns.rsi(weekly_close, 14).iloc[-1]) if len(weekly_close) >= 30 else None,
+            },
+        })
 
         _, mom_ctx_c = passes_momentum_confluence(prices)
         base = {
@@ -1992,6 +2245,17 @@ def main() -> None:
     log(f"Pass 1c complete: RS computed for {len(ticker_rs)} tickers; {quality_base_pass} in quality base "
         f"→ {len(raw_sr)} near S/R, {len(raw_retest)} recent breakouts, {len(raw_reversal)} reversal triggers, "
         f"{len(raw_mtf_rsi)} MTF-RSI bounces; {len(illiquid)} illiquid tickers excluded.")
+
+    # ---- Fundamentals for positional candidates (cached, weekly refresh, capped) ----
+    fundamentals = load_fundamentals_cache()
+    f_refreshed, f_failed = refresh_fundamentals(
+        fundamentals, [c["ticker"] for c in raw_positional], today_str
+    )
+    save_fundamentals_cache(fundamentals)
+    f_available = sum(1 for c in raw_positional
+                      if c["ticker"] in fundamentals and not fundamentals[c["ticker"]].get("error"))
+    log(f"Fundamentals: refreshed {f_refreshed}, failed {f_failed}; "
+        f"{f_available}/{len(raw_positional)} positional candidates have data.")
 
     # ---- Confluence gates: RS percentile + sector regime ----
     rs_percentiles = compute_rs_percentiles(ticker_rs)
@@ -2353,6 +2617,38 @@ def main() -> None:
         f"MTF-RSI {len(mtf_rsi_list)}→{len(mtf_rsi_shown)}, high-probability retests {len(high_prob_shown)} "
         f"(gated → shown).")
 
+    # ---- Pass 2f: Positional — quality at a fair price, not overextended ----
+    positional_list: list[dict] = []
+    pos_no_data = 0
+    for c in raw_positional:
+        f = fundamentals.get(c["ticker"])
+        if not f or f.get("error"):
+            pos_no_data += 1
+            continue
+        rs_pct = rs_percentiles.get(c["ticker"])
+        rank = _rank_for(c["entry"])
+        if rs_pct is None or rs_pct < POS_RS_MIN or not sector_rank_ok(rank, POS_SECTOR_RANK_MAX):
+            continue
+        ev = evaluate_positional(f, c["tech"])
+        if ev is None:
+            continue
+        e = c["entry"]
+        score = ev["quality_pts"] + ev["valuation_pts"] + ev["extension_pts"] + rs_pct / 5 + _sector_points(rank)
+        target = c["high_252"] if c["high_252"] > c["close"] * 1.05 else c["close"] * 1.20
+        positional_list.append({
+            "ticker": c["ticker"], "name": e.get("name", ""), "sector": e.get("sector", "Unknown"),
+            "sector_rank": rank, "rs_percentile": rs_pct, "piotroski": e.get("piotroski_f_score"),
+            "score": round(score, 1), **ev, **f,
+            "close": round(c["close"], 2), "sma50": round(c["sma50"], 2), "sma200": round(c["sma200"], 2),
+            "pct_above_200": round(c["tech"]["pct_above_200"], 1), "pct_above_50": round(c["tech"]["pct_above_50"], 1),
+            "rsi": round(c["tech"]["rsi"], 1),
+            "weekly_rsi": round(c["tech"]["weekly_rsi"], 1) if c["tech"]["weekly_rsi"] is not None else None,
+            "stop": round(c["sma200"] * 0.97, 2), "target": round(target, 2),
+        })
+    positional_qualified, positional_shown = _curate(positional_list, POS_MIN_SHOW_SCORE, MAX_POSITIONAL_SHOWN)
+    log(f"Pass 2f (positional) complete: {len(raw_positional)} candidates, {pos_no_data} without fundamentals "
+        f"→ {len(positional_list)} pass quality/valuation/extension → {len(positional_shown)} shown.")
+
     # Update history with today's signals (all four pipelines) BEFORE breadth
     update_history(history, [s["ticker"] for s in signals])
     update_history(history, [w["ticker"] for w in watchlist])
@@ -2488,6 +2784,9 @@ def main() -> None:
         "mtf_rsi_raw": len(raw_mtf_rsi), "mtf_rsi_signals": len(mtf_rsi_list),
         "mtf_rsi_qualified": mtf_rsi_qualified, "mtf_rsi_shown": len(mtf_rsi_shown),
         "max_mtf_rsi_cap": MAX_MTF_RSI_SHOWN,
+        "positional_raw": len(raw_positional), "positional_no_data": pos_no_data,
+        "positional_signals": len(positional_list), "positional_qualified": positional_qualified,
+        "positional_shown": len(positional_shown), "max_positional_cap": MAX_POSITIONAL_SHOWN,
         "supertrend_max_flip_age_days": SUPERTREND_MAX_FLIP_AGE_DAYS,
         "min_show_score_used": adaptive_min_score,
     }
@@ -2534,6 +2833,26 @@ def main() -> None:
         f"{len(recent_quality_recovery)} recent-quality recovery tickers "
         f"(score ≥ {RECOVERY_QUALITY_THRESHOLD}).")
 
+    # Rolling 7-day quality lists for setup types without their own archive
+    setups_archive = update_setups_archive(load_setups_archive(), {
+        "support": support_list, "resistance": resistance_list, "retest": retest_list, "holding": holding_list,
+        "reversal": reversal_list, "mtf_rsi": mtf_rsi_list, "positional": positional_list,
+    }, today_str)
+    save_setups_archive(setups_archive)
+    recent_resistance = compute_recent_setups(setups_archive, ["resistance"])
+    recent_retest = compute_recent_setups(setups_archive, ["retest", "holding"])
+    recent_pullback = compute_recent_setups(setups_archive, ["support", "reversal", "mtf_rsi"])
+    recent_positional = compute_recent_setups(setups_archive, ["positional"])
+
+    # Attach today's liquidity levels to every row the report will show
+    for rows in (shown, watchlist_shown, supertrend_shown, recovery_shown, support_shown,
+                 resistance_shown, retest_shown, holding_shown, reversal_shown, fake_shown,
+                 high_prob_shown, mtf_rsi_shown, positional_shown, recent_quality,
+                 recent_quality_watchlist, recent_quality_supertrend, recent_quality_recovery,
+                 recent_resistance, recent_retest, recent_pullback, recent_positional):
+        for r in rows:
+            r["liquidity"] = liquidity_info.get(r["ticker"])
+
     html = report.render(
         date_str=today_str,
         generated_at_utc=generated_at,
@@ -2550,6 +2869,11 @@ def main() -> None:
         fake=fake_shown,
         high_prob=high_prob_shown,
         mtf_rsi=mtf_rsi_shown,
+        positional=positional_shown,
+        recent_resistance=recent_resistance,
+        recent_retest=recent_retest,
+        recent_pullback=recent_pullback,
+        recent_positional=recent_positional,
         recent_quality=recent_quality,
         recent_quality_watchlist=recent_quality_watchlist,
         recent_quality_supertrend=recent_quality_supertrend,
