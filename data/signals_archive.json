@@ -159,6 +159,76 @@
       "piotroski": null,
       "days_on_report": 3,
       "volume_multiple": 1.78
+    },
+    {
+      "date": "2026-10-29",
+      "ticker": "AR",
+      "name": "AR",
+      "sector": "Unknown",
+      "score": 81.5,
+      "pattern_labels": [
+        "55D High",
+        "Resistance Break"
+      ],
+      "entry": 42.11,
+      "stop": 39.15,
+      "tp1": 48.02,
+      "tp2": 50.98,
+      "piotroski": null,
+      "days_on_report": 3,
+      "volume_multiple": 1.65
+    },
+    {
+      "date": "2026-10-29",
+      "ticker": "AVPT",
+      "name": "AVPT",
+      "sector": "Unknown",
+      "score": 128.9,
+      "pattern_labels": [
+        "52W High",
+        "Resistance Break"
+      ],
+      "entry": 17.2,
+      "stop": 15.87,
+      "tp1": 19.87,
+      "tp2": 21.2,
+      "piotroski": null,
+      "days_on_report": 3,
+      "volume_multiple": 2.37
+    },
+    {
+      "date": "2026-10-29",
+      "ticker": "MANH",
+      "name": "MANH",
+      "sector": "Unknown",
+      "score": 77.4,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 239.73,
+      "stop": 212.21,
+      "tp1": 294.78,
+      "tp2": 322.3,
+      "piotroski": null,
+      "days_on_report": 4,
+      "volume_multiple": 2.68
+    },
+    {
+      "date": "2026-10-29",
+      "ticker": "RRC",
+      "name": "RRC",
+      "sector": "Unknown",
+      "score": 75.0,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 55.88,
+      "stop": 40.21,
+      "tp1": 87.21,
+      "tp2": 102.88,
+      "piotroski": null,
+      "days_on_report": 6,
+      "volume_multiple": 3.16
     }
   ]
 }
