@@ -194,6 +194,146 @@
       "piotroski": null,
       "days_on_report": 2,
       "volume_multiple": 1.61
+    },
+    {
+      "date": "2026-10-30",
+      "ticker": "AR",
+      "name": "AR",
+      "sector": "Unknown",
+      "score": 56.7,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 41.2,
+      "stop": 37.22,
+      "tp1": 49.16,
+      "tp2": 53.14,
+      "piotroski": null,
+      "days_on_report": 4,
+      "volume_multiple": 1.67
+    },
+    {
+      "date": "2026-10-30",
+      "ticker": "AVPT",
+      "name": "AVPT",
+      "sector": "Unknown",
+      "score": 71.0,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 17.35,
+      "stop": 14.35,
+      "tp1": 23.35,
+      "tp2": 26.35,
+      "piotroski": null,
+      "days_on_report": 4,
+      "volume_multiple": 2.1
+    },
+    {
+      "date": "2026-10-30",
+      "ticker": "CART",
+      "name": "CART",
+      "sector": "Unknown",
+      "score": 80.4,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 57.11,
+      "stop": 48.29,
+      "tp1": 74.76,
+      "tp2": 83.58,
+      "piotroski": null,
+      "days_on_report": 4,
+      "volume_multiple": 4.33
+    },
+    {
+      "date": "2026-10-30",
+      "ticker": "DV",
+      "name": "DV",
+      "sector": "Unknown",
+      "score": 86.1,
+      "pattern_labels": [
+        "Resistance Break",
+        "VCP Break"
+      ],
+      "entry": 13.57,
+      "stop": 13.44,
+      "tp1": 13.83,
+      "tp2": 13.96,
+      "piotroski": null,
+      "days_on_report": 4,
+      "volume_multiple": 1.89
+    },
+    {
+      "date": "2026-10-30",
+      "ticker": "MANH",
+      "name": "MANH",
+      "sector": "Unknown",
+      "score": 80.8,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 240.84,
+      "stop": 215.49,
+      "tp1": 291.54,
+      "tp2": 316.89,
+      "piotroski": null,
+      "days_on_report": 4,
+      "volume_multiple": 3.15
+    },
+    {
+      "date": "2026-10-30",
+      "ticker": "OSW",
+      "name": "OSW",
+      "sector": "Unknown",
+      "score": 112.9,
+      "pattern_labels": [
+        "52W High",
+        "Resistance Break"
+      ],
+      "entry": 30.1,
+      "stop": 27.2,
+      "tp1": 35.9,
+      "tp2": 38.79,
+      "piotroski": null,
+      "days_on_report": 2,
+      "volume_multiple": 2.79
+    },
+    {
+      "date": "2026-10-30",
+      "ticker": "SN",
+      "name": "SN",
+      "sector": "Unknown",
+      "score": 121.5,
+      "pattern_labels": [
+        "52W High",
+        "Resistance Break"
+      ],
+      "entry": 209.12,
+      "stop": 186.35,
+      "tp1": 254.65,
+      "tp2": 277.42,
+      "piotroski": null,
+      "days_on_report": 4,
+      "volume_multiple": 2.07
+    },
+    {
+      "date": "2026-10-30",
+      "ticker": "STNG",
+      "name": "STNG",
+      "sector": "Unknown",
+      "score": 124.8,
+      "pattern_labels": [
+        "52W High",
+        "Resistance Break"
+      ],
+      "entry": 95.07,
+      "stop": 86.26,
+      "tp1": 112.69,
+      "tp2": 121.51,
+      "piotroski": null,
+      "days_on_report": 3,
+      "volume_multiple": 1.76
     }
   ]
 }
