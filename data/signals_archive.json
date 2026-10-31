@@ -1,78 +1,6 @@
 {
   "signals": [
     {
-      "date": "2026-10-23",
-      "ticker": "ADP",
-      "name": "ADP",
-      "sector": "Unknown",
-      "score": 68.2,
-      "pattern_labels": [
-        "55D High",
-        "Resistance Break"
-      ],
-      "entry": 307.94,
-      "stop": 275.41,
-      "tp1": 373.0,
-      "tp2": 405.53,
-      "piotroski": null,
-      "days_on_report": 1,
-      "volume_multiple": 1.82
-    },
-    {
-      "date": "2026-10-23",
-      "ticker": "KDP",
-      "name": "KDP",
-      "sector": "Unknown",
-      "score": 79.4,
-      "pattern_labels": [
-        "55D High",
-        "Resistance Break"
-      ],
-      "entry": 35.19,
-      "stop": 32.45,
-      "tp1": 40.67,
-      "tp2": 43.42,
-      "piotroski": null,
-      "days_on_report": 1,
-      "volume_multiple": 2.42
-    },
-    {
-      "date": "2026-10-23",
-      "ticker": "PG",
-      "name": "PG",
-      "sector": "Unknown",
-      "score": 94.8,
-      "pattern_labels": [
-        "55D High",
-        "Resistance Break"
-      ],
-      "entry": 165.59,
-      "stop": 148.78,
-      "tp1": 199.21,
-      "tp2": 216.02,
-      "piotroski": null,
-      "days_on_report": 4,
-      "volume_multiple": 2.42
-    },
-    {
-      "date": "2026-10-23",
-      "ticker": "QLYS",
-      "name": "QLYS",
-      "sector": "Unknown",
-      "score": 85.4,
-      "pattern_labels": [
-        "55D High",
-        "Resistance Break"
-      ],
-      "entry": 208.2,
-      "stop": 191.81,
-      "tp1": 240.97,
-      "tp2": 257.36,
-      "piotroski": null,
-      "days_on_report": 2,
-      "volume_multiple": 1.88
-    },
-    {
       "date": "2026-10-25",
       "ticker": "CART",
       "name": "CART",
@@ -334,6 +262,233 @@
       "piotroski": null,
       "days_on_report": 3,
       "volume_multiple": 1.76
+    },
+    {
+      "date": "2026-10-31",
+      "ticker": "ADI",
+      "name": "ADI",
+      "sector": "Unknown",
+      "score": 53.2,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 417.11,
+      "stop": 386.31,
+      "tp1": 478.7,
+      "tp2": 509.5,
+      "piotroski": null,
+      "days_on_report": 3,
+      "volume_multiple": 2.32
+    },
+    {
+      "date": "2026-10-31",
+      "ticker": "AVPT",
+      "name": "AVPT",
+      "sector": "Unknown",
+      "score": 80.0,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 17.09,
+      "stop": 14.41,
+      "tp1": 22.44,
+      "tp2": 25.12,
+      "piotroski": null,
+      "days_on_report": 5,
+      "volume_multiple": 11.21
+    },
+    {
+      "date": "2026-10-31",
+      "ticker": "CART",
+      "name": "CART",
+      "sector": "Unknown",
+      "score": 67.6,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 56.45,
+      "stop": 48.38,
+      "tp1": 72.59,
+      "tp2": 80.66,
+      "piotroski": null,
+      "days_on_report": 5,
+      "volume_multiple": 1.7
+    },
+    {
+      "date": "2026-10-31",
+      "ticker": "CVX",
+      "name": "CVX",
+      "sector": "Unknown",
+      "score": 126.0,
+      "pattern_labels": [
+        "52W High",
+        "Resistance Break"
+      ],
+      "entry": 235.52,
+      "stop": 217.69,
+      "tp1": 271.17,
+      "tp2": 289.0,
+      "piotroski": null,
+      "days_on_report": 5,
+      "volume_multiple": 1.52
+    },
+    {
+      "date": "2026-10-31",
+      "ticker": "FLYW",
+      "name": "FLYW",
+      "sector": "Unknown",
+      "score": 70.3,
+      "pattern_labels": [
+        "20D High",
+        "Resistance Break"
+      ],
+      "entry": 19.69,
+      "stop": 18.17,
+      "tp1": 22.73,
+      "tp2": 24.24,
+      "piotroski": null,
+      "days_on_report": 3,
+      "volume_multiple": 1.57
+    },
+    {
+      "date": "2026-10-31",
+      "ticker": "FTV",
+      "name": "FTV",
+      "sector": "Unknown",
+      "score": 49.0,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 65.23,
+      "stop": 57.62,
+      "tp1": 80.44,
+      "tp2": 88.05,
+      "piotroski": null,
+      "days_on_report": 3,
+      "volume_multiple": 1.9
+    },
+    {
+      "date": "2026-10-31",
+      "ticker": "KDP",
+      "name": "KDP",
+      "sector": "Unknown",
+      "score": 125.2,
+      "pattern_labels": [
+        "52W High",
+        "Resistance Break"
+      ],
+      "entry": 35.84,
+      "stop": 32.92,
+      "tp1": 41.68,
+      "tp2": 44.59,
+      "piotroski": null,
+      "days_on_report": 4,
+      "volume_multiple": 2.52
+    },
+    {
+      "date": "2026-10-31",
+      "ticker": "OSW",
+      "name": "OSW",
+      "sector": "Unknown",
+      "score": 112.9,
+      "pattern_labels": [
+        "52W High",
+        "Resistance Break"
+      ],
+      "entry": 30.22,
+      "stop": 28.04,
+      "tp1": 34.58,
+      "tp2": 36.76,
+      "piotroski": null,
+      "days_on_report": 3,
+      "volume_multiple": 2.29
+    },
+    {
+      "date": "2026-10-31",
+      "ticker": "PAA",
+      "name": "PAA",
+      "sector": "Unknown",
+      "score": 51.4,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 26.51,
+      "stop": 24.28,
+      "tp1": 30.97,
+      "tp2": 33.19,
+      "piotroski": null,
+      "days_on_report": 3,
+      "volume_multiple": 1.64
+    },
+    {
+      "date": "2026-10-31",
+      "ticker": "SSL",
+      "name": "SSL",
+      "sector": "Unknown",
+      "score": 68.9,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 17.22,
+      "stop": 15.08,
+      "tp1": 21.49,
+      "tp2": 23.63,
+      "piotroski": null,
+      "days_on_report": 5,
+      "volume_multiple": 1.81
+    },
+    {
+      "date": "2026-10-31",
+      "ticker": "TXN",
+      "name": "TXN",
+      "sector": "Unknown",
+      "score": 44.2,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 300.84,
+      "stop": 272.01,
+      "tp1": 358.5,
+      "tp2": 387.33,
+      "piotroski": null,
+      "days_on_report": 2,
+      "volume_multiple": 1.92
+    },
+    {
+      "date": "2026-10-31",
+      "ticker": "WMT",
+      "name": "WMT",
+      "sector": "Unknown",
+      "score": 85.2,
+      "pattern_labels": [
+        "55D High",
+        "Resistance Break"
+      ],
+      "entry": 123.51,
+      "stop": 113.83,
+      "tp1": 142.87,
+      "tp2": 152.54,
+      "piotroski": null,
+      "days_on_report": 4,
+      "volume_multiple": 1.52
+    },
+    {
+      "date": "2026-10-31",
+      "ticker": "XOM",
+      "name": "XOM",
+      "sector": "Unknown",
+      "score": 119.6,
+      "pattern_labels": [
+        "52W High",
+        "Resistance Break"
+      ],
+      "entry": 187.25,
+      "stop": 171.94,
+      "tp1": 217.87,
+      "tp2": 233.18,
+      "piotroski": null,
+      "days_on_report": 5,
+      "volume_multiple": 1.9
     }
   ]
 }
