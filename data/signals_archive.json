@@ -489,6 +489,111 @@
       "piotroski": null,
       "days_on_report": 5,
       "volume_multiple": 1.54
+    },
+    {
+      "date": "2026-11-05",
+      "ticker": "AAPL",
+      "name": "AAPL",
+      "sector": "Unknown",
+      "score": 66.1,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 349.51,
+      "stop": 325.33,
+      "tp1": 397.87,
+      "tp2": 422.05,
+      "piotroski": null,
+      "days_on_report": 4,
+      "volume_multiple": 2.05
+    },
+    {
+      "date": "2026-11-05",
+      "ticker": "ADP",
+      "name": "ADP",
+      "sector": "Unknown",
+      "score": 53.7,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 303.54,
+      "stop": 279.37,
+      "tp1": 351.88,
+      "tp2": 376.04,
+      "piotroski": null,
+      "days_on_report": 3,
+      "volume_multiple": 1.71
+    },
+    {
+      "date": "2026-11-05",
+      "ticker": "ASO",
+      "name": "ASO",
+      "sector": "Unknown",
+      "score": 123.4,
+      "pattern_labels": [
+        "52W High",
+        "Resistance Break"
+      ],
+      "entry": 67.69,
+      "stop": 58.19,
+      "tp1": 86.69,
+      "tp2": 96.19,
+      "piotroski": null,
+      "days_on_report": 5,
+      "volume_multiple": 1.82
+    },
+    {
+      "date": "2026-11-05",
+      "ticker": "FTV",
+      "name": "FTV",
+      "sector": "Unknown",
+      "score": 114.9,
+      "pattern_labels": [
+        "52W High",
+        "Resistance Break"
+      ],
+      "entry": 68.34,
+      "stop": 62.9,
+      "tp1": 79.23,
+      "tp2": 84.67,
+      "piotroski": null,
+      "days_on_report": 5,
+      "volume_multiple": 1.97
+    },
+    {
+      "date": "2026-11-05",
+      "ticker": "KDP",
+      "name": "KDP",
+      "sector": "Unknown",
+      "score": 67.7,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 36.79,
+      "stop": 32.56,
+      "tp1": 45.25,
+      "tp2": 49.48,
+      "piotroski": null,
+      "days_on_report": 5,
+      "volume_multiple": 1.75
+    },
+    {
+      "date": "2026-11-05",
+      "ticker": "MSFT",
+      "name": "MSFT",
+      "sector": "Unknown",
+      "score": 120.7,
+      "pattern_labels": [
+        "52W High",
+        "Resistance Break"
+      ],
+      "entry": 555.8,
+      "stop": 512.57,
+      "tp1": 642.26,
+      "tp2": 685.49,
+      "piotroski": null,
+      "days_on_report": 3,
+      "volume_multiple": 2.27
     }
   ]
 }
