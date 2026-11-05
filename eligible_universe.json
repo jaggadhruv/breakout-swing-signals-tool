@@ -1,7 +1,7 @@
 {
-  "refreshed_at": "2026-11-05T13:18:49.065320+00:00",
+  "refreshed_at": "2026-11-05T14:10:25.439597+00:00",
   "universe_source": "manual CSV: input/manual_universe.csv",
-  "eligible_count": 193,
+  "eligible_count": 243,
   "eligible": [
     {
       "ticker": "AAPL",
@@ -10,80 +10,32 @@
       "piotroski_f_score": null
     },
     {
-      "ticker": "ABNB",
-      "name": "ABNB",
+      "ticker": "MSFT",
+      "name": "MSFT",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "ACN",
-      "name": "ACN",
+      "ticker": "GOOG",
+      "name": "GOOG",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "ADBE",
-      "name": "ADBE",
+      "ticker": "TSLA",
+      "name": "TSLA",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "ADI",
-      "name": "ADI",
+      "ticker": "NVDA",
+      "name": "NVDA",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "ADP",
-      "name": "ADP",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "AEM",
-      "name": "AEM",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "AGCO",
-      "name": "AGCO",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "ALB",
-      "name": "ALB",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "ALV",
-      "name": "ALV",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "AMAT",
-      "name": "AMAT",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "AMD",
-      "name": "AMD",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "AME",
-      "name": "AME",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "AMKR",
-      "name": "AMKR",
+      "ticker": "META",
+      "name": "META",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -94,50 +46,8 @@
       "piotroski_f_score": null
     },
     {
-      "ticker": "ANF",
-      "name": "ANF",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "AOS",
-      "name": "AOS",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "APTV",
-      "name": "APTV",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "ARM",
-      "name": "ARM",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "ARW",
-      "name": "ARW",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "ASML",
-      "name": "ASML",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "ASO",
-      "name": "ASO",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "ATO",
-      "name": "ATO",
+      "ticker": "LRCX",
+      "name": "LRCX",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -148,14 +58,338 @@
       "piotroski_f_score": null
     },
     {
-      "ticker": "AVT",
-      "name": "AVT",
+      "ticker": "NOW",
+      "name": "NOW",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "AXON",
-      "name": "AXON",
+      "ticker": "PLTR",
+      "name": "PLTR",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "IBKR",
+      "name": "IBKR",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "AMD",
+      "name": "AMD",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "NBIS",
+      "name": "NBIS",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "HOOD",
+      "name": "HOOD",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "ARM",
+      "name": "ARM",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "MA",
+      "name": "MA",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "V",
+      "name": "V",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "ASML",
+      "name": "ASML",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "GE",
+      "name": "GE",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "NVO",
+      "name": "NVO",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "ORCL",
+      "name": "ORCL",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "MU",
+      "name": "MU",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "MNST",
+      "name": "MNST",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "LLY",
+      "name": "LLY",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "SNOW",
+      "name": "SNOW",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "CRM",
+      "name": "CRM",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "HWM",
+      "name": "HWM",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "SPCX",
+      "name": "SPCX",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "PANW",
+      "name": "PANW",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "UNH",
+      "name": "UNH",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "SNDK",
+      "name": "SNDK",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "INTC",
+      "name": "INTC",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "NFLX",
+      "name": "NFLX",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "MRVL",
+      "name": "MRVL",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "SOFI",
+      "name": "SOFI",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "DRAM",
+      "name": "DRAM",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "TSM",
+      "name": "TSM",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "WDC",
+      "name": "WDC",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "QCOM",
+      "name": "QCOM",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "WMT",
+      "name": "WMT",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "HPE",
+      "name": "HPE",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "DDOG",
+      "name": "DDOG",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "JPM",
+      "name": "JPM",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "AMAT",
+      "name": "AMAT",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "SHOP",
+      "name": "SHOP",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "CSCO",
+      "name": "CSCO",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "GEV",
+      "name": "GEV",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "ADI",
+      "name": "ADI",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "TXN",
+      "name": "TXN",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "CRWD",
+      "name": "CRWD",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "ADBE",
+      "name": "ADBE",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "TEAM",
+      "name": "TEAM",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "FTNT",
+      "name": "FTNT",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "WDAY",
+      "name": "WDAY",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "BAC",
+      "name": "BAC",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "WFC",
+      "name": "WFC",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "C",
+      "name": "C",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "NU",
+      "name": "NU",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "PYPL",
+      "name": "PYPL",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "COIN",
+      "name": "COIN",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "GS",
+      "name": "GS",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "MS",
+      "name": "MS",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "TGT",
+      "name": "TGT",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "BKNG",
+      "name": "BKNG",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -166,50 +400,188 @@
       "piotroski_f_score": null
     },
     {
-      "ticker": "BG",
-      "name": "BG",
+      "ticker": "PDD",
+      "name": "PDD",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "BHP",
-      "name": "BHP",
+      "ticker": "MRK",
+      "name": "MRK",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "BKR",
-      "name": "BKR",
+      "ticker": "ISRG",
+      "name": "ISRG",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "BP",
-      "name": "BP",
+      "ticker": "CAT",
+      "name": "CAT",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "BTI",
-      "name": "BTI",
+      "ticker": "BA",
+      "name": "BA",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "BUD",
-      "name": "BUD",
+      "ticker": "LMT",
+      "name": "LMT",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "CASY",
-      "name": "CASY",
+      "ticker": "UPS",
+      "name": "UPS",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "CAVA",
-      "name": "CAVA",
+      "ticker": "FDX",
+      "name": "FDX",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "AAL",
+      "name": "AAL",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "DAL",
+      "name": "DAL",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "ABBV",
+      "name": "ABBV",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "ABNB",
+      "name": "ABNB",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "ABT",
+      "name": "ABT",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "ADP",
+      "name": "ADP",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "ADSK",
+      "name": "ADSK",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "AJG",
+      "name": "AJG",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "ALL",
+      "name": "ALL",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "AME",
+      "name": "AME",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "AMGN",
+      "name": "AMGN",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "ANET",
+      "name": "ANET",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "AON",
+      "name": "AON",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "APP",
+      "name": "APP",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "AXP",
+      "name": "AXP",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "AZO",
+      "name": "AZO",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "BDX",
+      "name": "BDX",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "BLK",
+      "name": "BLK",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "BR",
+      "name": "BR",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "BRO",
+      "name": "BRO",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "BSX",
+      "name": "BSX",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "CB",
+      "name": "CB",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "CBRE",
+      "name": "CBRE",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -220,56 +592,50 @@
       "piotroski_f_score": null
     },
     {
-      "ticker": "CEG",
-      "name": "CEG",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "CELH",
-      "name": "CELH",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "CF",
-      "name": "CF",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
       "ticker": "CHD",
       "name": "CHD",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "CHKP",
-      "name": "CHKP",
+      "ticker": "CHTR",
+      "name": "CHTR",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "CMI",
-      "name": "CMI",
+      "ticker": "CL",
+      "name": "CL",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "CNQ",
-      "name": "CNQ",
+      "ticker": "CLX",
+      "name": "CLX",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "COHR",
-      "name": "COHR",
+      "ticker": "CMCSA",
+      "name": "CMCSA",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "CME",
+      "name": "CME",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
       "ticker": "COP",
       "name": "COP",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "COR",
+      "name": "COR",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -286,26 +652,20 @@
       "piotroski_f_score": null
     },
     {
-      "ticker": "CRH",
-      "name": "CRH",
+      "ticker": "CSGP",
+      "name": "CSGP",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "CRS",
-      "name": "CRS",
+      "ticker": "CSL",
+      "name": "CSL",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "CRWD",
-      "name": "CRWD",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "CSCO",
-      "name": "CSCO",
+      "ticker": "CSX",
+      "name": "CSX",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -316,56 +676,14 @@
       "piotroski_f_score": null
     },
     {
-      "ticker": "CTSH",
-      "name": "CTSH",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "CTVA",
-      "name": "CTVA",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "CVE",
-      "name": "CVE",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
       "ticker": "CVX",
       "name": "CVX",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "DAL",
-      "name": "DAL",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "DASH",
-      "name": "DASH",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "DCI",
-      "name": "DCI",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "DD",
-      "name": "DD",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "DDOG",
-      "name": "DDOG",
+      "ticker": "DE",
+      "name": "DE",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -376,44 +694,26 @@
       "piotroski_f_score": null
     },
     {
+      "ticker": "DHR",
+      "name": "DHR",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
       "ticker": "DIS",
       "name": "DIS",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "DOCU",
-      "name": "DOCU",
+      "ticker": "DRI",
+      "name": "DRI",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "DOV",
-      "name": "DOV",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "DT",
-      "name": "DT",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "DUOL",
-      "name": "DUOL",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "DVN",
-      "name": "DVN",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "ELF",
-      "name": "ELF",
+      "ticker": "EA",
+      "name": "EA",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -424,44 +724,26 @@
       "piotroski_f_score": null
     },
     {
-      "ticker": "ENTG",
-      "name": "ENTG",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
       "ticker": "EOG",
       "name": "EOG",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "EPAM",
-      "name": "EPAM",
+      "ticker": "EQIX",
+      "name": "EQIX",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "EQNR",
-      "name": "EQNR",
+      "ticker": "ETN",
+      "name": "ETN",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "EQT",
-      "name": "EQT",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "ESAB",
-      "name": "ESAB",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "ESTC",
-      "name": "ESTC",
+      "ticker": "EW",
+      "name": "EW",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -472,50 +754,26 @@
       "piotroski_f_score": null
     },
     {
-      "ticker": "FANG",
-      "name": "FANG",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
       "ticker": "FAST",
       "name": "FAST",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "FCX",
-      "name": "FCX",
+      "ticker": "FDS",
+      "name": "FDS",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "FIVE",
-      "name": "FIVE",
+      "ticker": "FFIV",
+      "name": "FFIV",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "FN",
-      "name": "FN",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "FND",
-      "name": "FND",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "FTNT",
-      "name": "FTNT",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "FTV",
-      "name": "FTV",
+      "ticker": "FICO",
+      "name": "FICO",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -526,56 +784,50 @@
       "piotroski_f_score": null
     },
     {
-      "ticker": "GEV",
-      "name": "GEV",
+      "ticker": "GILD",
+      "name": "GILD",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "GFI",
-      "name": "GFI",
+      "ticker": "GIS",
+      "name": "GIS",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "GGG",
-      "name": "GGG",
+      "ticker": "GNRC",
+      "name": "GNRC",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "GLW",
-      "name": "GLW",
+      "ticker": "HD",
+      "name": "HD",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "GOOGL",
-      "name": "GOOGL",
+      "ticker": "HON",
+      "name": "HON",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "GRMN",
-      "name": "GRMN",
+      "ticker": "HRL",
+      "name": "HRL",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "HAL",
-      "name": "HAL",
+      "ticker": "HSY",
+      "name": "HSY",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "HEI",
-      "name": "HEI",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "HPE",
-      "name": "HPE",
+      "ticker": "HUBB",
+      "name": "HUBB",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -586,20 +838,8 @@
       "piotroski_f_score": null
     },
     {
-      "ticker": "HWM",
-      "name": "HWM",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "IEX",
-      "name": "IEX",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "INFY",
-      "name": "INFY",
+      "ticker": "IDXX",
+      "name": "IDXX",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -610,56 +850,14 @@
       "piotroski_f_score": null
     },
     {
-      "ticker": "IOT",
-      "name": "IOT",
+      "ticker": "ITW",
+      "name": "ITW",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "IR",
-      "name": "IR",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "ITT",
-      "name": "ITT",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "JBHT",
-      "name": "JBHT",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "JCI",
-      "name": "JCI",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "JD",
-      "name": "JD",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "JKHY",
-      "name": "JKHY",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "KDP",
-      "name": "KDP",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "KEYS",
-      "name": "KEYS",
+      "ticker": "JNJ",
+      "name": "JNJ",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -670,50 +868,26 @@
       "piotroski_f_score": null
     },
     {
+      "ticker": "KMB",
+      "name": "KMB",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
       "ticker": "KMI",
       "name": "KMI",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "KNX",
-      "name": "KNX",
+      "ticker": "KO",
+      "name": "KO",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "LEA",
-      "name": "LEA",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "LHX",
-      "name": "LHX",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "LIN",
-      "name": "LIN",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "LKQ",
-      "name": "LKQ",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "LOGI",
-      "name": "LOGI",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "LRCX",
-      "name": "LRCX",
+      "ticker": "LOW",
+      "name": "LOW",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -724,26 +898,26 @@
       "piotroski_f_score": null
     },
     {
-      "ticker": "LUV",
-      "name": "LUV",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "MAN",
-      "name": "MAN",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "MANH",
-      "name": "MANH",
+      "ticker": "MCD",
+      "name": "MCD",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
       "ticker": "MCHP",
       "name": "MCHP",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "MCK",
+      "name": "MCK",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "MCO",
+      "name": "MCO",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -760,50 +934,20 @@
       "piotroski_f_score": null
     },
     {
-      "ticker": "META",
-      "name": "META",
+      "ticker": "MELI",
+      "name": "MELI",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "MGA",
-      "name": "MGA",
+      "ticker": "MMC",
+      "name": "MMC",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "MKC",
-      "name": "MKC",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "MLI",
-      "name": "MLI",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "MLM",
-      "name": "MLM",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "MNDY",
-      "name": "MNDY",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "MNST",
-      "name": "MNST",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "MOD",
-      "name": "MOD",
+      "ticker": "MPC",
+      "name": "MPC",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -814,44 +958,20 @@
       "piotroski_f_score": null
     },
     {
-      "ticker": "MRVL",
-      "name": "MRVL",
+      "ticker": "MSI",
+      "name": "MSI",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "MSFT",
-      "name": "MSFT",
+      "ticker": "MTD",
+      "name": "MTD",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "MSM",
-      "name": "MSM",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "MU",
-      "name": "MU",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "NBIS",
-      "name": "NBIS",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "NEM",
-      "name": "NEM",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "NFLX",
-      "name": "NFLX",
+      "ticker": "NET",
+      "name": "NET",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -868,26 +988,8 @@
       "piotroski_f_score": null
     },
     {
-      "ticker": "NOW",
-      "name": "NOW",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "NTES",
-      "name": "NTES",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "NVDA",
-      "name": "NVDA",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "NXPI",
-      "name": "NXPI",
+      "ticker": "ODFL",
+      "name": "ODFL",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -898,8 +1000,8 @@
       "piotroski_f_score": null
     },
     {
-      "ticker": "ONTO",
-      "name": "ONTO",
+      "ticker": "ORLY",
+      "name": "ORLY",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -910,20 +1012,20 @@
       "piotroski_f_score": null
     },
     {
-      "ticker": "PANW",
-      "name": "PANW",
+      "ticker": "PAYC",
+      "name": "PAYC",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "PATH",
-      "name": "PATH",
+      "ticker": "PCTY",
+      "name": "PCTY",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "PDD",
-      "name": "PDD",
+      "ticker": "PEP",
+      "name": "PEP",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -934,56 +1036,44 @@
       "piotroski_f_score": null
     },
     {
+      "ticker": "PGR",
+      "name": "PGR",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
       "ticker": "PH",
       "name": "PH",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "PINS",
-      "name": "PINS",
+      "ticker": "POOL",
+      "name": "POOL",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "PLTR",
-      "name": "PLTR",
+      "ticker": "PSX",
+      "name": "PSX",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "PTC",
-      "name": "PTC",
+      "ticker": "PWR",
+      "name": "PWR",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "QCOM",
-      "name": "QCOM",
+      "ticker": "REGN",
+      "name": "REGN",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "RDDT",
-      "name": "RDDT",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "RIO",
-      "name": "RIO",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "RMBS",
-      "name": "RMBS",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "ROKU",
-      "name": "ROKU",
+      "ticker": "ROK",
+      "name": "ROK",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -1000,50 +1090,26 @@
       "piotroski_f_score": null
     },
     {
+      "ticker": "RSX",
+      "name": "RSX",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
       "ticker": "RTX",
       "name": "RTX",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "SAP",
-      "name": "SAP",
+      "ticker": "SBUX",
+      "name": "SBUX",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "SCCO",
-      "name": "SCCO",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "SE",
-      "name": "SE",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "SHEL",
-      "name": "SHEL",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "SHOP",
-      "name": "SHOP",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "SLB",
-      "name": "SLB",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "SMCI",
-      "name": "SMCI",
+      "ticker": "SCHW",
+      "name": "SCHW",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -1054,44 +1120,320 @@
       "piotroski_f_score": null
     },
     {
+      "ticker": "SPGI",
+      "name": "SPGI",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
       "ticker": "SPOT",
       "name": "SPOT",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "STLD",
-      "name": "STLD",
+      "ticker": "SRE",
+      "name": "SRE",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "SU",
-      "name": "SU",
+      "ticker": "SYK",
+      "name": "SYK",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
-      "ticker": "TECK",
-      "name": "TECK",
+      "ticker": "TDX",
+      "name": "TDX",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "TJX",
+      "name": "TJX",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "TMO",
+      "name": "TMO",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "TMUS",
+      "name": "TMUS",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "TRV",
+      "name": "TRV",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "TSCO",
+      "name": "TSCO",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "TT",
+      "name": "TT",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "TTWO",
+      "name": "TTWO",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "TYL",
+      "name": "TYL",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "UBER",
+      "name": "UBER",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "UNP",
+      "name": "UNP",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "VEEV",
+      "name": "VEEV",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "VLO",
+      "name": "VLO",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "VLTO",
+      "name": "VLTO",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "VRSK",
+      "name": "VRSK",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "VRTX",
+      "name": "VRTX",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "WCN",
+      "name": "WCN",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "WM",
+      "name": "WM",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "WMB",
+      "name": "WMB",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "WSM",
+      "name": "WSM",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "XOM",
+      "name": "XOM",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "ZTS",
+      "name": "ZTS",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "ACN",
+      "name": "ACN",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "AXON",
+      "name": "AXON",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "CHKP",
+      "name": "CHKP",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "COHR",
+      "name": "COHR",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "DOCU",
+      "name": "DOCU",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "DT",
+      "name": "DT",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "DUOL",
+      "name": "DUOL",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "ENTG",
+      "name": "ENTG",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "EPAM",
+      "name": "EPAM",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "ESTC",
+      "name": "ESTC",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "INFY",
+      "name": "INFY",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "IOT",
+      "name": "IOT",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "KEYS",
+      "name": "KEYS",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "MNDY",
+      "name": "MNDY",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "MOD",
+      "name": "MOD",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "NXPI",
+      "name": "NXPI",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "ONTO",
+      "name": "ONTO",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "PATH",
+      "name": "PATH",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "PINS",
+      "name": "PINS",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "PTC",
+      "name": "PTC",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "RDDT",
+      "name": "RDDT",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "RMBS",
+      "name": "RMBS",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "ROKU",
+      "name": "ROKU",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "SAP",
+      "name": "SAP",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "SE",
+      "name": "SE",
+      "sector": "Unknown",
+      "piotroski_f_score": null
+    },
+    {
+      "ticker": "SMCI",
+      "name": "SMCI",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
     {
       "ticker": "TER",
       "name": "TER",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "TSLA",
-      "name": "TSLA",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "TSM",
-      "name": "TSM",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
@@ -1108,50 +1450,8 @@
       "piotroski_f_score": null
     },
     {
-      "ticker": "TXN",
-      "name": "TXN",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "UBER",
-      "name": "UBER",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "ULTA",
-      "name": "ULTA",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "VLO",
-      "name": "VLO",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
       "ticker": "VRT",
       "name": "VRT",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "WDAY",
-      "name": "WDAY",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "WMT",
-      "name": "WMT",
-      "sector": "Unknown",
-      "piotroski_f_score": null
-    },
-    {
-      "ticker": "XOM",
-      "name": "XOM",
       "sector": "Unknown",
       "piotroski_f_score": null
     },
