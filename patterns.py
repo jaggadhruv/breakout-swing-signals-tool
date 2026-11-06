@@ -753,7 +753,12 @@ def evaluate_trade_outcome(prices: pd.DataFrame, signal_date: str, entry: float,
                            tp1: float, tp2: float) -> dict:
     """Replay daily bars AFTER the signal day. Stop is checked before targets on the
     same bar (conservative). Status: Open, TP1 hit, TP2 hit, Stopped."""
-    after = prices[prices.index > pd.Timestamp(signal_date)]
+    # Yahoo's daily index is tz-aware (America/New_York); the logged signal date is a
+    # plain YYYY-MM-DD. Localise it to the index's timezone so the comparison is valid.
+    cutoff = pd.Timestamp(signal_date)
+    if prices.index.tz is not None:
+        cutoff = cutoff.tz_localize(prices.index.tz)
+    after = prices[prices.index > cutoff]
     status, exit_date = "Open", None
     tp1_hit = False
     for dt, row in after.iterrows():
