@@ -141,7 +141,8 @@ tr:has(.cf3) > td { background: #FFDCEB; }
              border-radius: 8px; padding: 10px 12px; }
 .cat-guide h4 { margin: 0 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--pc); }
 .cat-guide p { margin: 0 0 10px; }
-.cat-col { border-radius: 8px; padding: 8px 10px; min-width: 0; }
+.cat-col { border-radius: 8px; padding: 8px 10px; min-width: 0; overflow-x: auto; }
+table.mini td.tp { line-height: 1.15; font-size: 11px; }
 .cat-col.today { background: var(--surface); border: 2px solid var(--pc); }
 .cat-col.week { background: color-mix(in srgb, var(--pc) 10%, var(--surface)); border: 1px dashed var(--pc); }
 .cat-col h4 { margin: 0 0 6px; font-size: 12px; color: var(--pc); display: flex; justify-content: space-between; }
@@ -162,9 +163,21 @@ details.detail .detail-body { overflow-x: auto; }
 .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 11px; color: var(--muted); margin: -10px 0 22px; align-items: center; }
 .legend .sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -3px; margin-right: 5px; border: 1px solid var(--rule); }
 
+/* Data-health line and warning banner */
+.health { font-size: 11px; margin: 0 0 14px; color: var(--muted); }
+.health .ok { color: var(--sig-pos); font-weight: 700; }
+.health-banner { background: #FFF4D6; border: 1px solid #E0A800; border-left: 6px solid #E0A800; border-radius: 8px;
+                 padding: 10px 14px; margin: 0 0 18px; font-size: 13px; color: #5C4400; }
+.health-banner b { color: #8A6100; }
+.health-banner ul { margin: 6px 0 0 18px; padding: 0; }
+
 /* Signal-log status chips and scoreboard */
 .st { display: inline-block; padding: 0 6px; border-radius: 3px; font-size: 10px; font-weight: 700; color: #fff; }
 .st-open { background: #5C7A99; } .st-tp1 { background: #2E9E5B; } .st-tp2 { background: #17663A; } .st-stop { background: #C0392B; }
+.st-pend { background: #9A8C5A; } .st-exp { background: #A0A0A8; }
+.st { margin-left: 6px; vertical-align: 1px; }
+.plan { display: block; font-size: 10px; font-weight: 400; color: var(--ink); margin-top: 2px; white-space: nowrap; }
+.plan .k { color: var(--muted); }
 .scoreboard { font-size: 11px; margin: 0 0 8px; padding: 6px 8px; border-radius: 6px;
               background: color-mix(in srgb, var(--pc) 14%, var(--surface)); line-height: 1.6; }
 .scoreboard b { color: var(--pc); }
@@ -1114,13 +1127,14 @@ def _liq_html(c: dict) -> str:
             f'{_shares(lq["avg_vol"])} sh · {_money(lq["avg_dollar_vol"])}/d · 1% ADV {_money(lq["one_pct_adv"])}</span>')
 
 
-def _cf_badge(c: dict) -> str:
+def _cf_badge(c: dict, compact: bool = False) -> str:
     """Badge for tickers appearing in 2+ sections today (row background via CSS :has)."""
     secs = c.get("confluence") or []
     if len(secs) < 2:
         return ""
     cls = "cf3" if len(secs) >= 3 else "cf2"
-    return f'<span class="cf {cls}" title="In {len(secs)} sections today: {escape(", ".join(secs))}">×{len(secs)} sections</span>'
+    label = f"×{len(secs)}" if compact else f"×{len(secs)} sections"
+    return f'<span class="cf {cls}" title="In {len(secs)} sections today: {escape(", ".join(secs))}">{label}</span>'
 
 
 def _tk(c: dict, compact: bool = False) -> str:
@@ -1129,8 +1143,8 @@ def _tk(c: dict, compact: bool = False) -> str:
         dot = {"Very high": "t-vh", "High": "t-h", "Adequate": "t-a"}.get(lq.get("tier"), "")
         dot_html = (f'<span class="ldot {dot}" title="Liquidity {escape(lq.get("tier", ""))}: '
                     f'{_money(lq.get("avg_dollar_vol"))}/day, 1% ADV {_money(lq.get("one_pct_adv"))}"></span>') if lq else ""
-        return f'{dot_html}{escape(c["ticker"])}{_cf_badge(c)}'
-    return f'{escape(c["ticker"])}{_cf_badge(c)}{_liq_html(c)}'
+        return f'{dot_html}{escape(c["ticker"])}{_cf_badge(c, compact=True)}{_trade_chip(c)}'
+    return f'{escape(c["ticker"])}{_cf_badge(c)}{_trade_chip(c)}{_plan_line(c)}{_liq_html(c)}'
 
 
 _SETUP_LABELS = {"support": "Near support", "resistance": "Near resistance", "retest": "Break & retest", "holding": "Holding above BO",
@@ -1780,6 +1794,44 @@ def _render_methodology() -> str:
   </details>
 
   <details class="method-block">
+    <summary>Trade plans and outcome tracking (every section)</summary>
+    <div class="method-body">
+      <p>Every recommendation shown in a Today list gets a plan, shown under the ticker in the full tables and in the compact list: order type, entry, SL, TP1 and TP2, plus risk %.</p>
+      <table class="method-table">
+        <thead><tr><th>Section</th><th>Order &amp; entry</th><th>SL</th><th>TP1 / TP2</th></tr></thead>
+        <tbody>
+          <tr><td>Breakouts, Reversal, MTF RSI, Golden cross, 20/50 cross</td><td>Market, section's entry</td><td>Section's stop</td><td>Section's targets</td></tr>
+          <tr><td>Watchlist</td><td>Buy-stop at the trigger</td><td>Pending stop</td><td>2R / 3R</td></tr>
+          <tr><td>Near resistance</td><td>Buy-stop 0.5% above the level</td><td>Higher of support − 1% and entry − 2.5 × ATR</td><td>2R / 3R</td></tr>
+          <tr><td>Break &amp; retest</td><td>Market, close</td><td>Under the retest low</td><td>2R / 3R</td></tr>
+          <tr><td>Holding above breakout</td><td>Buy-limit 1% above the breakout level</td><td>Breakout level − 3%</td><td>2R / 3R</td></tr>
+          <tr><td>Supertrend</td><td>Market, close</td><td>Supertrend line</td><td>2R / 3R</td></tr>
+          <tr><td>Near support</td><td>Market, close</td><td>Support − 3%</td><td>2R / next resistance (or 3R)</td></tr>
+          <tr><td>Recovery</td><td>Market, close</td><td>Higher of 200 EMA − 3% and 20-day low − 1%</td><td>2R / 3R</td></tr>
+          <tr><td>Positional</td><td>Market, close</td><td>200 SMA − 3%</td><td>2R / 52-week high (or 3R)</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Trade log.</strong> Each recommendation is logged once in <code>data/trade_log.json</code> (key: section, ticker, signal date) with its levels frozen, and is not logged again while an earlier trade for the same section and ticker is still active. Trades are kept for 45 days. Every run replays the daily bars since the signal: market orders fill at the signal close; buy-stop / buy-limit orders stay <span class="st st-pend">Pending</span> until price reaches the entry and become <span class="st st-exp">Expired</span> after 10 sessions without a fill. After the fill: stop before TP1 = <span class="st st-stop">✗ SL</span> (stop checked first on a bar touching both, conservatively); TP1 = <span class="st st-tp1">✓ TP1</span> (half banked, the rest runs); TP2 = <span class="st st-tp2">✓ TP2</span>.</p>
+      <p><strong>Where you see it.</strong> Each block's scoreboard (trades, outcome counts, hit rate = TP1-or-better as a share of resolved trades, average result); a status chip next to every ticker in every table (hover for the logged levels); and a full signal log per block under "Full detail tables". Results are per trade before costs, and assume fills exactly at the planned prices.</p>
+    </div>
+  </details>
+
+  <details class="method-block">
+    <summary>Data-health checks (why a run may refuse to publish)</summary>
+    <div class="method-body">
+      <p><strong>Bad-bar repair.</strong> If Yahoo returns a final daily bar with missing or impossible prices (blank, zero, or a close outside the day's high-low range), up to 3 such bars are removed and the previous complete session is used. The count appears as "repaired" in the data line.</p>
+      <p><strong>Fail: the run stops and publishes nothing</strong> (the previous good report stays live, and no history, archive or log changes) if any of these hold:</p>
+      <ul>
+        <li>fewer than 80% of tickers downloaded;</li>
+        <li>more than 40% of tickers have a latest bar older than SPY's;</li>
+        <li>breadth is internally contradictory (with ≥ 50 tickers): 0% above both the 50- and 200-day averages; or new highs dominating while under 10% are above the 50-day average; or new lows dominating while over 90% are above it.</li>
+      </ul>
+      <p><strong>Warn: the report publishes with an amber banner</strong> if 80–95% of tickers downloaded, more than 10% are a session behind, or more than 10% needed a broken bar repaired.</p>
+      <p>Every report shows a data line under the header: tickers downloaded, latest market bar date, stale and repaired counts, and which symbols returned no data (often delisted or renamed tickers to fix in your CSV).</p>
+    </div>
+  </details>
+
+  <details class="method-block">
     <summary>EMA crossover strategies (20/50 and 20/200 golden cross), trade plans and the signal log</summary>
     <div class="method-body">
       <p><strong>Cross detection (both).</strong> Exponential moving averages on daily closes. A cross = the fast EMA was at or below the slow EMA on the prior bar and above it on this bar, and it must still be above today. The cross day's close is the signal price.</p>
@@ -1962,18 +2014,19 @@ CATEGORY_GUIDE = {
     "watch": (
         "Quality names coiling just under a trigger (20/55-day high) or under a horizontal resistance tested ≥ 2 times. "
         "Not actionable yet.",
-        "Set price alerts at the trigger/level. Act only on a daily close above it with ≥ 1.5× volume; the pending stop "
-        "and target apply from that moment. Tightening volume under the level is a plus."),
+        "Each row has a pending buy-stop (↑): at the trigger for watchlist names, 0.5% above the level for near-resistance "
+        "names. Enter only if price reaches it, ideally on ≥ 1.5× volume; unfilled orders expire after 10 sessions. "
+        "SL and TP1/TP2 (2R/3R) apply from the fill."),
     "retest": (
         "Recent breakouts (last 20 sessions): pullbacks to the old breakout level (the lowest-risk entry), names still "
         "holding above, and failed breakouts. ★ = old resistance tested ≥ 2× now holding as support, bounced today.",
-        "Prefer ★ and 'Bounce today' rows; stop just under the retest low. Holders > 10% extended: wait for a retest. "
-        "Never buy from the Avoid list; if you hold one, the breakout thesis is broken."),
+        "Retests: enter now, SL just under the retest low, TP1 2R / TP2 3R; prefer ★ and 'Bounce today'. Holders: a pending "
+        "buy-limit (↓) 1% above the breakout level waits for the retest, SL 3% under the level. Never buy from the Avoid list."),
     "trend": (
         "Fresh daily Supertrend (ATR 10 × 2.5) long flips in strong names. The Supertrend line itself is the trailing stop. "
         "Same settings as the Positional Trading Tool.",
-        "Best entries within ~3 days of the flip. Move the stop up to the Supertrend line each day and exit on a daily "
-        "close below it. Older flips are for riding, not for new entries."),
+        "Enter at the close, ideally within ~3 days of the flip. SL = the Supertrend line (trail it up daily and exit on a "
+        "close below it); TP1 2R / TP2 3R of the initial risk. Older flips are for riding, not new entries."),
     "pullback": (
         "Buying dips inside uptrends: price resting on tested support, bullish reversal candles after a 5–25% pullback, "
         "and RSI resets (monthly & weekly RSI > 60, daily RSI back above 50).",
@@ -1982,8 +2035,8 @@ CATEGORY_GUIDE = {
     "recovery": (
         "Stocks coming out of a correction: the 20 EMA just crossed above the 200 EMA and is still within 10% of it. "
         "Looser RS gates, because relative strength is still rebuilding.",
-        "Higher reward, higher failure rate. Enter on the first pullback to the 20 EMA or a close above the recent swing "
-        "high; stop below the 200 EMA. Size small."),
+        "Higher reward, higher failure rate. Entry at the close (or better on a pullback to the 20 EMA); SL = higher of "
+        "200 EMA − 3% and the 20-day low − 1%; TP1 2R / TP2 3R. Size small."),
     "positional": (
         "Profitable, cash-generative, moderately levered companies at PEG ≤ 2, in a long-term uptrend but not stretched "
         "(≤ 15% above the 200 SMA, RSI ≤ 65). Plus golden crosses: the 20 EMA crossed above the 200 EMA in the last "
@@ -2027,7 +2080,38 @@ _WEEK_FIELDS = {
 }
 
 
-_STATUS_CLS = {"Open": "st-open", "TP1 hit": "st-tp1", "TP2 hit": "st-tp2", "Stopped": "st-stop"}
+_STATUS_CLS = {"Open": "st-open", "TP1 hit": "st-tp1", "TP2 hit": "st-tp2", "Stopped": "st-stop",
+               "Pending": "st-pend", "Expired": "st-exp"}
+_STATUS_SHORT = {"TP1 hit": "✓ TP1", "TP2 hit": "✓ TP2", "Stopped": "✗ SL", "Pending": "Pending", "Expired": "Expired"}
+
+
+def _trade_chip(c: dict) -> str:
+    """Outcome of this ticker's logged trade for this section (from the trade log)."""
+    t = c.get("trade")
+    if not t or not t.get("status"):
+        return ""
+    st = t["status"]
+    label = _STATUS_SHORT.get(st)
+    if st == "Open":
+        res = t.get("result_pct")
+        if t.get("days", 0) == 0:
+            label = "New"          # logged today, no bars since the signal yet
+        else:
+            label = f"Open {res:+.1f}%" if res is not None else "Open"
+    tip = (f"Logged {t.get('signal_date', '')}: {t.get('entry_type', 'market').replace('_', '-')} entry {t.get('entry')}, "
+           f"SL {t.get('stop')}, TP1 {t.get('tp1')}, TP2 {t.get('tp2')} → {st}"
+           + (f" on {t['exit_date']}" if t.get("exit_date") else "")
+           + (f", result {t['result_pct']:+.1f}%" if t.get("result_pct") is not None else ""))
+    return f'<span class="st {_STATUS_CLS.get(st, "st-open")}" title="{escape(tip)}">{escape(label)}</span>'
+
+
+def _plan_line(c: dict) -> str:
+    pl = c.get("plan")
+    if not pl:
+        return ""
+    order = {"market": "Entry", "buy_stop": "Buy-stop", "buy_limit": "Buy-limit"}[pl.get("entry_type", "market")]
+    return (f'<span class="plan"><span class="k">{order}</span> {pl["entry"]:.2f} · <span class="k">SL</span> {pl["stop"]:.2f} '
+            f'· <span class="k">TP</span> {pl["tp1"]:.2f} / {pl["tp2"]:.2f} · <span class="k">risk</span> {pl["risk_pct"]:.1f}%</span>')
 
 
 def _status_chip(status: str | None) -> str:
@@ -2042,49 +2126,63 @@ def _ret(v: float | None) -> str:
 
 def _scoreboard(sb: dict | None, label: str) -> str:
     if not sb or not sb.get("signals"):
-        return f'<div class="scoreboard"><b>{label}</b>: no logged signals yet. The log fills as crosses occur.</div>'
+        return (f'<div class="scoreboard"><b>{label}</b>: no logged trades yet. Every recommendation shown here is '
+                f'logged and tracked for {sb.get("days", 45) if sb else 45} days.</div>')
     hr = f'{sb["hit_rate"]}%' if sb.get("hit_rate") is not None else "—"
-    return (f'<div class="scoreboard"><b>{label}</b> · last {sb["days"]} days: {sb["signals"]} signals · '
+    return (f'<div class="scoreboard"><b>{label}</b> · last {sb["days"]} days: {sb["signals"]} trades · '
             f'{_status_chip("TP2 hit")} {sb["tp2_hit"]} {_status_chip("TP1 hit")} {sb["tp1_hit"]} '
-            f'{_status_chip("Stopped")} {sb["stopped"]} {_status_chip("Open")} {sb["open"]} · '
-            f'hit rate (TP1+ of resolved) <b>{hr}</b> · avg return now <b>{_ret(sb.get("avg_return"))}</b></div>')
+            f'{_status_chip("Stopped")} {sb["stopped"]} {_status_chip("Open")} {sb["open"]} '
+            f'{_status_chip("Pending")} {sb["pending"]} {_status_chip("Expired")} {sb["expired"]} · '
+            f'hit rate (TP1+ of resolved) <b>{hr}</b> · avg result <b>{_ret(sb.get("avg_result"))}</b></div>')
+
+
+_STRAT_LABELS = {"breakout": "Breakout", "watchlist": "Watchlist", "resistance": "Near resistance",
+                 "retest": "Break & retest", "holding": "Holding above", "supertrend": "Supertrend",
+                 "support": "Near support", "reversal": "Reversal", "mtf_rsi": "MTF RSI", "recovery": "Recovery",
+                 "positional": "Positional", "golden_cross": "Golden cross", "ema2050": "20/50 cross"}
 
 
 def _mini_log(rows: list[dict], cap: int = 8) -> str:
     if not rows:
-        return '<div class="more">No signals logged yet.</div>'
+        return '<div class="more">No trades logged yet.</div>'
     body = "".join(
-        f'<tr><td class="tk">{_tk(r, compact=True)}</td><td class="num mono">{escape(r["signal_date"][5:])}</td>'
-        f'<td class="num mono">{_fmt(r["entry"], ".2f")}</td><td>{_status_chip(r.get("status"))}</td>'
-        f'<td class="num mono">{_ret(r.get("return_pct"))}</td></tr>' for r in rows[:cap])
+        f'<tr><td class="tk">{escape(r["ticker"])}</td><td><span class="setup">{escape(_STRAT_LABELS.get(r["strategy"], r["strategy"]))}</span></td>'
+        f'<td class="num mono">{escape(r["signal_date"][5:])}</td><td>{_status_chip(r.get("status"))}</td>'
+        f'<td class="num mono">{_ret(r.get("result_pct"))}</td></tr>' for r in rows[:cap])
     more = f'<div class="more">+{len(rows) - cap} more in Full detail</div>' if len(rows) > cap else ""
-    return ('<table class="mini"><thead><tr><th>Ticker</th><th class="num">Signal</th><th class="num">Entry</th>'
-            f'<th>Status</th><th class="num">Return</th></tr></thead><tbody>{body}</tbody></table>{more}')
+    return ('<table class="mini"><thead><tr><th>Ticker</th><th>Setup</th><th class="num">Signal</th>'
+            f'<th>Status</th><th class="num">Result</th></tr></thead><tbody>{body}</tbody></table>{more}')
 
 
 def _render_signal_log_table(rows: list[dict]) -> str:
     if not rows:
-        return _empty("No signals logged yet.")
+        return _empty("No trades logged yet for this section.")
+    order = {"market": "Market", "buy_stop": "Buy-stop", "buy_limit": "Buy-limit"}
     body = "".join(f"""
 <tr>
-  <td class="mono">{escape(r["signal_date"])}</td><td class="ticker">{_tk(r)}</td>
+  <td class="mono">{escape(r["signal_date"])}</td><td class="ticker">{_tk(r, compact=True)}</td>
+  <td><span class="setup">{escape(_STRAT_LABELS.get(r["strategy"], r["strategy"]))}</span></td>
+  <td>{order.get(r.get("entry_type", "market"), "Market")}</td>
   <td class="num mono">{_fmt(r["entry"], ".2f")}</td><td class="num mono">{_fmt(r["stop"], ".2f")}</td>
   <td class="num mono">{_fmt(r["tp1"], ".2f")}</td><td class="num mono">{_fmt(r["tp2"], ".2f")}</td>
+  <td class="mono">{escape(r.get("fill_date") or "—")}</td>
   <td>{_status_chip(r.get("status"))}</td><td class="mono">{escape(r.get("exit_date") or "—")}</td>
   <td class="num mono">{r.get("days", 0)}</td><td class="num mono">{_fmt(r.get("current"), ".2f")}</td>
-  <td class="num mono">{_ret(r.get("return_pct"))}</td><td class="num mono">{_ret(r.get("max_gain_pct"))}</td>
-  <td>{escape(r.get("sector", ""))}</td>
+  <td class="num mono">{_ret(r.get("result_pct"))}</td><td class="num mono">{_ret(r.get("max_gain_pct"))}</td>
 </tr>""" for r in rows)
     return f"""
 <table class="candidates">
-  <thead><tr><th>Signal date</th><th>Ticker</th><th class="num">Entry</th><th class="num">Stop</th>
-  <th class="num">TP1 (2R)</th><th class="num">TP2</th><th>Status</th><th>Resolved</th><th class="num">Days</th>
-  <th class="num">Current</th><th class="num">Return now</th><th class="num">Max gain</th><th>Sector</th></tr></thead>
+  <thead><tr><th>Signal date</th><th>Ticker</th><th>Setup</th><th>Order</th><th class="num">Entry</th>
+  <th class="num">SL</th><th class="num">TP1</th><th class="num">TP2</th><th>Filled</th><th>Status</th>
+  <th>Resolved</th><th class="num">Days</th><th class="num">Current</th><th class="num">Result</th>
+  <th class="num">Max gain</th></tr></thead>
   <tbody>{body}</tbody>
 </table>
-<p class="dim" style="font-size:11px;margin-top:6px;">Levels are frozen on the signal day. Each run replays the daily bars
-since then: a stop touch before TP1 = Stopped (stop checked first on the same bar, conservatively); TP1 reached = TP1 hit
-(partial profit banked, the stop is no longer counted); TP2 reached = TP2 hit. Return now = latest close vs entry.</p>
+<p class="dim" style="font-size:11px;margin-top:6px;">Levels are frozen on the signal day. Market orders fill at the
+signal close; buy-stop and buy-limit orders stay Pending until price reaches the entry, and expire after 10 sessions.
+After the fill: a stop touch before TP1 = ✗ Stopped (stop checked first on a bar touching both); TP1 = ✓ TP1 (half banked,
+the rest runs with no stop counted); TP2 = ✓ TP2. Result = Stopped: SL vs entry; TP2: TP2 vs entry; TP1: half at TP1 and
+half at the latest close; Open: latest close vs entry.</p>
 """
 
 
@@ -2161,17 +2259,20 @@ def _mini_today(items: list[tuple[str, dict]], cap: int = 10) -> str:
     items = sorted(items, key=lambda kv: _sc(kv[1]), reverse=True)
     rows = []
     for kind, r in items[:cap]:
-        label, ek, sk, tk = _TODAY_FIELDS[kind]
+        label = _TODAY_FIELDS[kind][0]
+        pl = r.get("plan") or {}
         tr_cls = ' class="hp"' if r.get("high_probability") else ""
+        e_mark = {"buy_stop": "↑", "buy_limit": "↓"}.get(pl.get("entry_type"), "")
         rows.append(
             f'<tr{tr_cls}><td class="tk">{_tk(r, compact=True)}</td><td><span class="setup">{label}</span></td>'
-            f'<td class="num mono">{_sc(r):.0f}</td><td class="num mono">{_fmt(r.get(ek), ".2f")}</td>'
-            f'<td class="num mono">{_fmt(r.get(sk), ".2f")}</td>'
-            f'<td class="num mono">{_fmt(r.get(tk), ".2f") if tk else "—"}</td></tr>')
+            f'<td class="num mono">{_sc(r):.0f}</td><td class="num mono">{e_mark}{_fmt(pl.get("entry"), ".2f")}</td>'
+            f'<td class="num mono">{_fmt(pl.get("stop"), ".2f")}</td>'
+            f'<td class="num mono tp">{_fmt(pl.get("tp1"), ".2f")}<br><span class="dim">{_fmt(pl.get("tp2"), ".2f")}</span></td></tr>')
     more = f'<div class="more">+{len(items) - cap} more in Full detail</div>' if len(items) > cap else ""
     return ('<table class="mini"><thead><tr><th>Ticker</th><th>Setup</th><th class="num">Score</th>'
-            '<th class="num">Entry</th><th class="num">Stop</th><th class="num">Target</th></tr></thead>'
-            f'<tbody>{"".join(rows)}</tbody></table>{more}')
+            '<th class="num">Entry</th><th class="num">SL</th><th class="num">TP1<br>TP2</th></tr></thead>'
+            f'<tbody>{"".join(rows)}</tbody></table>{more}'
+            '<div class="more">↑ = buy-stop (enter only if price rises to it) · ↓ = buy-limit (enter on a pullback to it)</div>')
 
 
 def _mini_week(items: list[tuple[str, dict]], today_str: str, cap: int = 8) -> str:
@@ -2219,6 +2320,23 @@ def _category(cid: str, title: str, today_items: list, week_items: list, detail_
 </section>"""
 
 
+def _render_health(h: dict | None) -> str:
+    """One-line data summary on every report, plus an amber banner on WARN runs.
+    (FAIL runs never publish, so they never reach this function.)"""
+    if not h:
+        return ""
+    nd = ", ".join(h.get("no_data", [])) or "none"
+    line = (f'<div class="health">Data: <span class="{"ok" if h["level"] == "ok" else ""}">'
+            f'{"OK" if h["level"] == "ok" else "Partial"}</span> · {h["fetched"]}/{h["eligible"]} tickers downloaded '
+            f'({h["fetch_rate"]}%) · latest market bar {escape(h["reference_date"])} · '
+            f'{len(h.get("stale", []))} stale · {len(h.get("repaired", []))} repaired · no data: {escape(nd)}</div>')
+    if h["level"] != "warn":
+        return line
+    items = "".join(f"<li>{escape(w)}</li>" for w in h.get("warn", []))
+    return (f'<div class="health-banner"><b>⚠ Partial data in this run.</b> The report is usable, but some '
+            f'tickers may be missing or scored on the previous session:<ul>{items}</ul></div>{line}')
+
+
 def _sub(title: str, note: str = "") -> str:
     note_html = f' <span class="count">· {note}</span>' if note else ""
     return f'<h3 class="subsection">{title}{note_html}</h3>'
@@ -2254,12 +2372,12 @@ def render(
     recent_retest: list[dict] | None = None,
     recent_pullback: list[dict] | None = None,
     recent_positional: list[dict] | None = None,
+    data_health: dict | None = None,
     golden_cross: list[dict] | None = None,
     ema2050: list[dict] | None = None,
-    log_golden: list[dict] | None = None,
-    log_ema2050: list[dict] | None = None,
-    sb_golden: dict | None = None,
-    sb_ema2050: dict | None = None,
+    trade_logs: dict | None = None,
+    trade_scoreboards: dict | None = None,
+    strategy_scoreboards: dict | None = None,
     sector_counts: dict,
     funnel: dict,
     eligible_refreshed_at: str,
@@ -2271,7 +2389,18 @@ def render(
     reversal, fake, high_prob, mtf_rsi, positional = L(reversal), L(fake), L(high_prob), L(mtf_rsi), L(positional)
     rq, rq_wl, rq_st, rq_rec = L(recent_quality), L(recent_quality_watchlist), L(recent_quality_supertrend), L(recent_quality_recovery)
     rq_res, rq_ret, rq_pb, rq_pos = L(recent_resistance), L(recent_retest), L(recent_pullback), L(recent_positional)
-    golden_cross, ema2050, log_golden, log_ema2050 = L(golden_cross), L(ema2050), L(log_golden), L(log_ema2050)
+    golden_cross, ema2050 = L(golden_cross), L(ema2050)
+    trade_logs, trade_scoreboards, strategy_scoreboards = trade_logs or {}, trade_scoreboards or {}, strategy_scoreboards or {}
+    CAT_STRATS = {"breakout": ["breakout"], "watch": ["watchlist", "resistance"], "retest": ["retest", "holding"],
+                  "trend": ["supertrend"], "pullback": ["support", "reversal", "mtf_rsi"], "recovery": ["recovery"],
+                  "positional": ["positional", "golden_cross"], "ema2050": ["ema2050"]}
+
+    def track(cid: str) -> str:
+        """Per-strategy scoreboards + full signal log for a block's Full detail."""
+        sbs = "".join(_scoreboard(strategy_scoreboards.get(st), _STRAT_LABELS[st]) for st in CAT_STRATS[cid])
+        rows = trade_logs.get(cid, [])
+        return (_sub("Trade outcomes", f"every recommendation in this block, tracked for {f.get('crossover_log_days', 45)} days")
+                + sbs + _render_signal_log_table(rows))
     f = funnel
 
     # ---- Confluence: tickers in 2+ sections TODAY (fake = avoid list and ★ = subset of retest: excluded) ----
@@ -2287,7 +2416,7 @@ def render(
         for r in rows:
             sections_by_ticker.setdefault(r["ticker"], set()).add(name)
     for rows in list(section_rows.values()) + [high_prob, fake, rq, rq_wl, rq_st, rq_rec, rq_res, rq_ret, rq_pb, rq_pos,
-                                               log_golden, log_ema2050]:
+                                               *trade_logs.values()]:
         for r in rows:
             r["confluence"] = sorted(sections_by_ticker.get(r["ticker"], ()))
     multi = sorted(((t, sorted(sec)) for t, sec in sections_by_ticker.items() if len(sec) >= 2),
@@ -2298,14 +2427,14 @@ def render(
          [("breakout", r) for r in candidates],
          [("breakout", r) for r in rq],
          _sub("Today's breakouts", f"top {f.get('max_breakouts_cap', 5)}") + _render_candidates_table(candidates)
-         + _history("This week's quality breakouts", len(rq), _render_recent_quality_table(rq, date_str)), None),
+         + _history("This week's quality breakouts", len(rq), _render_recent_quality_table(rq, date_str)) + track("breakout"), None),
         ("watch", "Pre-breakout watch",
          [("watchlist", r) for r in watchlist] + [("resistance", r) for r in resistance],
          [("watchlist", r) for r in rq_wl] + [("setup", r) for r in rq_res],
          _sub("Swing-ready watchlist", f"top {f.get('max_watchlist_cap', 8)}") + _render_watchlist_table(watchlist)
          + _sub("Near resistance", f"top {f.get('max_resistance_cap', 10)}") + _render_resistance_table(resistance)
          + _history("This week's quality watchlist", len(rq_wl), _render_recent_quality_watchlist_table(rq_wl, date_str))
-         + _history("This week's quality near-resistance names", len(rq_res), _render_setup_history_table(rq_res, date_str)), None),
+         + _history("This week's quality near-resistance names", len(rq_res), _render_setup_history_table(rq_res, date_str)) + track("watch"), None),
         ("retest", "Break &amp; retest",
          [("high_prob" if r.get("high_probability") else "retest", r) for r in retest] + [("holding", r) for r in holding],
          [("setup", r) for r in rq_ret],
@@ -2313,24 +2442,24 @@ def render(
          + _sub("Break &amp; retest", f"top {f.get('max_retest_cap', 8)}") + _render_retest_table(retest)
          + _sub("Holding above breakout", f"top {f.get('max_holding_cap', 8)}") + _render_holding_table(holding)
          + _sub("Fake / failed breakouts", "avoid list") + _render_fake_table(fake)
-         + _history("This week's quality breakouts-in-progress", len(rq_ret), _render_setup_history_table(rq_ret, date_str)), fake),
+         + _history("This week's quality breakouts-in-progress", len(rq_ret), _render_setup_history_table(rq_ret, date_str)) + track("retest"), fake),
         ("trend", "Trend following: Supertrend flips",
          [("supertrend", r) for r in supertrend],
          [("supertrend", r) for r in rq_st],
          _sub("Today's Supertrend longs", f"fresh flips ≤ {f.get('supertrend_max_flip_age_days', 20)}d") + _render_supertrend_table(supertrend)
-         + _history("This week's quality Supertrend names", len(rq_st), _render_recent_quality_supertrend_table(rq_st, date_str)), None),
+         + _history("This week's quality Supertrend names", len(rq_st), _render_recent_quality_supertrend_table(rq_st, date_str)) + track("trend"), None),
         ("pullback", "Pullback &amp; reversal",
          [("support", r) for r in support] + [("reversal", r) for r in reversal] + [("mtf_rsi", r) for r in mtf_rsi],
          [("setup", r) for r in rq_pb],
          _sub("Near support", f"top {f.get('max_support_cap', 10)}") + _render_support_table(support)
          + _sub("Reversal swing setups", f"top {f.get('max_reversal_cap', 6)}") + _render_reversal_table(reversal)
          + _sub("Multi-timeframe RSI momentum") + _render_mtf_rsi_table(mtf_rsi)
-         + _history("This week's quality pullback names", len(rq_pb), _render_setup_history_table(rq_pb, date_str)), None),
+         + _history("This week's quality pullback names", len(rq_pb), _render_setup_history_table(rq_pb, date_str)) + track("pullback"), None),
         ("recovery", "Recovery: coming out of correction",
          [("recovery", r) for r in recovery],
          [("recovery", r) for r in rq_rec],
          _sub("Today's recovery setups", f"top {f.get('max_recovery_cap', 6)}") + _render_recovery_table(recovery)
-         + _history("This week's quality recovery names", len(rq_rec), _render_recent_quality_recovery_table(rq_rec, date_str)), None),
+         + _history("This week's quality recovery names", len(rq_rec), _render_recent_quality_recovery_table(rq_rec, date_str)) + track("recovery"), None),
         ("positional", "Positional: quality at a fair price &amp; golden crosses",
          [("positional", r) for r in positional] + [("golden_cross", r) for r in golden_cross],
          [("setup", r) for r in rq_pos],
@@ -2338,26 +2467,25 @@ def render(
          + _sub("Golden cross (20 EMA over 200 EMA)", f"fresh ≤ {f.get('gc_max_age', 10)} sessions, quality + fair value, top {f.get('max_golden_cap', 8)}")
          + _render_golden_table(golden_cross)
          + _history("This week's quality positional names", len(rq_pos), _render_setup_history_table(rq_pos, date_str))
-         + _scoreboard(sb_golden, "Golden cross signal log")
-         + _history(f"Golden cross signal log (last {f.get('crossover_log_days', 45)} days)", len(log_golden), _render_signal_log_table(log_golden)),
+         + track("positional"),
          None),
         ("ema2050", "EMA 20/50 crossover (simple, no gates)",
          [("ema2050", r) for r in ema2050],
          [],
          _sub("Today's 20/50 crosses", f"last {f.get('ema2050_max_age', 5)} sessions, freshest first")
          + _render_ema2050_table(ema2050)
-         + _scoreboard(sb_ema2050, "20/50 signal log")
-         + _history(f"20/50 signal log (last {f.get('crossover_log_days', 45)} days)", len(log_ema2050), _render_signal_log_table(log_ema2050)),
+         + track("ema2050"),
          None),
     ]
-    week_override = {
-        "ema2050": (_scoreboard(sb_ema2050, "Scoreboard") + _mini_log(log_ema2050),
-                    f"Signal log & outcomes ({f.get('crossover_log_days', 45)} days)", len(log_ema2050)),
-        "positional": (_mini_week([("setup", r) for r in rq_pos], date_str)
-                       + '<h4 style="margin-top:12px">Golden cross log</h4>' + _scoreboard(sb_golden, "Scoreboard")
-                       + _mini_log(log_golden, cap=5),
-                       "This week's quality list + golden cross log", len(rq_pos) + len(log_golden)),
-    }
+    week_override = {}
+    for cid, _t, _today, week, _d, _a in cats:
+        sb = _scoreboard(trade_scoreboards.get(cid), "Scoreboard")
+        if cid == "ema2050":   # no weekly quality list: show the recent trades instead
+            week_override[cid] = (sb + _mini_log(trade_logs.get(cid, [])),
+                                  f"Scoreboard &amp; recent trades ({f.get('crossover_log_days', 45)} days)",
+                                  len(trade_logs.get(cid, [])))
+        else:
+            week_override[cid] = (sb + _mini_week(week, date_str), "Scoreboard + this week's quality list", len(week))
 
     def top_names(items):
         names = [r["ticker"] for _, r in sorted(items, key=lambda kv: _sc(kv[1]), reverse=True)]
@@ -2409,6 +2537,7 @@ def render(
     {_render_breadth_panel(breadth)}
   </header>
 
+  {_render_health(data_health)}
   <h2 class="section">At a glance</h2>
   <div class="glance">{glance}</div>
   <div class="legend">

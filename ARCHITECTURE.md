@@ -42,7 +42,7 @@ breakout-swing-tool/
 │   ├── recovery_archive.json          Recovery entries, rolling 7 d
 │   ├── setups_archive.json            S/R, retest, holding, reversal, MTF RSI, positional; rolling 7 d
 │   ├── fundamentals_cache.json        Yahoo fundamentals per ticker, refreshed weekly
-│   └── crossover_log.json             20/50 and golden-cross signals with tracked outcomes, 45 d
+│   └── trade_log.json                 Every recommendation's plan + tracked outcome, 45 d
 ├── reports/YYYY-MM-DD.html            One report per run (committed)
 ├── index.html                         Copy of the latest report (GitHub Pages landing)
 ├── requirements.txt                   pandas, numpy, requests, yfinance==0.2.65
@@ -127,10 +127,30 @@ flowchart TD
 ### 5.1 Data fetch
 
 `fetch_prices()` pulls 3 years of daily OHLCV per ticker (needed for monthly RSI)
-with a 0.3 s delay. **Partial-day
+with a 0.3 s delay. **Bad-bar repair:** up to 3 trailing bars with missing,
+non-positive or impossible prices (close outside the high-low range) are dropped
+(`_bad_bar()`), and the count is stored in `df.attrs["repaired_bars"]`. Yahoo
+occasionally returns such a row outside market hours; left in, it makes every
+"close vs moving average" test fail and empties the whole report. **Partial-day
 guard:** if the last bar's volume is under 30% of the prior 20-day average, the bar is
 dropped as an incomplete session (protects manual runs during market hours). Fetched
 frames are cached in `price_cache` and reused by Pass 1b, Pass 1c and breadth.
+
+**Data-health check.** Right after Pass 1, `assess_fetch_health()` compares what
+was downloaded against the universe, using SPY's latest bar as the reference date.
+After breadth is computed, `assess_breadth_plausibility()` checks for internally
+contradictory readings. Either can call `abort_unhealthy()`, which logs the reasons
+and exits with code 1: the workflow then skips publish and commit, so the previous
+report stays live and no state changes.
+
+| Level | Condition | Effect |
+|---|---|---|
+| Fail | < 80% downloaded; > 40% of tickers behind SPY's latest bar; breadth contradictory (≥ 50 tickers): 0% above both averages, or new highs dominating with < 10% above the 50-day, or new lows dominating with > 90% above it | Stop, publish nothing |
+| Warn | 80–95% downloaded; > 10% a session behind; > 10% needed a bar repaired | Publish with amber banner |
+| OK | otherwise | Publish; green data line |
+
+Every report shows a data line (downloaded, latest market bar, stale, repaired,
+symbols with no data).
 
 **Liquidity levels.** `liquidity_profile()` stores, for every fetched ticker, a tier
 (Very high ≥ $100M/day, High ≥ $25M, Adequate ≥ $10M), average shares/day, average
@@ -216,13 +236,21 @@ is the signal price, and levels use only data up to the cross bar):
   cross − 3%) and (20-day low − 1%); TP1 2R; TP2 = larger of 3R and the prior 52-week
   high; exit on a weekly close below the 200 EMA.
 
-**Crossover signal log.** `update_crossover_log()` records each signal once (key:
-strategy, ticker, cross date) in `crossover_log.json` with frozen levels, keeps 45
-days, and every run replays bars after the signal day with
-`patterns.evaluate_trade_outcome()`: stop before TP1 = Stopped (stop checked first on
-a bar touching both); TP1 = TP1 hit (stop then ignored, partial banked); TP2 = TP2 hit.
-`crossover_scoreboard()` gives counts, hit rate (TP1+ of resolved) and average return
-to date. Signals already Stopped are removed from today's lists but stay in the log.
+**Trade plans and the trade log (every section).** After the elite filter,
+`plan_trade()` gives every displayed recommendation an order type, entry, SL, TP1 and
+TP2 (sections with their own levels keep them; watchlist and near-resistance become
+pending buy-stops, holding-above a pending buy-limit; see the Methodology table).
+`update_trade_log()` records each once in `trade_log.json` (key: strategy, ticker,
+signal date; skipped while an earlier trade for the same strategy+ticker is still
+active), keeps 45 days, and every run re-evaluates all trades with
+`patterns.evaluate_trade_outcome()`: pending orders fill when price reaches the entry
+or expire after 10 sessions; after the fill, stop before TP1 = Stopped (stop checked
+first on a bar touching both), TP1 = TP1 hit (half banked, runner continues), TP2 =
+TP2 hit. `result_pct` is the plan's outcome. `trade_scoreboard()` aggregates per block
+(`CATEGORY_STRATEGIES`) and per strategy. Each displayed and weekly-list row carries
+its latest trade (`r["trade"]`) for the status chip. The older crossover-only log is
+migrated automatically on first load. Crossover signals already Stopped are removed
+from today's lists.
 
 **Fake breakouts.** `recent_breakout_status()` now returns `failed` / `failing`
 statuses instead of dropping them, plus `fake_flags` (weak breakout close, marginal
@@ -330,7 +358,7 @@ The S/R, retest, holding, reversal, MTF RSI and positional rows are archived in
 | `recovery_archive.json` | `update_recovery_archive()` | 7 d | Recent Quality Recovery |
 | `setups_archive.json` | `update_setups_archive()` | 7 d | Weekly lists for S/R, retest/holding, pullback, positional |
 | `fundamentals_cache.json` | `refresh_fundamentals()` | refreshed per ticker every 7 d | Positional and golden cross |
-| `crossover_log.json` | `update_crossover_log()` | 45 d (by signal date) | Signal logs and scoreboards for 20/50 and golden cross |
+| `trade_log.json` | `update_trade_log()` | 45 d (by signal date) | Plans, outcomes, scoreboards and signal logs for every block |
 
 Each archive update drops entries older than `ARCHIVE_RETENTION_DAYS` and replaces any
 same-day entries, so re-running a scan on the same date is idempotent. Missing files
@@ -378,11 +406,19 @@ Every row for that ticker, in compact lists, weekly lists and full tables, gets 
 badge (`_cf_badge`), and CSS `tr:has(.cf2)` / `tr:has(.cf3)` colours the row: violet
 for 2 sections, pink for 3+. ★ high-probability rows keep a gold left stripe.
 
-Compact lists normalise every row type through `_TODAY_FIELDS` / `_WEEK_FIELDS`
-(which keys hold entry, stop, target, level). Adding a section means: a full table
-renderer, a `render()` keyword argument, an entry in `_TODAY_FIELDS` (and
-`_WEEK_FIELDS` if it has its own archive), adding it to the right `cats` block and to
-`section_rows`, funnel rows, and a methodology block.
+**Trade tracking in the report.** Every ticker cell goes through `_tk()`, which adds
+the multi-section badge, the trade status chip (`_trade_chip`: New, Open ±x%, ✓ TP1,
+✓ TP2, ✗ SL, Pending, Expired; hover for the logged levels), the plan line
+(`_plan_line`, full tables) and the liquidity line. Each block's right column starts
+with its scoreboard; its Full detail ends with per-strategy scoreboards and the
+block's complete signal log (`_render_signal_log_table`).
+
+Compact lists take entry/SL/TP from `r["plan"]`; `_TODAY_FIELDS` supplies the setup
+label and `_WEEK_FIELDS` the weekly level. Adding a section means: a full table
+renderer, a `render()` keyword argument, a `plan_trade()` rule, entries in
+`_TODAY_FIELDS`, `CATEGORY_STRATEGIES` / `CAT_STRATS` and `_STRAT_LABELS`, adding it to
+the right `cats` block, `section_rows` and `today_lists`, funnel rows, and a
+methodology block.
 
 ---
 
@@ -414,8 +450,11 @@ pipeline. The ones you are most likely to touch:
 | `POS_MAX_PEG` / `POS_MAX_PCT_ABOVE_200SMA` / `POS_MAX_DAILY_RSI` | 2.0 / 15 / 65 | Positional valuation and extension limits |
 | `FUNDAMENTALS_MAX_REFRESH_PER_RUN` | 120 | Yahoo lookups per run (runtime vs cache fill speed) |
 | `GC_MAX_CROSS_AGE` / `EMA2050_MAX_CROSS_AGE` | 10 / 5 | How recent a cross must be to show |
-| `CROSSOVER_LOG_RETENTION_DAYS` | 45 | How long crossover signals and outcomes are kept |
+| `CROSSOVER_LOG_RETENTION_DAYS` | 45 | How long trades and outcomes are kept (all sections) |
+| `PENDING_EXPIRY_SESSIONS` | 10 | Unfilled buy-stop / buy-limit orders expire after this |
 | `RECOVERY_STRICT_MOMENTUM` | False | True restores Recovery's original 3-of-4 momentum gate |
+| `HEALTH_FAIL_FETCH_RATE` / `HEALTH_FAIL_STALE_SHARE` | 0.80 / 0.40 | When a run refuses to publish |
+| `HEALTH_WARN_*` | 0.95 / 0.10 / 0.10 | When the amber partial-data banner appears |
 
 When a section is empty, read the funnel before tuning: it shows whether candidates
 died at pattern detection, a base gate, or the elite filter.
@@ -433,7 +472,9 @@ There is no unit-test suite yet. Two checks are used before every release:
    scratch copy of the repo. Run it twice: once with a sector-less universe, once with
    sectors, and once with `BREADTH_ADVERSE_THRESHOLD` forced high to exercise the
    Adverse path. Rendering-only tests are not sufficient; they missed runtime errors
-   in `main()` in the past.
+   in `main()` in the past. Synthetic prices must use a **timezone-aware
+   `America/New_York` index**, exactly as yfinance returns it: tz-naive test data
+   once hid a date-comparison crash in the crossover outcome replay.
 
 ---
 
@@ -460,6 +501,12 @@ There is no unit-test suite yet. Two checks are used before every release:
   per ticker) and occasionally fails or rate-limits; the cache and per-run cap contain
   this, but a Yahoo outage simply leaves the Positional panel thin. Figures can be
   stale or restated: verify in filings.
+- **A failed health check means no report that day.** That is deliberate (no report
+  beats a misleading one); re-run from the Actions tab once Yahoo recovers. GitHub
+  emails the repo owner on failed workflow runs by default.
+- **Tracked results are idealised.** Fills are assumed exactly at the planned price
+  (no slippage; a gap through a buy-stop still fills at the trigger) and there are no
+  costs. Treat the scoreboards as a comparison between sections, not exact P&L.
 - **Outcome tracking uses daily bars only.** If one bar touches both the stop and a
   target, the stop is assumed to have come first. After TP1 the remaining position is
   treated as a runner and the stop is no longer counted, so "TP1 hit" can include

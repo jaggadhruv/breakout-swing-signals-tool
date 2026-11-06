@@ -750,36 +750,68 @@ def plan_golden_cross_trade(prices: pd.DataFrame, cross_idx: int, slow_at_cross:
 
 
 def evaluate_trade_outcome(prices: pd.DataFrame, signal_date: str, entry: float, stop: float,
-                           tp1: float, tp2: float) -> dict:
-    """Replay daily bars AFTER the signal day. Stop is checked before targets on the
-    same bar (conservative). Status: Open, TP1 hit, TP2 hit, Stopped."""
-    # Yahoo's daily index is tz-aware (America/New_York); the logged signal date is a
-    # plain YYYY-MM-DD. Localise it to the index's timezone so the comparison is valid.
+                           tp1: float, tp2: float, entry_type: str = "market",
+                           expiry_sessions: int = 10) -> dict:
+    """Replay daily bars AFTER the signal day.
+
+    entry_type:
+      "market"    filled at `entry` on the signal day (the signal close)
+      "buy_stop"  pending until a bar's high reaches `entry` (breakout trigger)
+      "buy_limit" pending until a bar's low reaches `entry` (pullback / retest)
+    Unfilled pending orders expire after `expiry_sessions` sessions.
+
+    After the fill, the stop is checked before targets on the same bar
+    (conservative). Status: Pending, Expired, Open, TP1 hit, TP2 hit, Stopped.
+
+    result_pct = what the plan would have produced:
+      Stopped → stop vs entry;  TP2 hit → TP2 vs entry;
+      TP1 hit → half banked at TP1, half marked at the latest close;
+      Open    → latest close vs entry (unrealised);  Pending/Expired → None.
+    """
     cutoff = pd.Timestamp(signal_date)
     if prices.index.tz is not None:
         cutoff = cutoff.tz_localize(prices.index.tz)
     after = prices[prices.index > cutoff]
-    status, exit_date = "Open", None
-    tp1_hit = False
-    for dt, row in after.iterrows():
+    last = float(prices["Close"].iloc[-1])
+    base = {"days": int(len(after)), "current": round(last, 2), "fill_date": None, "exit_date": None}
+
+    # 1) Fill
+    if entry_type == "market":
+        live = after
+        base["fill_date"] = signal_date
+    else:
+        fill_pos = None
+        for k, (dt, row) in enumerate(after.iterrows()):
+            if k >= expiry_sessions:
+                break
+            hit = row["High"] >= entry if entry_type == "buy_stop" else row["Low"] <= entry
+            if hit:
+                fill_pos = k
+                base["fill_date"] = dt.strftime("%Y-%m-%d")
+                break
+        if fill_pos is None:
+            status = "Expired" if len(after) >= expiry_sessions else "Pending"
+            return {**base, "status": status, "result_pct": None, "return_pct": None, "max_gain_pct": None}
+        live = after.iloc[fill_pos:]   # the fill bar itself can also hit the stop/targets
+
+    # 2) Manage the open trade
+    status, tp1_hit = "Open", False
+    for dt, row in live.iterrows():
         if row["Low"] <= stop and not tp1_hit:
-            status, exit_date = "Stopped", dt
+            status, base["exit_date"] = "Stopped", dt.strftime("%Y-%m-%d")
             break
         if row["High"] >= tp2:
-            status, exit_date = "TP2 hit", dt
+            status, base["exit_date"] = "TP2 hit", dt.strftime("%Y-%m-%d")
             break
         if row["High"] >= tp1 and not tp1_hit:
             tp1_hit, status = True, "TP1 hit"
-    last = float(prices["Close"].iloc[-1])
-    max_high = float(after["High"].max()) if len(after) else entry
-    return {
-        "status": status,
-        "exit_date": exit_date.strftime("%Y-%m-%d") if exit_date is not None else None,
-        "days": int(len(after)),
-        "return_pct": round((last / entry - 1) * 100, 2),
-        "max_gain_pct": round((max_high / entry - 1) * 100, 2),
-        "current": round(last, 2),
-    }
+
+    pct = lambda x: round((x / entry - 1) * 100, 2)
+    result = {"Stopped": pct(stop), "TP2 hit": pct(tp2),
+              "TP1 hit": round((pct(tp1) + pct(last)) / 2, 2), "Open": pct(last)}[status]
+    max_high = float(live["High"].max()) if len(live) else entry
+    return {**base, "status": status, "result_pct": result, "return_pct": pct(last),
+            "max_gain_pct": round((max_high / entry - 1) * 100, 2)}
 
 
 def accumulation_day_count(prices: pd.DataFrame, lookback: int = 25, vol_avg_window: int = 20) -> int:

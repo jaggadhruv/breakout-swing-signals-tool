@@ -46,7 +46,8 @@ SUPERTREND_ARCHIVE_PATH = Path("data/supertrend_archive.json")
 RECOVERY_ARCHIVE_PATH = Path("data/recovery_archive.json")
 SETUPS_ARCHIVE_PATH = Path("data/setups_archive.json")          # S/R, retest, reversal, RSI, positional
 FUNDAMENTALS_CACHE_PATH = Path("data/fundamentals_cache.json")
-CROSSOVER_LOG_PATH = Path("data/crossover_log.json")             # 20/50 and golden-cross signals + outcomes
+CROSSOVER_LOG_PATH = Path("data/crossover_log.json")             # legacy (migrated into trade_log.json)
+TRADE_LOG_PATH = Path("data/trade_log.json")                     # every recommendation + tracked outcome
 REPORTS_DIR = Path("reports")
 
 YFINANCE_DELAY_SECONDS = 0.3
@@ -228,8 +229,28 @@ MAX_GOLDEN_CROSS_SHOWN     = 8
 EMA2050_MAX_CROSS_AGE      = 5      # cross within the last 5 sessions
 MAX_EMA2050_SHOWN          = 25     # full table cap (dashboard shows top 10)
 
-# Signal log with outcome tracking for both crossover strategies
-CROSSOVER_LOG_RETENTION_DAYS = 45
+# Trade log with outcome tracking for every section
+CROSSOVER_LOG_RETENTION_DAYS = 45   # retention (by signal date) for the whole trade log
+PENDING_EXPIRY_SESSIONS      = 10   # unfilled buy-stop / buy-limit orders expire after this
+
+# Which strategies feed each dashboard block's scoreboard and signal log
+CATEGORY_STRATEGIES = {
+    "breakout": ["breakout"], "watch": ["watchlist", "resistance"], "retest": ["retest", "holding"],
+    "trend": ["supertrend"], "pullback": ["support", "reversal", "mtf_rsi"], "recovery": ["recovery"],
+    "positional": ["positional", "golden_cross"], "ema2050": ["ema2050"],
+}
+
+# ----------------------------------------------------------------------------
+# Data-health check. FAIL = stop before publishing (the workflow then commits
+# nothing, so the previous good report stays live and no state is changed).
+# WARN = publish with an amber banner describing the gaps.
+# ----------------------------------------------------------------------------
+HEALTH_FAIL_FETCH_RATE     = 0.80   # < 80% of tickers downloaded -> fail
+HEALTH_WARN_FETCH_RATE     = 0.95   # < 95% -> warn
+HEALTH_FAIL_STALE_SHARE    = 0.40   # > 40% of tickers behind SPY's latest bar -> fail
+HEALTH_WARN_STALE_SHARE    = 0.10
+HEALTH_WARN_REPAIRED_SHARE = 0.10   # > 10% needed a broken last bar removed -> warn
+HEALTH_MIN_BREADTH_SAMPLE  = 50     # breadth plausibility checks need this many tickers
 
 # Layer 4: trend context filter — a stock passes if all four hold
 TREND_ABOVE_50_SMA = True
@@ -379,6 +400,16 @@ def fetch_prices(ticker: str, period: str = PRICE_HISTORY_PERIOD) -> pd.DataFram
         hist = yf.Ticker(ticker).history(period=period, auto_adjust=False)
         if hist is None or hist.empty or len(hist) < 60:
             return None
+        # Bad-bar repair: Yahoo occasionally returns a final row with missing or
+        # impossible prices (NaN, zero, close outside the day's range), typically
+        # outside market hours. Using it silently breaks every "close vs average"
+        # test, so drop up to 3 such trailing rows and record how many.
+        repaired = 0
+        while repaired < 3 and len(hist) > 60 and _bad_bar(hist.iloc[-1]):
+            hist = hist.iloc[:-1]
+            repaired += 1
+        if _bad_bar(hist.iloc[-1]):
+            return None
         # Partial-day guard: if the most recent bar has less than 30% of the
         # prior 20-day average volume, treat it as an incomplete session and
         # drop it. Scan will then use the last complete trading day.
@@ -389,9 +420,81 @@ def fetch_prices(ticker: str, period: str = PRICE_HISTORY_PERIOD) -> pd.DataFram
                 hist = hist.iloc[:-1]
         if len(hist) < 60:
             return None
+        hist.attrs["repaired_bars"] = repaired
         return hist
     except Exception:
         return None
+
+
+def _bad_bar(row: pd.Series) -> bool:
+    """True if a daily bar has missing/non-positive prices or a close outside its range."""
+    o, h, l, c = (row.get(k) for k in ("Open", "High", "Low", "Close"))
+    vals = [o, h, l, c]
+    if any(v is None or pd.isna(v) or v <= 0 for v in vals):
+        return True
+    if pd.isna(row.get("Volume")):
+        return True
+    return c > h * 1.02 or c < l * 0.98 or h < l
+
+
+def assess_fetch_health(eligible_n: int, fetched: dict, no_data: list[str],
+                        reference_date) -> dict:
+    """Run-level data checks after downloading. Returns level ok/warn/fail + reasons."""
+    got = len(fetched)
+    rate = got / eligible_n if eligible_n else 0.0
+    stale = sorted(t for t, df in fetched.items() if df.index[-1].date() < reference_date)
+    repaired = sorted(t for t, df in fetched.items() if df.attrs.get("repaired_bars", 0) > 0)
+    stale_share = len(stale) / got if got else 1.0
+    rep_share = len(repaired) / got if got else 0.0
+    fail, warn = [], []
+    if rate < HEALTH_FAIL_FETCH_RATE:
+        fail.append(f"only {got}/{eligible_n} tickers downloaded ({rate:.0%}); Yahoo is likely throttling or down")
+    elif rate < HEALTH_WARN_FETCH_RATE:
+        warn.append(f"{eligible_n - got} of {eligible_n} tickers returned no data ({1 - rate:.0%})")
+    if stale_share > HEALTH_FAIL_STALE_SHARE:
+        fail.append(f"{len(stale)}/{got} tickers' latest bar is older than SPY's ({reference_date}); prices are stale")
+    elif stale_share > HEALTH_WARN_STALE_SHARE:
+        warn.append(f"{len(stale)} tickers have no bar for {reference_date} yet (scored on their previous session)")
+    if rep_share > HEALTH_WARN_REPAIRED_SHARE:
+        warn.append(f"{len(repaired)} tickers had a broken latest bar from Yahoo (removed; previous session used)")
+    return {
+        "level": "fail" if fail else ("warn" if warn else "ok"),
+        "fail": fail, "warn": warn,
+        "eligible": eligible_n, "fetched": got, "fetch_rate": round(rate * 100, 1),
+        "no_data": sorted(no_data), "stale": stale, "repaired": repaired,
+        "reference_date": str(reference_date),
+    }
+
+
+def assess_breadth_plausibility(breadth: dict) -> list[str]:
+    """Catch internally contradictory breadth (a sign of broken price data)."""
+    raw = breadth.get("raw", {})
+    n = raw.get("sample_size", 0)
+    if n < HEALTH_MIN_BREADTH_SAMPLE:
+        return []
+    a50, a200 = raw.get("pct_above_50_sma", 50), raw.get("pct_above_200_sma", 50)
+    hi, lo = raw.get("new_52w_highs", 0), raw.get("new_52w_lows", 0)
+    problems = []
+    if a50 == 0 and a200 == 0:
+        problems.append(f"0% of {n} stocks are above their 50- or 200-day average, which is implausible")
+    share_hi = hi / (hi + lo) if (hi + lo) else 0.5
+    if hi + lo >= 10 and share_hi >= 0.83 and a50 < 10:
+        problems.append(f"new highs dominate ({hi} vs {lo} lows) while only {a50}% are above the 50-day average")
+    if hi + lo >= 10 and share_hi <= 0.17 and a50 > 90:
+        problems.append(f"new lows dominate ({lo} vs {hi} highs) while {a50}% are above the 50-day average")
+    return problems
+
+
+def abort_unhealthy(reasons: list[str]) -> None:
+    log("=" * 70)
+    log("DATA HEALTH CHECK FAILED — not publishing this run:")
+    for r in reasons:
+        log(f"  • {r}")
+    log("Nothing is committed: the previous good report stays live and no history,")
+    log("archive or log is changed. Re-run later from the Actions tab.")
+    log("=" * 70)
+    print(f"::error::Data health check failed: {'; '.join(reasons)}")
+    sys.exit(1)
 
 
 # ============================================================================
@@ -1489,57 +1592,113 @@ def evaluate_positional(f: dict, tech: dict | None) -> dict | None:
             "valuation_label": valuation_label, "fcf_yield": fcf_yield, "peg_used": peg}
 
 
-# ---------------- Crossover signal log with outcome tracking ----------------
+# ---------------- Trade plans + trade log with outcome tracking (all sections) ----------------
 
-def load_crossover_log() -> list[dict]:
-    if not CROSSOVER_LOG_PATH.exists():
-        return []
-    try:
-        return json.loads(CROSSOVER_LOG_PATH.read_text()).get("signals", [])
-    except Exception:
-        return []
+def plan_trade(strategy: str, r: dict, prices: pd.DataFrame) -> dict | None:
+    """Entry / stop / TP1 / TP2 and order type for one recommendation.
+    Uses a section's own levels where it has them; otherwise the rules below.
+    Returns None if the plan is invalid (stop not below entry)."""
+    close = float(prices["Close"].iloc[-1])
+    a = float(patterns.atr(prices, 14).iloc[-1])
+
+    def mk(entry, stop, tp2=None, etype="market", tp1=None):
+        if entry is None or stop is None or not (0 < stop < entry):
+            return None
+        risk = entry - stop
+        t1 = tp1 if (tp1 and tp1 > entry) else entry + 2 * risk
+        t2 = tp2 if (tp2 and tp2 > t1) else entry + 3 * risk
+        return {"entry": round(entry, 2), "stop": round(stop, 2), "tp1": round(t1, 2), "tp2": round(t2, 2),
+                "entry_type": etype, "risk_pct": round(risk / entry * 100, 2)}
+
+    if strategy in ("breakout", "reversal", "mtf_rsi", "golden_cross", "ema2050"):
+        return mk(r.get("entry"), r.get("stop"), r.get("tp2"), tp1=r.get("tp1"))
+    if strategy == "watchlist":       # pending breakout: buy-stop at the trigger
+        return mk(r.get("trigger"), r.get("stop_pending"), r.get("tp2_pending"), "buy_stop", r.get("tp1_pending"))
+    if strategy == "resistance":      # pending breakout: buy-stop just above the level
+        entry = r["level"] * 1.005
+        sb = r.get("support_below")
+        stop = max(sb * 0.99 if (sb and sb * 0.99 < entry) else 0.0, entry - 2.5 * a)
+        return mk(entry, stop, etype="buy_stop")
+    if strategy == "retest":
+        return mk(r.get("close"), r.get("stop"), tp1=r.get("tp1"))
+    if strategy == "holding":         # wait for the retest: buy-limit just above the breakout level
+        entry = r["breakout_level"] * 1.01
+        if close > entry:
+            return mk(entry, r["breakout_level"] * 0.97, etype="buy_limit")
+        return mk(close, r["breakout_level"] * 0.97)
+    if strategy == "supertrend":      # the Supertrend line is the stop
+        return mk(r.get("close"), r.get("supertrend_level"))
+    if strategy == "support":
+        return mk(r.get("close"), r.get("stop"), tp2=r.get("target"))
+    if strategy == "recovery":
+        stop = max(r["long_ema"] * 0.97, float(prices["Low"].iloc[-20:].min()) * 0.99)
+        if stop >= close:
+            stop = close - 2 * a
+        return mk(close, stop)
+    if strategy == "positional":
+        return mk(r.get("close"), r.get("stop"), tp2=r.get("target"))
+    return None
 
 
-def save_crossover_log(signals: list[dict]) -> None:
-    CROSSOVER_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
-    CROSSOVER_LOG_PATH.write_text(json.dumps({"signals": signals}, indent=1))
+ACTIVE_STATUSES = ("Pending", "Open", "TP1 hit")
 
 
-def update_crossover_log(log_rows: list[dict], new_rows: dict[str, list[dict]],
-                         price_cache: dict, today_str: str) -> list[dict]:
-    """Add each signal once (key: strategy + ticker + cross date), drop signals older
-    than the retention window, and re-evaluate every open/recorded signal's outcome
-    against the latest prices. Levels are frozen at signal time."""
+def load_trade_log() -> list[dict]:
+    """Trade log; on first run, migrates the older crossover-only log."""
+    for path, key in ((TRADE_LOG_PATH, "trades"), (CROSSOVER_LOG_PATH, "signals")):
+        if path.exists():
+            try:
+                rows = json.loads(path.read_text()).get(key, [])
+                for r in rows:
+                    r.setdefault("entry_type", "market")
+                return rows
+            except Exception:
+                return []
+    return []
+
+
+def save_trade_log(rows: list[dict]) -> None:
+    TRADE_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    TRADE_LOG_PATH.write_text(json.dumps({"trades": rows}, indent=1))
+
+
+def update_trade_log(log_rows: list[dict], new_signals: list[tuple], price_cache: dict,
+                     today_str: str) -> list[dict]:
+    """new_signals: (strategy, row, signal_date, plan). A signal is logged once per
+    (strategy, ticker, signal date), and not at all while an earlier trade for the
+    same strategy+ticker is still active. Levels are frozen at logging; every run
+    replays the bars since the signal to update the outcome."""
     cutoff = (datetime.utcnow() - timedelta(days=CROSSOVER_LOG_RETENTION_DAYS)).strftime("%Y-%m-%d")
     log_rows = [r for r in log_rows if r.get("signal_date", "") >= cutoff]
-    seen = {(r["strategy"], r["ticker"], r["signal_date"]) for r in log_rows}
-    for strategy, rows in new_rows.items():
-        for r in rows:
-            key = (strategy, r["ticker"], r["cross_date"])
-            if key in seen:
-                continue
-            seen.add(key)
-            log_rows.append({
-                "strategy": strategy, "ticker": r["ticker"], "sector": r.get("sector", "Unknown"),
-                "signal_date": r["cross_date"], "logged": today_str,
-                "entry": r["entry"], "stop": r["stop"], "tp1": r["tp1"], "tp2": r["tp2"],
-            })
+    keys = {(r["strategy"], r["ticker"], r["signal_date"]) for r in log_rows}
+    active = {(r["strategy"], r["ticker"]) for r in log_rows if r.get("status", "Open") in ACTIVE_STATUSES}
+    for strategy, row, sig_date, plan in new_signals:
+        t = row["ticker"]
+        if (strategy, t, sig_date) in keys or (strategy, t) in active:
+            continue
+        keys.add((strategy, t, sig_date)); active.add((strategy, t))
+        log_rows.append({"strategy": strategy, "ticker": t, "sector": row.get("sector", "Unknown"),
+                         "signal_date": sig_date, "logged": today_str, **plan})
     for r in log_rows:
         prices = price_cache.get(r["ticker"])
         if prices is None:
             continue  # keep last known outcome
-        r.update(patterns.evaluate_trade_outcome(prices, r["signal_date"], r["entry"], r["stop"], r["tp1"], r["tp2"]))
+        r.update(patterns.evaluate_trade_outcome(
+            prices, r["signal_date"], r["entry"], r["stop"], r["tp1"], r["tp2"],
+            r.get("entry_type", "market"), PENDING_EXPIRY_SESSIONS))
     return log_rows
 
 
-def crossover_scoreboard(log_rows: list[dict], strategy: str) -> dict:
-    rows = [r for r in log_rows if r["strategy"] == strategy and "status" in r]
-    count = {k: sum(1 for r in rows if r["status"] == k) for k in ("Open", "TP1 hit", "TP2 hit", "Stopped")}
-    closed_or_tp = count["TP1 hit"] + count["TP2 hit"] + count["Stopped"]
+def trade_scoreboard(log_rows: list[dict], strategies: list[str]) -> dict:
+    rows = [r for r in log_rows if r["strategy"] in strategies and "status" in r]
+    count = {k: sum(1 for r in rows if r["status"] == k)
+             for k in ("Pending", "Expired", "Open", "TP1 hit", "TP2 hit", "Stopped")}
     winners = count["TP1 hit"] + count["TP2 hit"]
+    resolved = winners + count["Stopped"]
+    results = [r["result_pct"] for r in rows if r.get("result_pct") is not None]
     return {"signals": len(rows), **{k.lower().replace(" ", "_"): v for k, v in count.items()},
-            "hit_rate": round(winners / closed_or_tp * 100) if closed_or_tp else None,
-            "avg_return": round(sum(r["return_pct"] for r in rows) / len(rows), 2) if rows else None,
+            "hit_rate": round(winners / resolved * 100) if resolved else None,
+            "avg_result": round(sum(results) / len(results), 2) if results else None,
             "days": CROSSOVER_LOG_RETENTION_DAYS}
 
 
@@ -1726,7 +1885,7 @@ def compute_market_breadth(
     total = 0
 
     for ticker, prices in eligible_price_cache.items():
-        if prices is None or len(prices) < 200:
+        if prices is None or len(prices) < 200 or _bad_bar(prices.iloc[-1]):
             continue
         total += 1
         close_now = float(prices["Close"].iloc[-1])
@@ -2055,6 +2214,7 @@ def main() -> None:
     log(f"Pass 1 — scanning {len(eligible)} eligible tickers...")
     price_cache: dict[str, pd.DataFrame] = {}
     no_data = 0
+    no_data_tickers: list[str] = []
     trend_pass = 0
     behavioral_pass = 0
     momentum_pass = 0
@@ -2073,6 +2233,7 @@ def main() -> None:
         time.sleep(YFINANCE_DELAY_SECONDS)
         if prices is None:
             no_data += 1
+            no_data_tickers.append(ticker)
             if (i + 1) % 50 == 0:
                 log(f"  {i+1}/{len(eligible)} scanned, {len(raw_candidates)} candidates, {no_data} skipped")
             continue
@@ -2180,6 +2341,14 @@ def main() -> None:
         f"{behavioral_pass} behavioral, {momentum_pass} momentum, "
         f"{pattern_pass} patterns → {len(raw_candidates)} breakouts, "
         f"{len(raw_watchlist)} watchlist, {len(raw_supertrend)} supertrend.")
+
+    # ---- Data-health check on what was downloaded ----
+    health = assess_fetch_health(len(eligible), price_cache, no_data_tickers, spy.index[-1].date())
+    log(f"Data health: {health['level'].upper()} — {health['fetched']}/{health['eligible']} downloaded "
+        f"({health['fetch_rate']}%), {len(health['stale'])} stale vs SPY {health['reference_date']}, "
+        f"{len(health['repaired'])} broken latest bars repaired, no data: {', '.join(health['no_data']) or 'none'}")
+    if health["level"] == "fail":
+        abort_unhealthy(health["fail"])
 
     # ---- Pass 1b: Recovery scan (independent of trend filter) ----
     # Recovery stocks have been WEAK recently (crossed below 200 EMA, now recovering)
@@ -2807,22 +2976,6 @@ def main() -> None:
         f"{len(golden_list)} pass → {len(golden_shown)} shown; 20/50 EMA cross {len(ema2050_list)} "
         f"(showing {len(ema2050_shown)}).")
 
-    # ---- Crossover signal log: record new signals, replay outcomes ----
-    xlog = update_crossover_log(load_crossover_log(),
-                                {"golden_cross": golden_list, "ema2050": ema2050_list},
-                                price_cache, today_str)
-    save_crossover_log(xlog)
-    sb_golden = crossover_scoreboard(xlog, "golden_cross")
-    sb_ema2050 = crossover_scoreboard(xlog, "ema2050")
-    log_golden = sorted([r for r in xlog if r["strategy"] == "golden_cross"], key=lambda r: r["signal_date"], reverse=True)
-    log_ema2050 = sorted([r for r in xlog if r["strategy"] == "ema2050"], key=lambda r: r["signal_date"], reverse=True)
-    log(f"Crossover log: golden {sb_golden}; 20/50 {sb_ema2050}")
-
-    # A signal that has already hit its stop is no longer a valid trade: keep it in
-    # the log, but drop it from today's lists (the EMA cross may still be in force).
-    stopped = {(r["strategy"], r["ticker"], r["signal_date"]) for r in xlog if r.get("status") == "Stopped"}
-    golden_shown = [r for r in golden_shown if ("golden_cross", r["ticker"], r["cross_date"]) not in stopped]
-    ema2050_shown = [r for r in ema2050_shown if ("ema2050", r["ticker"], r["cross_date"]) not in stopped]
 
     # Update history with today's signals (all four pipelines) BEFORE breadth
     update_history(history, [s["ticker"] for s in signals])
@@ -2833,6 +2986,9 @@ def main() -> None:
     # Compute market breadth
     log("Computing market breadth...")
     breadth = compute_market_breadth(price_cache, spy, vix, history)
+    breadth_problems = assess_breadth_plausibility(breadth)
+    if breadth_problems:
+        abort_unhealthy(breadth_problems)
 
     # Persist history (now includes breadth entry)
     save_history(history)
@@ -2908,6 +3064,55 @@ def main() -> None:
         f"{len(elite_watchlist)} watchlist qualified → top {len(watchlist_shown)} shown; "
         f"{len(elite_supertrend)} supertrend qualified → top {len(supertrend_shown)} shown; "
         f"{len(qualified_recovery)} recovery qualified → top {len(recovery_shown)} shown.")
+
+    # ---- Trade plans + trade log for every section's displayed recommendations ----
+    today_lists = {
+        "breakout": shown, "watchlist": watchlist_shown, "resistance": resistance_shown,
+        "retest": retest_shown, "holding": holding_shown, "supertrend": supertrend_shown,
+        "support": support_shown, "reversal": reversal_shown, "mtf_rsi": mtf_rsi_shown,
+        "recovery": recovery_shown, "positional": positional_shown,
+        "golden_cross": golden_shown, "ema2050": ema2050_shown,
+    }
+    new_signals = []
+    for strategy, rows in today_lists.items():
+        for r in rows:
+            prices = price_cache.get(r["ticker"])
+            if prices is None:
+                continue
+            plan = plan_trade(strategy, r, prices)
+            if plan is None:
+                continue
+            r["plan"] = plan
+            sig_date = r.get("cross_date") or prices.index[-1].strftime("%Y-%m-%d")
+            new_signals.append((strategy, r, sig_date, plan))
+    trade_log = update_trade_log(load_trade_log(), new_signals, price_cache, today_str)
+    save_trade_log(trade_log)
+
+    # A crossover whose trade already hit its stop is no longer valid today
+    stopped = {(r["strategy"], r["ticker"], r["signal_date"]) for r in trade_log if r.get("status") == "Stopped"}
+    golden_shown = [r for r in golden_shown if ("golden_cross", r["ticker"], r["cross_date"]) not in stopped]
+    ema2050_shown = [r for r in ema2050_shown if ("ema2050", r["ticker"], r["cross_date"]) not in stopped]
+    today_lists["golden_cross"], today_lists["ema2050"] = golden_shown, ema2050_shown
+
+    # Latest trade per (strategy, ticker): active one if any, else most recent
+    latest_trade: dict[tuple, dict] = {}
+    for r in sorted(trade_log, key=lambda x: x["signal_date"]):
+        key = (r["strategy"], r["ticker"])
+        prev = latest_trade.get(key)
+        if prev is None or r.get("status") in ACTIVE_STATUSES or prev.get("status") not in ACTIVE_STATUSES:
+            latest_trade[key] = r
+    for strategy, rows in today_lists.items():
+        for r in rows:
+            r["trade"] = latest_trade.get((strategy, r["ticker"]))
+
+    trade_scoreboards = {cid: trade_scoreboard(trade_log, strats) for cid, strats in CATEGORY_STRATEGIES.items()}
+    strategy_scoreboards = {st: trade_scoreboard(trade_log, [st]) for strats in CATEGORY_STRATEGIES.values() for st in strats}
+    trade_logs = {cid: sorted([r for r in trade_log if r["strategy"] in strats],
+                              key=lambda r: (r["signal_date"], r["ticker"]), reverse=True)
+                  for cid, strats in CATEGORY_STRATEGIES.items()}
+    sb_all = trade_scoreboard(trade_log, [st for v in CATEGORY_STRATEGIES.values() for st in v])
+    log(f"Trade log: {len(trade_log)} trades over {CROSSOVER_LOG_RETENTION_DAYS}d; {len(new_signals)} candidates today; "
+        f"overall {sb_all}")
 
     # Sector breakdown across all signals (not just shown)
     sector_counts: dict = {}
@@ -3030,9 +3235,17 @@ def main() -> None:
                  high_prob_shown, mtf_rsi_shown, positional_shown, recent_quality,
                  recent_quality_watchlist, recent_quality_supertrend, recent_quality_recovery,
                  recent_resistance, recent_retest, recent_pullback, recent_positional,
-                 golden_shown, ema2050_shown, log_golden, log_ema2050):
+                 golden_shown, ema2050_shown, *trade_logs.values()):
         for r in rows:
             r["liquidity"] = liquidity_info.get(r["ticker"])
+    history_strategy = [(recent_quality, "breakout"), (recent_quality_watchlist, "watchlist"),
+                        (recent_quality_supertrend, "supertrend"), (recent_quality_recovery, "recovery")]
+    for rows, strategy in history_strategy:
+        for r in rows:
+            r["trade"] = latest_trade.get((strategy, r["ticker"]))
+    for rows in (recent_resistance, recent_retest, recent_pullback, recent_positional):
+        for r in rows:
+            r["trade"] = latest_trade.get((r["setup"], r["ticker"]))
 
     html = report.render(
         date_str=today_str,
@@ -3055,12 +3268,12 @@ def main() -> None:
         recent_retest=recent_retest,
         recent_pullback=recent_pullback,
         recent_positional=recent_positional,
+        data_health=health,
         golden_cross=golden_shown,
         ema2050=ema2050_shown,
-        log_golden=log_golden,
-        log_ema2050=log_ema2050,
-        sb_golden=sb_golden,
-        sb_ema2050=sb_ema2050,
+        trade_logs=trade_logs,
+        trade_scoreboards=trade_scoreboards,
+        strategy_scoreboards=strategy_scoreboards,
         recent_quality=recent_quality,
         recent_quality_watchlist=recent_quality_watchlist,
         recent_quality_supertrend=recent_quality_supertrend,
