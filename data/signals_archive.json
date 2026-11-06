@@ -1,41 +1,6 @@
 {
   "signals": [
     {
-      "date": "2026-10-29",
-      "ticker": "CART",
-      "name": "CART",
-      "sector": "Unknown",
-      "score": 79.2,
-      "pattern_labels": [
-        "Resistance Break"
-      ],
-      "entry": 57.51,
-      "stop": 48.29,
-      "tp1": 75.97,
-      "tp2": 85.2,
-      "piotroski": null,
-      "days_on_report": 4,
-      "volume_multiple": 2.88
-    },
-    {
-      "date": "2026-10-29",
-      "ticker": "OSW",
-      "name": "OSW",
-      "sector": "Unknown",
-      "score": 101.1,
-      "pattern_labels": [
-        "52W High",
-        "Resistance Break"
-      ],
-      "entry": 29.51,
-      "stop": 27.2,
-      "tp1": 34.13,
-      "tp2": 36.43,
-      "piotroski": null,
-      "days_on_report": 2,
-      "volume_multiple": 1.61
-    },
-    {
       "date": "2026-10-30",
       "ticker": "AR",
       "name": "AR",
