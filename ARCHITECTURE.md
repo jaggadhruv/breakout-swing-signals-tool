@@ -41,7 +41,8 @@ breakout-swing-tool/
 │   ├── supertrend_archive.json        Supertrend-long entries, rolling 7 d
 │   ├── recovery_archive.json          Recovery entries, rolling 7 d
 │   ├── setups_archive.json            S/R, retest, holding, reversal, MTF RSI, positional; rolling 7 d
-│   └── fundamentals_cache.json        Yahoo fundamentals per ticker, refreshed weekly
+│   ├── fundamentals_cache.json        Yahoo fundamentals per ticker, refreshed weekly
+│   └── crossover_log.json             20/50 and golden-cross signals with tracked outcomes, 45 d
 ├── reports/YYYY-MM-DD.html            One report per run (committed)
 ├── index.html                         Copy of the latest report (GitHub Pages landing)
 ├── requirements.txt                   pandas, numpy, requests, yfinance==0.2.65
@@ -171,7 +172,9 @@ ticker**, skipping the trend filter:
 1. Behavioral filter
 2. `patterns.golden_cross_recovery()`: 20 EMA above 200 EMA, gap ≤ 10%, crossover
    from below within the last 30 bars, 20 EMA higher than 5 bars ago
-3. Momentum ≥ 3/4 (same function as Pass 1)
+3. Close above both EMAs and daily RSI ≥ 50. (The original 3-of-4 momentum gate
+   is kept behind `RECOVERY_STRICT_MOMENTUM = True`; it was dropped by default
+   because weekly MACD and 52-week range position lag a fresh cross.)
 
 ### 5.3b Pass 1c: full-universe RS and the S/R, retest and reversal setups
 
@@ -196,6 +199,30 @@ that is higher than 20 sessions ago) and collects three setup types:
   RSI(14) ≥ 60 and a daily RSI cross from below 50 within 3 sessions, with cross-day
   volume ≥ 1.0× average. Checked after the behavioral filter, before the 200 SMA
   quality base.
+
+**EMA crossovers** (detected with `patterns.ema_cross_up()`; the cross bar's close
+is the signal price, and levels use only data up to the cross bar):
+
+- **20/50 EMA, no gates**: any liquid ticker whose 20 EMA crossed above its 50 EMA in
+  the last 5 sessions. Detected before every other Pass 1c check.
+  `plan_ema2050_trade()`: stop = 10-day swing low − 1%, never more than 2.5 × ATR
+  below entry; TP1 2R, TP2 3R; exit on a daily close below the 50 EMA. Ranked
+  freshest first.
+- **20/200 EMA golden cross (positional)**: cross in the last 10 sessions, close
+  above both EMAs, 20 EMA rising, RSI > 50, behavioral filter, then (Pass 2g) RS ≥ 40
+  and `fundamental_quality_value()`, i.e. the Positional quality and fair-value gates
+  without its extension gates. Golden-cross tickers are fetched first in the
+  fundamentals refresh. `plan_golden_cross_trade()`: stop = higher of (200 EMA at the
+  cross − 3%) and (20-day low − 1%); TP1 2R; TP2 = larger of 3R and the prior 52-week
+  high; exit on a weekly close below the 200 EMA.
+
+**Crossover signal log.** `update_crossover_log()` records each signal once (key:
+strategy, ticker, cross date) in `crossover_log.json` with frozen levels, keeps 45
+days, and every run replays bars after the signal day with
+`patterns.evaluate_trade_outcome()`: stop before TP1 = Stopped (stop checked first on
+a bar touching both); TP1 = TP1 hit (stop then ignored, partial banked); TP2 = TP2 hit.
+`crossover_scoreboard()` gives counts, hit rate (TP1+ of resolved) and average return
+to date. Signals already Stopped are removed from today's lists but stay in the log.
 
 **Fake breakouts.** `recent_breakout_status()` now returns `failed` / `failing`
 statuses instead of dropping them, plus `fake_flags` (weak breakout close, marginal
@@ -236,6 +263,8 @@ RS percentiles are computed once, across the full universe (see Pass 1c).
 | Fake / failed breakouts | ≥ 60 | none | most recent first | — |
 | MTF RSI momentum | ≥ 60 | rank ≤ 7 | `compute_mtf_rsi_score` | 147 |
 | Positional | ≥ 40 | none | `evaluate_positional` + RS ÷ 5 + sector | 132 |
+| Golden cross | ≥ 40 | none | quality + valuation + freshness (6–20) + RS ÷ 5 + sector | 132 |
+| EMA 20/50 cross | none | none | 100 − 15 × cross age − gap (freshest first) | 100 |
 
 Score components (see docstrings and the report's Methodology section for detail):
 
@@ -279,6 +308,8 @@ Applied only to the four "Today's" sections. Archives are unaffected.
 | Fake / Failed Breakouts | RS ≥ 60 | 8 |
 | Multi-Timeframe RSI Momentum | score ≥ 60 | 8 |
 | Positional | score ≥ 70 | 8 |
+| Golden cross (inside Positional block) | score ≥ 60, not already stopped | 8 |
+| EMA 20/50 cross | not already stopped | 25 (dashboard shows top 10) |
 
 The S/R, retest, holding, reversal, MTF RSI and positional rows are archived in
 `setups_archive.json` (all gated rows, not only displayed ones) and ranked by
@@ -298,7 +329,8 @@ The S/R, retest, holding, reversal, MTF RSI and positional rows are archived in
 | `supertrend_archive.json` | `update_supertrend_archive()` | 7 d | Recent Quality Supertrend |
 | `recovery_archive.json` | `update_recovery_archive()` | 7 d | Recent Quality Recovery |
 | `setups_archive.json` | `update_setups_archive()` | 7 d | Weekly lists for S/R, retest/holding, pullback, positional |
-| `fundamentals_cache.json` | `refresh_fundamentals()` | refreshed per ticker every 7 d | Positional section |
+| `fundamentals_cache.json` | `refresh_fundamentals()` | refreshed per ticker every 7 d | Positional and golden cross |
+| `crossover_log.json` | `update_crossover_log()` | 45 d (by signal date) | Signal logs and scoreboards for 20/50 and golden cross |
 
 Each archive update drops entries older than `ARCHIVE_RETENTION_DAYS` and replaces any
 same-day entries, so re-running a scan on the same date is idempotent. Missing files
@@ -337,7 +369,8 @@ external assets):
 | Trend following | purple | Supertrend flips | `supertrend_archive` |
 | Pullback & reversal | green | near support, reversal, MTF RSI | setups: support, reversal, mtf_rsi |
 | Recovery | orange | recovery | `recovery_archive` |
-| Positional | navy | quality at a fair price | setups: positional |
+| Positional | navy | quality at a fair price, golden crosses | setups: positional + golden-cross log & scoreboard |
+| EMA 20/50 crossover | olive | 20/50 crosses (no gates) | 20/50 signal log & scoreboard (45 d) |
 
 **Multi-section highlighting.** `render()` maps each ticker to the set of today
 sections it appears in (11 sections; Fake/failed and the ★ subset are excluded).
@@ -380,6 +413,9 @@ pipeline. The ones you are most likely to touch:
 | `LIQUIDITY_TIERS` | 100M / 25M / 10M | Tier labels on the liquidity line |
 | `POS_MAX_PEG` / `POS_MAX_PCT_ABOVE_200SMA` / `POS_MAX_DAILY_RSI` | 2.0 / 15 / 65 | Positional valuation and extension limits |
 | `FUNDAMENTALS_MAX_REFRESH_PER_RUN` | 120 | Yahoo lookups per run (runtime vs cache fill speed) |
+| `GC_MAX_CROSS_AGE` / `EMA2050_MAX_CROSS_AGE` | 10 / 5 | How recent a cross must be to show |
+| `CROSSOVER_LOG_RETENTION_DAYS` | 45 | How long crossover signals and outcomes are kept |
+| `RECOVERY_STRICT_MOMENTUM` | False | True restores Recovery's original 3-of-4 momentum gate |
 
 When a section is empty, read the funnel before tuning: it shows whether candidates
 died at pattern detection, a base gate, or the elite filter.
@@ -424,6 +460,10 @@ There is no unit-test suite yet. Two checks are used before every release:
   per ticker) and occasionally fails or rate-limits; the cache and per-run cap contain
   this, but a Yahoo outage simply leaves the Positional panel thin. Figures can be
   stale or restated: verify in filings.
+- **Outcome tracking uses daily bars only.** If one bar touches both the stop and a
+  target, the stop is assumed to have come first. After TP1 the remaining position is
+  treated as a runner and the stop is no longer counted, so "TP1 hit" can include
+  trades that later fell back.
 - **Positional fills gradually.** With ~250 quality-base names and a 120-per-run cap,
   the cache is complete after about three runs.
 - **Tight elite Supertrend combination.** A fresh flip after a pullback often still

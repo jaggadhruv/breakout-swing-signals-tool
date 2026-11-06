@@ -46,6 +46,7 @@ SUPERTREND_ARCHIVE_PATH = Path("data/supertrend_archive.json")
 RECOVERY_ARCHIVE_PATH = Path("data/recovery_archive.json")
 SETUPS_ARCHIVE_PATH = Path("data/setups_archive.json")          # S/R, retest, reversal, RSI, positional
 FUNDAMENTALS_CACHE_PATH = Path("data/fundamentals_cache.json")
+CROSSOVER_LOG_PATH = Path("data/crossover_log.json")             # 20/50 and golden-cross signals + outcomes
 REPORTS_DIR = Path("reports")
 
 YFINANCE_DELAY_SECONDS = 0.3
@@ -204,6 +205,31 @@ POS_RS_MIN                       = 40    # trend matters less for positional; av
 POS_SECTOR_RANK_MAX              = 11    # no sector gate (valuation-led)
 POS_MIN_SHOW_SCORE               = 70
 MAX_POSITIONAL_SHOWN             = 8
+
+# ----------------------------------------------------------------------------
+# Recovery momentum gate. The 3-of-4 confluence (RSI, ADX, weekly MACD, 52W range)
+# often fails right at a fresh 20/200 cross (weekly MACD and 52W position lag).
+# False = simpler fresh-cross checks: close above both EMAs and daily RSI >= 50.
+# ----------------------------------------------------------------------------
+RECOVERY_STRICT_MOMENTUM   = False
+
+# ----------------------------------------------------------------------------
+# Positional golden cross: 20 EMA crosses 200 EMA from below (daily candles)
+# ----------------------------------------------------------------------------
+GC_MAX_CROSS_AGE           = 10     # cross within the last 10 sessions
+GC_MIN_DAILY_RSI           = 50
+GC_RS_MIN                  = 40
+GC_MIN_SHOW_SCORE          = 60
+MAX_GOLDEN_CROSS_SHOWN     = 8
+
+# ----------------------------------------------------------------------------
+# Simple 20/50 EMA crossover: no quality gates (global liquidity filter only)
+# ----------------------------------------------------------------------------
+EMA2050_MAX_CROSS_AGE      = 5      # cross within the last 5 sessions
+MAX_EMA2050_SHOWN          = 25     # full table cap (dashboard shows top 10)
+
+# Signal log with outcome tracking for both crossover strategies
+CROSSOVER_LOG_RETENTION_DAYS = 45
 
 # Layer 4: trend context filter — a stock passes if all four hold
 TREND_ABOVE_50_SMA = True
@@ -1393,9 +1419,16 @@ def refresh_fundamentals(cache: dict, tickers: list[str], today_str: str) -> tup
     return refreshed, failed
 
 
-def evaluate_positional(f: dict, tech: dict) -> dict | None:
-    """Quality + valuation + extension. Returns scored components or None if it
-    fails a hard gate (unprofitable, over-levered, expensive, overextended)."""
+def fundamental_quality_value(f: dict) -> dict | None:
+    """Financial-quality and fair-valuation gates + points (no technical gates).
+    Shared by the Positional section and the golden-cross subsection."""
+    return evaluate_positional(f, None)
+
+
+def evaluate_positional(f: dict, tech: dict | None) -> dict | None:
+    """Quality + valuation (+ extension when `tech` is given). Returns scored
+    components or None if it fails a hard gate (unprofitable, over-levered,
+    expensive, or — with tech — overextended)."""
     roe, margin, fcf = f.get("roe"), f.get("profit_margin"), f.get("free_cashflow")
     de, growth = f.get("debt_to_equity"), f.get("revenue_growth")
     fpe, tpe, peg, mcap = f.get("forward_pe"), f.get("trailing_pe"), f.get("peg"), f.get("market_cap")
@@ -1419,12 +1452,13 @@ def evaluate_positional(f: dict, tech: dict) -> dict | None:
         if fpe > POS_MAX_FORWARD_PE_NO_PEG:
             return None
         valuation_label = "Undervalued" if fpe <= 15 else "Fair"
-    # Hard gates: not overextended
-    if not (0 <= tech["pct_above_200"] <= POS_MAX_PCT_ABOVE_200SMA):
+    # Hard gates: not overextended (skipped when tech is None)
+    if tech is not None and not (0 <= tech["pct_above_200"] <= POS_MAX_PCT_ABOVE_200SMA):
         return None
-    if tech["pct_above_50"] > POS_MAX_PCT_ABOVE_50SMA:
+    if tech is not None and tech["pct_above_50"] > POS_MAX_PCT_ABOVE_50SMA:
         return None
-    if tech["rsi"] > POS_MAX_DAILY_RSI or (tech["weekly_rsi"] is not None and tech["weekly_rsi"] > POS_MAX_WEEKLY_RSI):
+    if tech is not None and (tech["rsi"] > POS_MAX_DAILY_RSI
+                             or (tech["weekly_rsi"] is not None and tech["weekly_rsi"] > POS_MAX_WEEKLY_RSI)):
         return None
 
     quality = (12 if roe >= 0.20 else 8 if roe >= 0.15 else 4)
@@ -1447,10 +1481,66 @@ def evaluate_positional(f: dict, tech: dict) -> dict | None:
     if tpe and fpe < tpe:
         valuation += 5   # earnings expected to grow
 
-    ext = (10 if tech["pct_above_200"] <= 5 else 6 if tech["pct_above_200"] <= 10 else 3)
-    ext += (10 if 40 <= tech["rsi"] <= 55 else 5 if tech["rsi"] <= 65 else 0)
+    ext = 0
+    if tech is not None:
+        ext = (10 if tech["pct_above_200"] <= 5 else 6 if tech["pct_above_200"] <= 10 else 3)
+        ext += (10 if 40 <= tech["rsi"] <= 55 else 5 if tech["rsi"] <= 65 else 0)
     return {"quality_pts": quality, "valuation_pts": valuation, "extension_pts": ext,
             "valuation_label": valuation_label, "fcf_yield": fcf_yield, "peg_used": peg}
+
+
+# ---------------- Crossover signal log with outcome tracking ----------------
+
+def load_crossover_log() -> list[dict]:
+    if not CROSSOVER_LOG_PATH.exists():
+        return []
+    try:
+        return json.loads(CROSSOVER_LOG_PATH.read_text()).get("signals", [])
+    except Exception:
+        return []
+
+
+def save_crossover_log(signals: list[dict]) -> None:
+    CROSSOVER_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    CROSSOVER_LOG_PATH.write_text(json.dumps({"signals": signals}, indent=1))
+
+
+def update_crossover_log(log_rows: list[dict], new_rows: dict[str, list[dict]],
+                         price_cache: dict, today_str: str) -> list[dict]:
+    """Add each signal once (key: strategy + ticker + cross date), drop signals older
+    than the retention window, and re-evaluate every open/recorded signal's outcome
+    against the latest prices. Levels are frozen at signal time."""
+    cutoff = (datetime.utcnow() - timedelta(days=CROSSOVER_LOG_RETENTION_DAYS)).strftime("%Y-%m-%d")
+    log_rows = [r for r in log_rows if r.get("signal_date", "") >= cutoff]
+    seen = {(r["strategy"], r["ticker"], r["signal_date"]) for r in log_rows}
+    for strategy, rows in new_rows.items():
+        for r in rows:
+            key = (strategy, r["ticker"], r["cross_date"])
+            if key in seen:
+                continue
+            seen.add(key)
+            log_rows.append({
+                "strategy": strategy, "ticker": r["ticker"], "sector": r.get("sector", "Unknown"),
+                "signal_date": r["cross_date"], "logged": today_str,
+                "entry": r["entry"], "stop": r["stop"], "tp1": r["tp1"], "tp2": r["tp2"],
+            })
+    for r in log_rows:
+        prices = price_cache.get(r["ticker"])
+        if prices is None:
+            continue  # keep last known outcome
+        r.update(patterns.evaluate_trade_outcome(prices, r["signal_date"], r["entry"], r["stop"], r["tp1"], r["tp2"]))
+    return log_rows
+
+
+def crossover_scoreboard(log_rows: list[dict], strategy: str) -> dict:
+    rows = [r for r in log_rows if r["strategy"] == strategy and "status" in r]
+    count = {k: sum(1 for r in rows if r["status"] == k) for k in ("Open", "TP1 hit", "TP2 hit", "Stopped")}
+    closed_or_tp = count["TP1 hit"] + count["TP2 hit"] + count["Stopped"]
+    winners = count["TP1 hit"] + count["TP2 hit"]
+    return {"signals": len(rows), **{k.lower().replace(" ", "_"): v for k, v in count.items()},
+            "hit_rate": round(winners / closed_or_tp * 100) if closed_or_tp else None,
+            "avg_return": round(sum(r["return_pct"] for r in rows) / len(rows), 2) if rows else None,
+            "days": CROSSOVER_LOG_RETENTION_DAYS}
 
 
 # ---------------- Generic 7-day archive for setup types without their own ----------------
@@ -2126,8 +2216,14 @@ def main() -> None:
         recovery_cross_pass += 1
 
         _, mom_ctx = passes_momentum_confluence(prices)
-        if mom_ctx.get("pass_count", 0) < RECOVERY_MOMENTUM_PASSES_MIN:
-            continue
+        if RECOVERY_STRICT_MOMENTUM:
+            if mom_ctx.get("pass_count", 0) < RECOVERY_MOMENTUM_PASSES_MIN:
+                continue
+        else:
+            close_r = float(prices["Close"].iloc[-1])
+            rsi_r = float(patterns.rsi(prices["Close"], 14).iloc[-1])
+            if not (close_r > recovery_state["short_ema"] and close_r > recovery_state["long_ema"] and rsi_r >= 50):
+                continue
         recovery_momentum_pass += 1
 
         # Compute RS if not already (recovery tickers may not have passed main trend filter)
@@ -2164,6 +2260,8 @@ def main() -> None:
     raw_reversal: list[dict] = []
     raw_mtf_rsi: list[dict] = []
     raw_positional: list[dict] = []
+    raw_ema2050: list[dict] = []
+    raw_golden: list[dict] = []
     quality_base_pass = 0
 
     for ticker, prices in price_cache.items():
@@ -2175,11 +2273,27 @@ def main() -> None:
             if rs_val is not None:
                 ticker_rs[ticker] = rs_val
 
+        # Simple 20/50 EMA cross — deliberately no quality gates (liquidity only)
+        x2050 = patterns.ema_cross_up(prices, 20, 50, EMA2050_MAX_CROSS_AGE)
+        if x2050:
+            raw_ema2050.append({"ticker": ticker, "entry_info": entry_info, "x": x2050,
+                                "plan": patterns.plan_ema2050_trade(prices, x2050["cross_idx"])})
+
         if len(prices) < 221:
             continue
         beh_ok, _ = passes_behavioral_filter(prices, ticker)
         if not beh_ok:
             continue
+
+        # Golden cross (20/200 EMA): fresh, price above both EMAs, 20 EMA rising, RSI > 50.
+        # Fundamentals are checked after the loop.
+        xgc = patterns.ema_cross_up(prices, 20, 200, GC_MAX_CROSS_AGE)
+        if xgc:
+            rsi_gc = float(patterns.rsi(prices["Close"], 14).iloc[-1])
+            if (xgc["close"] > xgc["fast_ema"] and xgc["close"] > xgc["slow_ema"]
+                    and xgc["fast_rising"] and rsi_gc > GC_MIN_DAILY_RSI):
+                raw_golden.append({"ticker": ticker, "entry_info": entry_info, "x": xgc, "rsi": rsi_gc,
+                                   "plan": patterns.plan_golden_cross_trade(prices, xgc["cross_idx"], xgc["slow_at_cross"])})
 
         m_rsi = patterns.mtf_rsi_bounce(
             prices, MTF_RSI_MONTHLY_MIN, MTF_RSI_WEEKLY_MIN, MTF_RSI_DAILY_LEVEL, MTF_RSI_CROSS_LOOKBACK
@@ -2248,9 +2362,8 @@ def main() -> None:
 
     # ---- Fundamentals for positional candidates (cached, weekly refresh, capped) ----
     fundamentals = load_fundamentals_cache()
-    f_refreshed, f_failed = refresh_fundamentals(
-        fundamentals, [c["ticker"] for c in raw_positional], today_str
-    )
+    f_targets = list(dict.fromkeys([c["ticker"] for c in raw_golden] + [c["ticker"] for c in raw_positional]))
+    f_refreshed, f_failed = refresh_fundamentals(fundamentals, f_targets, today_str)
     save_fundamentals_cache(fundamentals)
     f_available = sum(1 for c in raw_positional
                       if c["ticker"] in fundamentals and not fundamentals[c["ticker"]].get("error"))
@@ -2649,6 +2762,68 @@ def main() -> None:
     log(f"Pass 2f (positional) complete: {len(raw_positional)} candidates, {pos_no_data} without fundamentals "
         f"→ {len(positional_list)} pass quality/valuation/extension → {len(positional_shown)} shown.")
 
+    # ---- Pass 2g: golden cross (positional) and simple 20/50 EMA cross ----
+    golden_list: list[dict] = []
+    gc_no_data = 0
+    for c in raw_golden:
+        f = fundamentals.get(c["ticker"])
+        if not f or f.get("error"):
+            gc_no_data += 1
+            continue
+        rs_pct = rs_percentiles.get(c["ticker"])
+        if rs_pct is None or rs_pct < GC_RS_MIN:
+            continue
+        fq = fundamental_quality_value(f)
+        if fq is None:
+            continue
+        x, plan, e = c["x"], c["plan"], c["entry_info"]
+        rank = _rank_for(e)
+        fresh = 20 if x["cross_age"] <= 3 else 12 if x["cross_age"] <= 6 else 6
+        golden_list.append({
+            "ticker": c["ticker"], "name": e.get("name", ""), "sector": e.get("sector", "Unknown"),
+            "sector_rank": rank, "rs_percentile": rs_pct,
+            "score": round(fq["quality_pts"] + fq["valuation_pts"] + fresh + rs_pct / 5 + _sector_points(rank), 1),
+            **fq, **f, **plan,
+            "cross_date": x["cross_date"], "cross_age": x["cross_age"], "gap_pct": x["gap_pct"],
+            "ema20": x["fast_ema"], "ema200": x["slow_ema"], "close": x["close"], "rsi": round(c["rsi"], 1),
+            "from_entry_pct": round((x["close"] / plan["entry"] - 1) * 100, 2),
+        })
+    golden_qualified, golden_shown = _curate(golden_list, GC_MIN_SHOW_SCORE, MAX_GOLDEN_CROSS_SHOWN)
+
+    ema2050_list: list[dict] = []
+    for c in raw_ema2050:
+        x, plan, e = c["x"], c["plan"], c["entry_info"]
+        ema2050_list.append({
+            "ticker": c["ticker"], "name": e.get("name", ""), "sector": e.get("sector", "Unknown"),
+            "sector_rank": _rank_for(e), "rs_percentile": rs_percentiles.get(c["ticker"]),
+            "score": round(100 - 15 * x["cross_age"] - min(abs(x["gap_pct"]), 10), 1),  # freshest first
+            **plan, "cross_date": x["cross_date"], "cross_age": x["cross_age"], "gap_pct": x["gap_pct"],
+            "ema20": x["fast_ema"], "ema50": x["slow_ema"], "close": x["close"],
+            "from_entry_pct": round((x["close"] / plan["entry"] - 1) * 100, 2),
+        })
+    ema2050_list.sort(key=lambda r: r["score"], reverse=True)
+    ema2050_shown = ema2050_list[:MAX_EMA2050_SHOWN]
+    log(f"Pass 2g complete: golden cross {len(raw_golden)} raw, {gc_no_data} without fundamentals → "
+        f"{len(golden_list)} pass → {len(golden_shown)} shown; 20/50 EMA cross {len(ema2050_list)} "
+        f"(showing {len(ema2050_shown)}).")
+
+    # ---- Crossover signal log: record new signals, replay outcomes ----
+    xlog = update_crossover_log(load_crossover_log(),
+                                {"golden_cross": golden_list, "ema2050": ema2050_list},
+                                price_cache, today_str)
+    save_crossover_log(xlog)
+    sb_golden = crossover_scoreboard(xlog, "golden_cross")
+    sb_ema2050 = crossover_scoreboard(xlog, "ema2050")
+    log_golden = sorted([r for r in xlog if r["strategy"] == "golden_cross"], key=lambda r: r["signal_date"], reverse=True)
+    log_ema2050 = sorted([r for r in xlog if r["strategy"] == "ema2050"], key=lambda r: r["signal_date"], reverse=True)
+    log(f"Crossover log: golden {sb_golden}; 20/50 {sb_ema2050}")
+
+    # A signal that has already hit its stop is no longer a valid trade: keep it in
+    # the log, but drop it from today's lists (the EMA cross may still be in force).
+    stopped = {(r["strategy"], r["ticker"], r["signal_date"]) for r in xlog if r.get("status") == "Stopped"}
+    golden_shown = [r for r in golden_shown if ("golden_cross", r["ticker"], r["cross_date"]) not in stopped]
+    ema2050_shown = [r for r in ema2050_shown if ("ema2050", r["ticker"], r["cross_date"]) not in stopped]
+
     # Update history with today's signals (all four pipelines) BEFORE breadth
     update_history(history, [s["ticker"] for s in signals])
     update_history(history, [w["ticker"] for w in watchlist])
@@ -2787,6 +2962,11 @@ def main() -> None:
         "positional_raw": len(raw_positional), "positional_no_data": pos_no_data,
         "positional_signals": len(positional_list), "positional_qualified": positional_qualified,
         "positional_shown": len(positional_shown), "max_positional_cap": MAX_POSITIONAL_SHOWN,
+        "golden_raw": len(raw_golden), "golden_no_data": gc_no_data, "golden_signals": len(golden_list),
+        "golden_shown": len(golden_shown), "max_golden_cap": MAX_GOLDEN_CROSS_SHOWN,
+        "ema2050_signals": len(ema2050_list), "ema2050_shown": len(ema2050_shown),
+        "ema2050_max_age": EMA2050_MAX_CROSS_AGE, "gc_max_age": GC_MAX_CROSS_AGE,
+        "crossover_log_days": CROSSOVER_LOG_RETENTION_DAYS,
         "supertrend_max_flip_age_days": SUPERTREND_MAX_FLIP_AGE_DAYS,
         "min_show_score_used": adaptive_min_score,
     }
@@ -2849,7 +3029,8 @@ def main() -> None:
                  resistance_shown, retest_shown, holding_shown, reversal_shown, fake_shown,
                  high_prob_shown, mtf_rsi_shown, positional_shown, recent_quality,
                  recent_quality_watchlist, recent_quality_supertrend, recent_quality_recovery,
-                 recent_resistance, recent_retest, recent_pullback, recent_positional):
+                 recent_resistance, recent_retest, recent_pullback, recent_positional,
+                 golden_shown, ema2050_shown, log_golden, log_ema2050):
         for r in rows:
             r["liquidity"] = liquidity_info.get(r["ticker"])
 
@@ -2874,6 +3055,12 @@ def main() -> None:
         recent_retest=recent_retest,
         recent_pullback=recent_pullback,
         recent_positional=recent_positional,
+        golden_cross=golden_shown,
+        ema2050=ema2050_shown,
+        log_golden=log_golden,
+        log_ema2050=log_ema2050,
+        sb_golden=sb_golden,
+        sb_ema2050=sb_ema2050,
         recent_quality=recent_quality,
         recent_quality_watchlist=recent_quality_watchlist,
         recent_quality_supertrend=recent_quality_supertrend,

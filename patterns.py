@@ -688,6 +688,95 @@ def reversal_swing_setup(
     }
 
 
+def ema_cross_up(prices: pd.DataFrame, fast: int, slow: int, max_age: int) -> dict | None:
+    """Most recent bullish EMA cross (fast crosses above slow from below) within the
+    last `max_age` sessions (0 = today), still in force today. Returns the cross bar
+    index plus EMA values, or None."""
+    if len(prices) < slow + max_age + 5:
+        return None
+    c = prices["Close"]
+    f_ema = c.ewm(span=fast, adjust=False).mean().to_numpy()
+    s_ema = c.ewm(span=slow, adjust=False).mean().to_numpy()
+    n = len(c)
+    if f_ema[-1] <= s_ema[-1]:
+        return None
+    for i in range(n - 1, n - 2 - max_age, -1):
+        if f_ema[i] > s_ema[i] and f_ema[i - 1] <= s_ema[i - 1]:
+            return {
+                "cross_idx": i,
+                "cross_age": n - 1 - i,
+                "cross_date": prices.index[i].strftime("%Y-%m-%d"),
+                "fast_ema": round(float(f_ema[-1]), 2),
+                "slow_ema": round(float(s_ema[-1]), 2),
+                "gap_pct": float(round((f_ema[-1] / s_ema[-1] - 1) * 100, 2)),
+                "fast_rising": bool(f_ema[-1] > f_ema[-6]),
+                "slow_at_cross": float(s_ema[i]),
+                "close": round(float(c.iloc[-1]), 2),
+            }
+    return None
+
+
+def plan_ema2050_trade(prices: pd.DataFrame, cross_idx: int) -> dict:
+    """Entry / stop / targets for a 20/50 EMA cross, using only data up to the cross bar.
+      Entry : close of the cross day (the signal price)
+      Stop  : 10-session swing low − 1%, but never more than 2.5 × ATR(14) below entry
+      TP1/2 : 2R / 3R.  Exit rule: daily close back below the 50 EMA."""
+    upto = prices.iloc[:cross_idx + 1]
+    entry = float(upto["Close"].iloc[-1])
+    a = float(atr(upto, 14).iloc[-1])
+    stop = max(float(upto["Low"].iloc[-10:].min()) * 0.99, entry - 2.5 * a)
+    if stop >= entry:
+        stop = entry - 1.5 * a
+    r = entry - stop
+    return {"entry": round(entry, 2), "stop": round(stop, 2), "tp1": round(entry + 2 * r, 2),
+            "tp2": round(entry + 3 * r, 2), "risk_pct": round(r / entry * 100, 2)}
+
+
+def plan_golden_cross_trade(prices: pd.DataFrame, cross_idx: int, slow_at_cross: float) -> dict:
+    """Entry / stop / targets for a 20/200 EMA golden cross (positional).
+      Entry : close of the cross day; add on pullbacks to the 20 EMA
+      Stop  : the tighter (higher) of 200 EMA − 3% and the 20-session low − 1%
+      TP1   : 2R.  TP2: the larger of 3R and the prior 52-week high.
+      Exit rule: weekly close back below the 200 EMA."""
+    upto = prices.iloc[:cross_idx + 1]
+    entry = float(upto["Close"].iloc[-1])
+    stop = max(slow_at_cross * 0.97, float(upto["Low"].iloc[-20:].min()) * 0.99)
+    if stop >= entry:
+        stop = entry - 2.0 * float(atr(upto, 14).iloc[-1])
+    r = entry - stop
+    high52 = float(upto["High"].iloc[-252:].max())
+    return {"entry": round(entry, 2), "stop": round(stop, 2), "tp1": round(entry + 2 * r, 2),
+            "tp2": round(max(entry + 3 * r, high52), 2), "risk_pct": round(r / entry * 100, 2)}
+
+
+def evaluate_trade_outcome(prices: pd.DataFrame, signal_date: str, entry: float, stop: float,
+                           tp1: float, tp2: float) -> dict:
+    """Replay daily bars AFTER the signal day. Stop is checked before targets on the
+    same bar (conservative). Status: Open, TP1 hit, TP2 hit, Stopped."""
+    after = prices[prices.index > pd.Timestamp(signal_date)]
+    status, exit_date = "Open", None
+    tp1_hit = False
+    for dt, row in after.iterrows():
+        if row["Low"] <= stop and not tp1_hit:
+            status, exit_date = "Stopped", dt
+            break
+        if row["High"] >= tp2:
+            status, exit_date = "TP2 hit", dt
+            break
+        if row["High"] >= tp1 and not tp1_hit:
+            tp1_hit, status = True, "TP1 hit"
+    last = float(prices["Close"].iloc[-1])
+    max_high = float(after["High"].max()) if len(after) else entry
+    return {
+        "status": status,
+        "exit_date": exit_date.strftime("%Y-%m-%d") if exit_date is not None else None,
+        "days": int(len(after)),
+        "return_pct": round((last / entry - 1) * 100, 2),
+        "max_gain_pct": round((max_high / entry - 1) * 100, 2),
+        "current": round(last, 2),
+    }
+
+
 def accumulation_day_count(prices: pd.DataFrame, lookback: int = 25, vol_avg_window: int = 20) -> int:
     """Count accumulation days in the last `lookback` sessions.
 

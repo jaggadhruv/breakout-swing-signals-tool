@@ -162,6 +162,14 @@ details.detail .detail-body { overflow-x: auto; }
 .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 11px; color: var(--muted); margin: -10px 0 22px; align-items: center; }
 .legend .sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -3px; margin-right: 5px; border: 1px solid var(--rule); }
 
+/* Signal-log status chips and scoreboard */
+.st { display: inline-block; padding: 0 6px; border-radius: 3px; font-size: 10px; font-weight: 700; color: #fff; }
+.st-open { background: #5C7A99; } .st-tp1 { background: #2E9E5B; } .st-tp2 { background: #17663A; } .st-stop { background: #C0392B; }
+.scoreboard { font-size: 11px; margin: 0 0 8px; padding: 6px 8px; border-radius: 6px;
+              background: color-mix(in srgb, var(--pc) 14%, var(--surface)); line-height: 1.6; }
+.scoreboard b { color: var(--pc); }
+.pos-ret { color: var(--sig-pos); } .neg-ret { color: var(--sig-neg); }
+
 /* At-a-glance dashboard */
 .glance { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin: 6px 0 22px; }
 .glance a { display: block; text-decoration: none; color: inherit; background: var(--surface);
@@ -1582,6 +1590,8 @@ def _render_funnel(funnel: dict) -> str:
         ("Fake / failed breakouts: gated → shown", f'{funnel.get("fake_signals", 0)} → {funnel.get("fake_shown", 0)}'),
         ("MTF RSI: raw → gated → qualified → shown", f'{funnel.get("mtf_rsi_raw", 0)} → {funnel.get("mtf_rsi_signals", 0)} → {funnel.get("mtf_rsi_qualified", 0)} → {funnel.get("mtf_rsi_shown", 0)}'),
         ("Positional: candidates → no fundamentals → pass → shown", f'{funnel.get("positional_raw", 0)} → {funnel.get("positional_no_data", 0)} → {funnel.get("positional_signals", 0)} → {funnel.get("positional_shown", 0)}'),
+        ("Golden cross: raw → no fundamentals → pass → shown", f'{funnel.get("golden_raw", 0)} → {funnel.get("golden_no_data", 0)} → {funnel.get("golden_signals", 0)} → {funnel.get("golden_shown", 0)}'),
+        ("EMA 20/50 crosses (no gates) → shown", f'{funnel.get("ema2050_signals", 0)} → {funnel.get("ema2050_shown", 0)}'),
         ("Reversal: gated → qualified → shown", f'{funnel.get("reversal_signals", 0)} → {funnel.get("reversal_qualified", 0)} → {funnel.get("reversal_shown", 0)}'),
     ]
     items = "".join(
@@ -1770,6 +1780,27 @@ def _render_methodology() -> str:
   </details>
 
   <details class="method-block">
+    <summary>EMA crossover strategies (20/50 and 20/200 golden cross), trade plans and the signal log</summary>
+    <div class="method-body">
+      <p><strong>Cross detection (both).</strong> Exponential moving averages on daily closes. A cross = the fast EMA was at or below the slow EMA on the prior bar and above it on this bar, and it must still be above today. The cross day's close is the signal price.</p>
+      <table class="method-table">
+        <thead><tr><th></th><th>20/50 EMA (simple)</th><th>20/200 EMA golden cross (positional)</th></tr></thead>
+        <tbody>
+          <tr><td>Window</td><td class="mono">cross in last 5 sessions</td><td class="mono">cross in last 10 sessions</td></tr>
+          <tr><td>Gates</td><td>None (global liquidity filter only)</td><td>Price above both EMAs, 20 EMA rising, RSI &gt; 50, no −10% gap, RS ≥ 40, Positional quality + fair-value gates</td></tr>
+          <tr><td>Entry</td><td>Cross-day close; skip if already &gt; 3% above</td><td>Cross-day close, or add on pullbacks to the 20 EMA</td></tr>
+          <tr><td>Stop</td><td>10-day swing low − 1%, never more than 2.5 × ATR(14) below entry</td><td>Higher of (200 EMA at the cross − 3%) and (20-day low − 1%)</td></tr>
+          <tr><td>Targets</td><td>TP1 = 2R, TP2 = 3R</td><td>TP1 = 2R, TP2 = larger of 3R and the prior 52-week high</td></tr>
+          <tr><td>Exit rule</td><td>Daily close below the 50 EMA</td><td>Weekly close below the 200 EMA</td></tr>
+          <tr><td>Ranking</td><td>Freshest cross first</td><td>Quality + valuation points, freshness (6–20), RS ÷ 5, sector</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Signal log.</strong> Each cross is recorded once in <code>data/crossover_log.json</code> (key: strategy, ticker, cross date) with its levels frozen, and kept for 45 days. Every run replays the daily bars after the signal day: a stop touch before TP1 marks it Stopped (on a bar that touches both, the stop is assumed first, conservatively); reaching TP1 marks TP1 hit, after which the stop is no longer counted (partial profit banked, runner trailing); reaching TP2 marks TP2 hit. The scoreboard shows counts, hit rate (TP1 or better as a share of resolved signals) and the average return to date. With a few weeks of data this tells you whether the simple 20/50 signal earns its place, and how the golden cross compares.</p>
+      <p><strong>Recovery change.</strong> Recovery (20/200 EMA cross within 30 sessions) used to require 3 of 4 momentum checks, two of which (weekly MACD, 52-week range position) usually lag a fresh cross. It now requires close above both EMAs and RSI ≥ 50. Set <code>RECOVERY_STRICT_MOMENTUM = True</code> to restore the old gate.</p>
+    </div>
+  </details>
+
+  <details class="method-block">
     <summary>Liquidity levels and the Positional (quality at a fair price) section</summary>
     <div class="method-body">
       <p><strong>Liquidity line under each ticker.</strong> Tier from the 20-session average dollar volume: Very high ≥ $100M/day, High ≥ $25M, Adequate ≥ $10M (the minimum to appear at all). Then average shares/day, average dollar volume/day, and <strong>1% of ADV</strong>: keeping your position below about 1% of a stock's average daily dollar volume means you can get in and out without moving the price, even on a fast exit. Hover the line for the full sentence.</p>
@@ -1912,9 +1943,17 @@ def _render_methodology() -> str:
 PANEL_COLORS = {
     "breakout": "#2A6FDB", "watch": "#138A8A", "retest": "#C8961E", "trend": "#7B4FBF",
     "pullback": "#2E7D5B", "recovery": "#D9731A", "positional": "#1F3A5F", "diag": "#6B6B75",
+    "ema2050": "#6B8E23",
 }
 
 CATEGORY_GUIDE = {
+    "ema2050": (
+        "Every liquid stock whose 20 EMA crossed above its 50 EMA in the last 5 sessions (daily candles). No quality, "
+        "trend or momentum filters, by design: a raw, simple signal. Each signal is logged for 45 days and its outcome "
+        "tracked, so the scoreboard shows whether it is working.",
+        "Entry = cross-day close (skip if price is already > 3% above it). Stop = 10-day swing low − 1%, capped at "
+        "2.5 × ATR. Take partial profit at TP1 (2R), the rest at TP2 (3R); exit early on a daily close below the 50 EMA. "
+        "Expect more false signals than the gated sections; prefer names that also appear elsewhere (coloured rows)."),
     "breakout": (
         "Stocks clearing a 20/55/252-day high, horizontal resistance or a volatility contraction today on ≥ 1.5× volume, "
         "with top-15% relative strength, 4/4 momentum and a strong sector.",
@@ -1947,9 +1986,11 @@ CATEGORY_GUIDE = {
         "high; stop below the 200 EMA. Size small."),
     "positional": (
         "Profitable, cash-generative, moderately levered companies at PEG ≤ 2, in a long-term uptrend but not stretched "
-        "(≤ 15% above the 200 SMA, RSI ≤ 65). Fundamentals from Yahoo, refreshed weekly.",
-        "Weeks-to-months holds. Build in tranches near the 50 SMA add zone; stop 3% under the 200 SMA. Verify the numbers "
-        "in the company's filings before committing capital."),
+        "(≤ 15% above the 200 SMA, RSI ≤ 65). Plus golden crosses: the 20 EMA crossed above the 200 EMA in the last "
+        "10 sessions in a fundamentally sound, fairly valued company. Fundamentals from Yahoo, refreshed weekly.",
+        "Weeks-to-months holds. Build in tranches near the 50 SMA add zone; stop 3% under the 200 SMA. Golden cross: "
+        "enter at the cross-day close or on a pullback to the 20 EMA; stop = higher of 200 EMA − 3% and 20-day low − 1%; "
+        "TP1 2R, TP2 = 52-week high or 3R; exit on a weekly close below the 200 EMA. Verify filings first."),
 }
 
 
@@ -1974,6 +2015,8 @@ _TODAY_FIELDS = {
     "mtf_rsi":    ("RSI reset",       "entry",   "stop",             "tp1"),
     "recovery":   ("Recovery",        "close",   "long_ema",         None),
     "positional": ("Positional",      "close",   "stop",             "target"),
+    "golden_cross": ("Golden ×",      "entry",   "stop",             "tp1"),
+    "ema2050":    ("20/50 ×",         "entry",   "stop",             "tp1"),
 }
 # (label, level key) per weekly-list kind
 _WEEK_FIELDS = {
@@ -1982,6 +2025,134 @@ _WEEK_FIELDS = {
     "supertrend": ("ST flip",    "peak_close"),
     "recovery":   ("Recovery",   "peak_close"),
 }
+
+
+_STATUS_CLS = {"Open": "st-open", "TP1 hit": "st-tp1", "TP2 hit": "st-tp2", "Stopped": "st-stop"}
+
+
+def _status_chip(status: str | None) -> str:
+    return f'<span class="st {_STATUS_CLS.get(status or "Open", "st-open")}">{escape(status or "Open")}</span>'
+
+
+def _ret(v: float | None) -> str:
+    if v is None:
+        return "—"
+    return f'<span class="{"pos-ret" if v >= 0 else "neg-ret"}">{v:+.1f}%</span>'
+
+
+def _scoreboard(sb: dict | None, label: str) -> str:
+    if not sb or not sb.get("signals"):
+        return f'<div class="scoreboard"><b>{label}</b>: no logged signals yet. The log fills as crosses occur.</div>'
+    hr = f'{sb["hit_rate"]}%' if sb.get("hit_rate") is not None else "—"
+    return (f'<div class="scoreboard"><b>{label}</b> · last {sb["days"]} days: {sb["signals"]} signals · '
+            f'{_status_chip("TP2 hit")} {sb["tp2_hit"]} {_status_chip("TP1 hit")} {sb["tp1_hit"]} '
+            f'{_status_chip("Stopped")} {sb["stopped"]} {_status_chip("Open")} {sb["open"]} · '
+            f'hit rate (TP1+ of resolved) <b>{hr}</b> · avg return now <b>{_ret(sb.get("avg_return"))}</b></div>')
+
+
+def _mini_log(rows: list[dict], cap: int = 8) -> str:
+    if not rows:
+        return '<div class="more">No signals logged yet.</div>'
+    body = "".join(
+        f'<tr><td class="tk">{_tk(r, compact=True)}</td><td class="num mono">{escape(r["signal_date"][5:])}</td>'
+        f'<td class="num mono">{_fmt(r["entry"], ".2f")}</td><td>{_status_chip(r.get("status"))}</td>'
+        f'<td class="num mono">{_ret(r.get("return_pct"))}</td></tr>' for r in rows[:cap])
+    more = f'<div class="more">+{len(rows) - cap} more in Full detail</div>' if len(rows) > cap else ""
+    return ('<table class="mini"><thead><tr><th>Ticker</th><th class="num">Signal</th><th class="num">Entry</th>'
+            f'<th>Status</th><th class="num">Return</th></tr></thead><tbody>{body}</tbody></table>{more}')
+
+
+def _render_signal_log_table(rows: list[dict]) -> str:
+    if not rows:
+        return _empty("No signals logged yet.")
+    body = "".join(f"""
+<tr>
+  <td class="mono">{escape(r["signal_date"])}</td><td class="ticker">{_tk(r)}</td>
+  <td class="num mono">{_fmt(r["entry"], ".2f")}</td><td class="num mono">{_fmt(r["stop"], ".2f")}</td>
+  <td class="num mono">{_fmt(r["tp1"], ".2f")}</td><td class="num mono">{_fmt(r["tp2"], ".2f")}</td>
+  <td>{_status_chip(r.get("status"))}</td><td class="mono">{escape(r.get("exit_date") or "—")}</td>
+  <td class="num mono">{r.get("days", 0)}</td><td class="num mono">{_fmt(r.get("current"), ".2f")}</td>
+  <td class="num mono">{_ret(r.get("return_pct"))}</td><td class="num mono">{_ret(r.get("max_gain_pct"))}</td>
+  <td>{escape(r.get("sector", ""))}</td>
+</tr>""" for r in rows)
+    return f"""
+<table class="candidates">
+  <thead><tr><th>Signal date</th><th>Ticker</th><th class="num">Entry</th><th class="num">Stop</th>
+  <th class="num">TP1 (2R)</th><th class="num">TP2</th><th>Status</th><th>Resolved</th><th class="num">Days</th>
+  <th class="num">Current</th><th class="num">Return now</th><th class="num">Max gain</th><th>Sector</th></tr></thead>
+  <tbody>{body}</tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">Levels are frozen on the signal day. Each run replays the daily bars
+since then: a stop touch before TP1 = Stopped (stop checked first on the same bar, conservatively); TP1 reached = TP1 hit
+(partial profit banked, the stop is no longer counted); TP2 reached = TP2 hit. Return now = latest close vs entry.</p>
+"""
+
+
+def _render_ema2050_table(rows: list[dict]) -> str:
+    if not rows:
+        return _empty("No 20/50 EMA crosses in the last 5 sessions.")
+    body = "".join(f"""
+<tr>
+  <td class="ticker">{_tk(r)}</td>
+  <td class="num mono">{'<span class="streak">today</span>' if r["cross_age"] == 0 else f'{r["cross_age"]}d ago'}</td>
+  <td class="num mono">{_fmt(r["ema20"], ".2f")}</td><td class="num mono">{_fmt(r["ema50"], ".2f")}</td>
+  <td class="num mono">+{r["gap_pct"]:.2f}%</td>
+  <td class="num mono">{_fmt(r["entry"], ".2f")}</td><td class="num mono">{_fmt(r["close"], ".2f")}</td>
+  <td class="num mono">{_ret(r["from_entry_pct"])}</td>
+  <td class="num mono">{_fmt(r["stop"], ".2f")}</td><td class="num mono">{r["risk_pct"]:.1f}%</td>
+  <td class="num mono">{_fmt(r["tp1"], ".2f")}</td><td class="num mono">{_fmt(r["tp2"], ".2f")}</td>
+  {_rs_cell(r.get("rs_percentile"))}
+  <td>{_render_sector_cell(r.get("sector", ""), r.get("sector_rank"))}</td>
+</tr>""" for r in rows)
+    return f"""
+<table class="candidates">
+  <thead><tr><th>Ticker</th><th class="num">Crossed</th><th class="num">20 EMA</th><th class="num">50 EMA</th>
+  <th class="num">Gap</th><th class="num">Entry (cross close)</th><th class="num">Current</th><th class="num">vs entry</th>
+  <th class="num">Stop</th><th class="num">Risk</th><th class="num">TP1 (2R)</th><th class="num">TP2 (3R)</th>
+  <th class="num">RS</th><th>Sector</th></tr></thead>
+  <tbody>{body}</tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">No quality gates: RS and sector are shown for context only.
+Signals that have already hit their stop are removed from this list (they stay in the log).
+Skip names already &gt; 3% above the entry (chasing). Exit rule: daily close back below the 50 EMA.</p>
+"""
+
+
+def _render_golden_table(rows: list[dict]) -> str:
+    if not rows:
+        return _empty("No fresh golden crosses in fundamentally sound, fairly valued names "
+                      "(or their fundamentals are still being cached).")
+    body = []
+    for r in rows:
+        peg = "—" if r.get("peg_used") is None else f'{r["peg_used"]:.2f}'
+        body.append(f"""
+<tr>
+  <td class="ticker">{_tk(r)}</td>
+  <td class="{_score_class(r["score"])} num mono">{_fmt(r["score"], ".0f")}</td>
+  <td class="num mono">{'<span class="streak">today</span>' if r["cross_age"] == 0 else f'{r["cross_age"]}d ago'}</td>
+  <td><span class="tag {'pos' if r["valuation_label"] == 'Undervalued' else ''}">{escape(r["valuation_label"])}</span></td>
+  <td class="num mono">{_fmt(r.get("forward_pe"), ".1f")}</td><td class="num mono">{peg}</td>
+  <td class="num mono">{_pct(r.get("roe"))}</td><td class="num mono">{r["rsi"]:.0f}</td>
+  <td class="num mono">{_fmt(r["entry"], ".2f")}</td><td class="num mono">{_fmt(r["close"], ".2f")}</td>
+  <td class="num mono">{_ret(r["from_entry_pct"])}</td><td class="num mono">{_fmt(r["ema20"], ".2f")}</td>
+  <td class="num mono">{_fmt(r["stop"], ".2f")}</td><td class="num mono">{r["risk_pct"]:.1f}%</td>
+  <td class="num mono">{_fmt(r["tp1"], ".2f")}</td><td class="num mono">{_fmt(r["tp2"], ".2f")}</td>
+  <td>{_render_sector_cell(r.get("sector", ""), r.get("sector_rank"))}</td>
+</tr>""")
+    return f"""
+<table class="candidates">
+  <thead><tr><th>Ticker</th><th class="num">Score</th><th class="num">Crossed</th><th>Valuation</th>
+  <th class="num">Fwd P/E</th><th class="num">PEG</th><th class="num">ROE</th><th class="num">RSI</th>
+  <th class="num">Entry (cross close)</th><th class="num">Current</th><th class="num">vs entry</th>
+  <th class="num">Add zone (20 EMA)</th><th class="num">Stop</th><th class="num">Risk</th>
+  <th class="num">TP1 (2R)</th><th class="num">TP2</th><th>Sector</th></tr></thead>
+  <tbody>{"".join(body)}</tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">Golden cross = 20 EMA crossed above the 200 EMA from below in
+the last 10 sessions, price above both EMAs, 20 EMA rising, RSI &gt; 50, plus the Positional quality and fair-value gates.
+Stop = higher of (200 EMA at the cross − 3%) and (20-day low − 1%). TP2 = 52-week high or 3R, whichever is larger.
+Exit rule: weekly close back below the 200 EMA.</p>
+"""
 
 
 def _mini_today(items: list[tuple[str, dict]], cap: int = 10) -> str:
@@ -2028,7 +2199,8 @@ def _mini_week(items: list[tuple[str, dict]], today_str: str, cap: int = 8) -> s
 
 
 def _category(cid: str, title: str, today_items: list, week_items: list, detail_html: str,
-              today_str: str, avoid: list[dict] | None = None) -> str:
+              today_str: str, avoid: list[dict] | None = None, week_html: str | None = None,
+              week_title: str = "This week's quality list", week_n: int | None = None) -> str:
     summary, how = CATEGORY_GUIDE[cid]
     avoid_html = ""
     if avoid:
@@ -2037,11 +2209,11 @@ def _category(cid: str, title: str, today_items: list, week_items: list, detail_
     return f"""
 <section class="cat" id="p-{cid}" style="--pc:{PANEL_COLORS[cid]}">
   <div class="cat-head"><span class="c-title">{title}</span>
-    <span class="c-counts">today {len(today_items)} · this week {len(week_items)}</span></div>
+    <span class="c-counts">today {len(today_items)} · {"history" if week_html else "this week"} {week_n if week_n is not None else len(week_items)}</span></div>
   <div class="cat-grid">
     <div class="cat-guide"><h4>What it is</h4><p>{escape(summary)}</p><h4>How to use it</h4><p>{escape(how)}</p></div>
     <div class="cat-col today"><h4>Today <span class="n">{len(today_items)}</span></h4>{_mini_today(today_items)}{avoid_html}</div>
-    <div class="cat-col week"><h4>This week's quality list <span class="n">{len(week_items)}</span></h4>{_mini_week(week_items, today_str)}</div>
+    <div class="cat-col week"><h4>{week_title} <span class="n">{week_n if week_n is not None else len(week_items)}</span></h4>{week_html if week_html is not None else _mini_week(week_items, today_str)}</div>
   </div>
   <details class="detail"><summary>Full detail tables</summary><div class="detail-body">{detail_html}</div></details>
 </section>"""
@@ -2082,6 +2254,12 @@ def render(
     recent_retest: list[dict] | None = None,
     recent_pullback: list[dict] | None = None,
     recent_positional: list[dict] | None = None,
+    golden_cross: list[dict] | None = None,
+    ema2050: list[dict] | None = None,
+    log_golden: list[dict] | None = None,
+    log_ema2050: list[dict] | None = None,
+    sb_golden: dict | None = None,
+    sb_ema2050: dict | None = None,
     sector_counts: dict,
     funnel: dict,
     eligible_refreshed_at: str,
@@ -2093,6 +2271,7 @@ def render(
     reversal, fake, high_prob, mtf_rsi, positional = L(reversal), L(fake), L(high_prob), L(mtf_rsi), L(positional)
     rq, rq_wl, rq_st, rq_rec = L(recent_quality), L(recent_quality_watchlist), L(recent_quality_supertrend), L(recent_quality_recovery)
     rq_res, rq_ret, rq_pb, rq_pos = L(recent_resistance), L(recent_retest), L(recent_pullback), L(recent_positional)
+    golden_cross, ema2050, log_golden, log_ema2050 = L(golden_cross), L(ema2050), L(log_golden), L(log_ema2050)
     f = funnel
 
     # ---- Confluence: tickers in 2+ sections TODAY (fake = avoid list and ★ = subset of retest: excluded) ----
@@ -2101,12 +2280,14 @@ def render(
         "Break & retest": retest, "Holding above": holding, "Supertrend": supertrend,
         "Near support": support, "Reversal": reversal, "MTF RSI": mtf_rsi,
         "Recovery": recovery, "Positional": positional,
+        "Golden cross": golden_cross, "EMA 20/50 cross": ema2050,
     }
     sections_by_ticker: dict[str, set] = {}
     for name, rows in section_rows.items():
         for r in rows:
             sections_by_ticker.setdefault(r["ticker"], set()).add(name)
-    for rows in list(section_rows.values()) + [high_prob, fake, rq, rq_wl, rq_st, rq_rec, rq_res, rq_ret, rq_pb, rq_pos]:
+    for rows in list(section_rows.values()) + [high_prob, fake, rq, rq_wl, rq_st, rq_rec, rq_res, rq_ret, rq_pb, rq_pos,
+                                               log_golden, log_ema2050]:
         for r in rows:
             r["confluence"] = sorted(sections_by_ticker.get(r["ticker"], ()))
     multi = sorted(((t, sorted(sec)) for t, sec in sections_by_ticker.items() if len(sec) >= 2),
@@ -2150,12 +2331,33 @@ def render(
          [("recovery", r) for r in rq_rec],
          _sub("Today's recovery setups", f"top {f.get('max_recovery_cap', 6)}") + _render_recovery_table(recovery)
          + _history("This week's quality recovery names", len(rq_rec), _render_recent_quality_recovery_table(rq_rec, date_str)), None),
-        ("positional", "Positional: quality at a fair price",
-         [("positional", r) for r in positional],
+        ("positional", "Positional: quality at a fair price &amp; golden crosses",
+         [("positional", r) for r in positional] + [("golden_cross", r) for r in golden_cross],
          [("setup", r) for r in rq_pos],
          _sub("Today's positional candidates", f"top {f.get('max_positional_cap', 8)}") + _render_positional_table(positional)
-         + _history("This week's quality positional names", len(rq_pos), _render_setup_history_table(rq_pos, date_str)), None),
+         + _sub("Golden cross (20 EMA over 200 EMA)", f"fresh ≤ {f.get('gc_max_age', 10)} sessions, quality + fair value, top {f.get('max_golden_cap', 8)}")
+         + _render_golden_table(golden_cross)
+         + _history("This week's quality positional names", len(rq_pos), _render_setup_history_table(rq_pos, date_str))
+         + _scoreboard(sb_golden, "Golden cross signal log")
+         + _history(f"Golden cross signal log (last {f.get('crossover_log_days', 45)} days)", len(log_golden), _render_signal_log_table(log_golden)),
+         None),
+        ("ema2050", "EMA 20/50 crossover (simple, no gates)",
+         [("ema2050", r) for r in ema2050],
+         [],
+         _sub("Today's 20/50 crosses", f"last {f.get('ema2050_max_age', 5)} sessions, freshest first")
+         + _render_ema2050_table(ema2050)
+         + _scoreboard(sb_ema2050, "20/50 signal log")
+         + _history(f"20/50 signal log (last {f.get('crossover_log_days', 45)} days)", len(log_ema2050), _render_signal_log_table(log_ema2050)),
+         None),
     ]
+    week_override = {
+        "ema2050": (_scoreboard(sb_ema2050, "Scoreboard") + _mini_log(log_ema2050),
+                    f"Signal log & outcomes ({f.get('crossover_log_days', 45)} days)", len(log_ema2050)),
+        "positional": (_mini_week([("setup", r) for r in rq_pos], date_str)
+                       + '<h4 style="margin-top:12px">Golden cross log</h4>' + _scoreboard(sb_golden, "Scoreboard")
+                       + _mini_log(log_golden, cap=5),
+                       "This week's quality list + golden cross log", len(rq_pos) + len(log_golden)),
+    }
 
     def top_names(items):
         names = [r["ticker"] for _, r in sorted(items, key=lambda kv: _sc(kv[1]), reverse=True)]
@@ -2173,8 +2375,10 @@ def render(
                 f'{escape(t)} ×{len(sec)}</span> ' for t, sec in multi)
         if multi else '<span class="dim">none today</span>'
     )
-    cats_html = "".join(_category(cid, title, today, week, detail, date_str, avoid)
-                        for cid, title, today, week, detail, avoid in cats)
+    cats_html = "".join(
+        _category(cid, title, today, week, detail, date_str, avoid,
+                  *(week_override[cid] if cid in week_override else (None, "This week's quality list", None)))
+        for cid, title, today, week, detail, avoid in cats)
     diag_body = f"""
   <div class="secondary">
     <div><h3 class="subsection">Sector distribution</h3>{_render_sector_breakdown(sector_counts)}</div>
