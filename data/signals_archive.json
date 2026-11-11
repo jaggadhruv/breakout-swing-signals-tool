@@ -1,94 +1,6 @@
 {
   "signals": [
     {
-      "date": "2026-11-03",
-      "ticker": "EXPD",
-      "name": "EXPD",
-      "sector": "Unknown",
-      "score": 57.0,
-      "pattern_labels": [
-        "Resistance Break"
-      ],
-      "entry": 200.56,
-      "stop": 190.39,
-      "tp1": 220.9,
-      "tp2": 231.07,
-      "piotroski": null,
-      "days_on_report": 5,
-      "volume_multiple": 1.64
-    },
-    {
-      "date": "2026-11-03",
-      "ticker": "KDP",
-      "name": "KDP",
-      "sector": "Unknown",
-      "score": 127.8,
-      "pattern_labels": [
-        "52W High",
-        "Resistance Break"
-      ],
-      "entry": 36.82,
-      "stop": 33.6,
-      "tp1": 43.26,
-      "tp2": 46.48,
-      "piotroski": null,
-      "days_on_report": 4,
-      "volume_multiple": 2.28
-    },
-    {
-      "date": "2026-11-03",
-      "ticker": "MHK",
-      "name": "MHK",
-      "sector": "Unknown",
-      "score": 113.7,
-      "pattern_labels": [
-        "52W High",
-        "Resistance Break"
-      ],
-      "entry": 148.58,
-      "stop": 131.29,
-      "tp1": 183.16,
-      "tp2": 200.46,
-      "piotroski": null,
-      "days_on_report": 1,
-      "volume_multiple": 1.87
-    },
-    {
-      "date": "2026-11-03",
-      "ticker": "OSW",
-      "name": "OSW",
-      "sector": "Unknown",
-      "score": 64.6,
-      "pattern_labels": [
-        "Resistance Break"
-      ],
-      "entry": 30.02,
-      "stop": 25.15,
-      "tp1": 39.77,
-      "tp2": 44.64,
-      "piotroski": null,
-      "days_on_report": 4,
-      "volume_multiple": 2.96
-    },
-    {
-      "date": "2026-11-03",
-      "ticker": "TTC",
-      "name": "TTC",
-      "sector": "Unknown",
-      "score": 110.4,
-      "pattern_labels": [
-        "52W High",
-        "Resistance Break"
-      ],
-      "entry": 108.84,
-      "stop": 101.2,
-      "tp1": 124.11,
-      "tp2": 131.75,
-      "piotroski": null,
-      "days_on_report": 5,
-      "volume_multiple": 1.54
-    },
-    {
       "date": "2026-11-05",
       "ticker": "AAPL",
       "name": "AAPL",
@@ -587,6 +499,23 @@
       "piotroski": null,
       "days_on_report": 3,
       "volume_multiple": 1.79
+    },
+    {
+      "date": "2026-11-11",
+      "ticker": "PCTY",
+      "name": "PCTY",
+      "sector": "Unknown",
+      "score": 70.5,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 177.81,
+      "stop": 164.21,
+      "tp1": 205.01,
+      "tp2": 218.61,
+      "piotroski": null,
+      "days_on_report": 6,
+      "volume_multiple": 1.83
     }
   ]
 }
