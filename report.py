@@ -163,6 +163,52 @@ details.detail .detail-body { overflow-x: auto; }
 .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 11px; color: var(--muted); margin: -10px 0 22px; align-items: center; }
 .legend .sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -3px; margin-right: 5px; border: 1px solid var(--rule); }
 
+/* Action Plan */
+.ap { border: 2px solid #1F3A5F; border-radius: 12px; background: var(--surface); margin: 0 0 26px; overflow: hidden; }
+.ap-head { background: #1F3A5F; color: #fff; padding: 12px 18px; display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: baseline; }
+.ap-head .t { font-size: 18px; font-weight: 700; }
+.ap-head .s { font-size: 12px; opacity: 0.92; }
+.ap-body { padding: 14px 18px 16px; overflow-x: auto; }
+.ap-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 0 14px; }
+@media (max-width: 900px) { .ap-steps { grid-template-columns: 1fr; } }
+.ap-steps div { font-size: 12px; line-height: 1.45; background: #EEF3F9; border-radius: 8px; padding: 8px 10px; }
+.ap-steps b { color: #1F3A5F; }
+.ap-slots { font-size: 13px; font-weight: 600; padding: 8px 12px; border-radius: 8px; background: #E8F4EC; color: #17663A; margin: 0 0 10px; }
+.ap-slots.full { background: #FDECEA; color: #A93226; }
+.ap h3 { font-size: 13px; margin: 16px 0 6px; color: #1F3A5F; }
+table.ap-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.ap-table th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted);
+                    border-bottom: 2px solid var(--rule); padding: 5px 6px; }
+table.ap-table td { padding: 6px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+table.ap-table th.num, table.ap-table td.num { text-align: right; white-space: nowrap; }
+.ap-row.ap-take > td { background: #E8F6EE; }
+.ap-row.ap-take > td:first-child { box-shadow: inset 4px 0 0 #2E9E5B; }
+.ap-row.ap-bench > td { color: var(--muted); }
+.ap-row.ap-held > td { background: #F1F1F4; color: var(--muted); }
+.ap-row.ap-held button[data-take] { display: none; }
+a.ap-link { text-decoration: none; color: var(--ink); }
+a.ap-link:hover { text-decoration: underline; }
+.lbl { display: inline-block; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 4px; color: #fff; }
+.lbl.take { background: #2E9E5B; } .lbl.bench { background: #9AA0AA; } .lbl.held { background: #5C7A99; }
+.ap-notes { font-size: 11px; color: var(--muted); max-width: 300px; }
+.ap-notes .warn { color: #A93226; font-weight: 600; }
+button.ap-btn { font: inherit; font-size: 11px; padding: 3px 8px; border-radius: 5px; border: 1px solid #1F3A5F;
+                background: #fff; color: #1F3A5F; cursor: pointer; white-space: nowrap; }
+button.ap-btn:hover { background: #1F3A5F; color: #fff; }
+button.ap-btn.danger { border-color: #A93226; color: #A93226; }
+.act { font-size: 11px; font-weight: 600; padding: 3px 7px; border-radius: 4px; display: inline-block; }
+.act.exit { background: #FDECEA; color: #A93226; } .act.tp { background: #E8F6EE; color: #17663A; }
+.act.trail { background: #FFF4D6; color: #8A6100; } .act.hold { background: #EEF1F5; color: #4A5A6A; }
+.act.nodata { background: #F1F1F4; color: var(--muted); }
+.pos-form { display: flex; flex-wrap: wrap; gap: 6px; align-items: end; margin-top: 8px; font-size: 11px; }
+.pos-form label { display: flex; flex-direction: column; gap: 2px; color: var(--muted); }
+.pos-form input { width: 86px; font: inherit; font-size: 12px; padding: 3px 5px; border: 1px solid var(--rule); border-radius: 4px; }
+.pos-form input[name=t] { width: 70px; text-transform: uppercase; }
+textarea.pos-io { width: 100%; height: 70px; font-family: monospace; font-size: 11px; margin-top: 6px; }
+details.research { margin: 0 0 18px; border: 2px dashed var(--rule-strong); border-radius: 12px; padding: 0 14px; }
+details.research > summary { cursor: pointer; padding: 12px 0; font-size: 15px; font-weight: 700; color: var(--ink); }
+details.research > summary .s { font-size: 12px; font-weight: 400; color: var(--muted); }
+
 /* Data-health line and warning banner */
 .health { font-size: 11px; margin: 0 0 14px; color: var(--muted); }
 .health .ok { color: var(--sig-pos); font-weight: 700; }
@@ -2097,11 +2143,11 @@ def _trade_chip(c: dict) -> str:
         if t.get("days", 0) == 0:
             label = "New"          # logged today, no bars since the signal yet
         else:
-            label = f"Open {res:+.1f}%" if res is not None else "Open"
+            label = (f"Open {0.0 if abs(res) < 0.05 else res:+.1f}%") if res is not None else "Open"
     tip = (f"Logged {t.get('signal_date', '')}: {t.get('entry_type', 'market').replace('_', '-')} entry {t.get('entry')}, "
            f"SL {t.get('stop')}, TP1 {t.get('tp1')}, TP2 {t.get('tp2')} → {st}"
            + (f" on {t['exit_date']}" if t.get("exit_date") else "")
-           + (f", result {t['result_pct']:+.1f}%" if t.get("result_pct") is not None else ""))
+           + (f", result {(0.0 if abs(t['result_pct']) < 0.05 else t['result_pct']):+.1f}%" if t.get("result_pct") is not None else ""))
     return f'<span class="st {_STATUS_CLS.get(st, "st-open")}" title="{escape(tip)}">{escape(label)}</span>'
 
 
@@ -2121,6 +2167,8 @@ def _status_chip(status: str | None) -> str:
 def _ret(v: float | None) -> str:
     if v is None:
         return "—"
+    if abs(v) < 0.05:
+        v = 0.0
     return f'<span class="{"pos-ret" if v >= 0 else "neg-ret"}">{v:+.1f}%</span>'
 
 
@@ -2337,6 +2385,225 @@ def _render_health(h: dict | None) -> str:
             f'tickers may be missing or scored on the previous session:<ul>{items}</ul></div>{line}')
 
 
+_ORDER_LABEL = {"market": "Market", "buy_stop": "Buy-stop ↑", "buy_limit": "Buy-limit ↓"}
+# Which strategy block each Action Plan idea comes from (for the deep-dive link)
+_STRATEGY_BLOCK = {"breakout": "breakout", "watchlist": "watch", "resistance": "watch", "retest": "retest",
+                   "holding": "retest", "supertrend": "trend", "support": "pullback", "reversal": "pullback",
+                   "mtf_rsi": "pullback", "recovery": "recovery", "positional": "positional",
+                   "golden_cross": "positional", "ema2050": "ema2050"}
+
+
+def _render_action_plan(ap: dict | None, market_data: dict | None, date_str: str) -> str:
+    """Top-of-page decision panel: open positions (browser-only) + ranked, sized ideas."""
+    if not ap:
+        return ""
+    import json as _json
+    cap = ap["regime_cap"]
+    sz = ap["sizing"]
+    rows, n_take = [], 0
+    for c in ap["candidates"]:
+        pl = c["plan"]
+        take = c["eligible"] and n_take < cap
+        n_take += 1 if take else 0
+        lbl = '<span class="lbl take">TAKE</span>' if take else '<span class="lbl bench">Bench</span>'
+        others = [x for x in c["sections"] if x != c["strategy"]]
+        notes = [f'<span class="warn">{escape(n)}</span>' for n in c.get("notes", [])]
+        if c["high_probability"]:
+            notes.append("★ high-probability retest")
+        if others:
+            notes.append("also in: " + ", ".join(escape(_STRAT_LABELS.get(x, x)) for x in others))
+        if c.get("earnings") and not any("Earnings" in n for n in c.get("notes", [])):
+            notes.append(f"next earnings {escape(c['earnings'])}")
+        rr = (pl["tp1"] - pl["entry"]) / (pl["entry"] - pl["stop"])
+        row = {"ticker": c["ticker"], "liquidity": c["liquidity"], "trade": c.get("trade")}
+        strat = escape(_STRAT_LABELS.get(c["strategy"], c["strategy"]))
+        rows.append(f"""
+<tr class="ap-row {'ap-take' if take else 'ap-bench'}" data-ticker="{escape(c['ticker'])}" data-rank="{c['rank']}"
+    data-eligible="{1 if c['eligible'] else 0}" data-entry="{pl['entry']}" data-stop="{pl['stop']}" data-tp1="{pl['tp1']}"
+    data-tp2="{pl['tp2']}" data-shares="{c['shares']}" data-strategy="{strat}" data-type="{pl['entry_type']}">
+  <td class="ap-lbl">{lbl}</td><td class="num mono">{c['rank']}</td>
+  <td class="tk"><b>{_tk(row, compact=True)}</b></td>
+  <td><a class="setup ap-link" href="#p-{_STRATEGY_BLOCK.get(c['strategy'], 'breakout')}" title="Open this section's details">{strat} ↓</a></td>
+  <td class="num mono"><b>{c['conviction']:.0f}</b></td>
+  <td>{_ORDER_LABEL[pl['entry_type']]}</td>
+  <td class="num mono">{pl['entry']:.2f}</td><td class="num mono">{pl['stop']:.2f}</td>
+  <td class="num mono">{pl['tp1']:.2f}</td><td class="num mono">{pl['tp2']:.2f}</td>
+  <td class="num mono">{c['shares']:g}</td><td class="num mono">${c['position_usd']:.0f}</td>
+  <td class="num mono">${c['risk_usd']:.0f}</td><td class="num mono">1 : {rr:.1f}</td>
+  <td class="mono">{escape(c['valid_until'])}</td>
+  <td class="ap-notes">{" · ".join(notes) or "—"}</td>
+  <td><button class="ap-btn" data-take="1">I took this</button></td>
+</tr>""")
+    table = ('<div class="empty">No candidates passed your rules today. Manage your open positions; nothing new to do.</div>'
+             if not rows else f"""
+<table class="ap-table">
+  <thead><tr><th></th><th class="num">#</th><th>Ticker</th><th>Setup</th><th class="num">Conviction</th><th>Order</th>
+  <th class="num">Entry</th><th class="num">SL</th><th class="num">TP1</th><th class="num">TP2</th><th class="num">Shares</th>
+  <th class="num">Position</th><th class="num">Risk</th><th class="num">R:R (TP1)</th><th>Valid until</th><th>Notes</th><th></th></tr></thead>
+  <tbody id="ap-rows">{"".join(rows)}</tbody>
+</table>""")
+    sector_warn = ("" if ap.get("sector_data") else
+                   '<div class="ap-notes" style="margin:6px 0 0;max-width:none;"><span class="warn">No sector data in your CSV, so the '
+                   '"max 2 per sector" rule cannot work yet.</span> Add a Sector column to input/manual_universe.csv.</div>')
+    payload = _json.dumps({"md": market_data or {}, "regime": ap["regime"], "cap": cap, "max": sz["max_positions"],
+                           "size": sz["trade_size"], "risk": sz["risk"], "fractional": sz["fractional"],
+                           "date": date_str}).replace("</", "<\\/")
+    return f"""
+<section class="ap" id="action-plan">
+  <div class="ap-head"><span class="t">Action Plan</span>
+    <span class="s">Market <b>{escape(ap['regime'])}</b> → at most <b>{cap}</b> open positions ·
+    ${sz['trade_size']} per trade, max ${sz['risk']} risk · {'fractional shares on' if sz['fractional'] else 'whole shares only'}</span></div>
+  <div class="ap-body">
+    <div class="ap-steps">
+      <div><b>1 · Manage open positions.</b> Do what the Action column says: exit, take TP1, or raise the stop (trailing starts only once a trade is 1R in profit or TP1 is taken). Positions live only in this browser.</div>
+      <div><b>2 · Place the TAKE orders exactly as shown.</b> Buy-stop ↑ / buy-limit ↓ orders can sit with your broker until "valid until"; market ideas expire after 2 sessions.</div>
+      <div><b>3 · Click "I took this"</b> after placing an order, and Close it here when you exit. Free slots and picks update automatically.</div>
+    </div>
+    <h3>My open positions</h3>
+    <div class="ap-slots" id="ap-slots">Open positions: 0 of max {cap} → {cap} new trade(s) allowed (add your positions below).</div>
+    <div id="pos-wrap"><div class="ap-notes">No positions stored in this browser yet.</div></div>
+    <details><summary class="ap-notes" style="cursor:pointer">Add a position manually</summary>
+      <form class="pos-form" id="pos-form">
+        <label>Ticker<input name="t" required></label><label>Entry<input name="entry" type="number" step="any" required></label>
+        <label>Shares<input name="shares" type="number" step="any" required></label><label>Stop<input name="stop" type="number" step="any" required></label>
+        <label>TP1<input name="tp1" type="number" step="any" required></label><label>TP2<input name="tp2" type="number" step="any" required></label>
+        <button class="ap-btn" type="submit">Add</button>
+      </form>
+    </details>
+    <details><summary class="ap-notes" style="cursor:pointer">Back up / move positions to another device</summary>
+      <button class="ap-btn" id="pos-export" type="button">Show backup text</button>
+      <button class="ap-btn" id="pos-import" type="button">Restore from text</button>
+      <textarea class="pos-io" id="pos-io" placeholder="Backup text appears here; paste backup text here to restore."></textarea>
+    </details>
+    <div class="ap-notes" style="margin-top:6px;max-width:none;">Privacy: positions are saved only in this browser (localStorage) on this device.
+    They are never uploaded or committed, and the public page does not contain them. Clearing browser data deletes them, so keep a backup.</div>
+
+    <h3>Today's ranked ideas</h3>
+    {table}
+    {sector_warn}
+    <div class="ap-notes" style="margin-top:6px;max-width:none;">Conviction ranks every section on one scale: the signal's strength within
+    its section × a quality weight for that section (1.0 for confirmed, gated setups such as breakouts and retests, down to 0.6 for the
+    ungated 20/50 cross), + up to 20 for appearing in several sections, + 10 for ★ retests, + liquidity, + the section's tracked hit rate once it has
+    ≥ 15 resolved trades, and a bonus for a sensible stop distance (2–8%). Rules: one idea per ticker, max 2 per sector, skip anything
+    already &gt; 3% past its entry, demote earnings inside ~2 weeks and prices above ${sz['trade_size']} per share.
+    Shares = smaller of ${sz['trade_size']} ÷ entry and ${sz['risk']} ÷ (entry − SL). Click a setup name to jump to that section's full
+    details below; every section and signal from before is still there.</div>
+  </div>
+  <script id="ap-data" type="application/json">{payload}</script>
+</section>"""
+
+
+_AP_SCRIPT = r"""
+(function () {
+  var el = document.getElementById("ap-data");
+  if (!el) return;
+  var D = JSON.parse(el.textContent), KEY = "swingTool.positions.v1";
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { return []; } }
+  function save(ps) { try { localStorage.setItem(KEY, JSON.stringify(ps)); } catch (e) { alert("Could not save in this browser."); } }
+  function r2(x) { return Math.round(x * 100) / 100; }
+  function f2(x) { return (x == null || isNaN(x)) ? "—" : Number(x).toFixed(2); }
+  function esc(x) { return String(x).replace(/[&<>"]/g, function (c) { return {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]; }); }
+
+  function action(p, m) {
+    if (!m) return {cls: "nodata", text: "Not in today's scan data: check the chart yourself"};
+    if (m.l <= p.stop) return {cls: "exit", text: "EXIT: stop touched (low " + f2(m.l) + " ≤ SL " + f2(p.stop) + "). If your stop order was live, you are already out."};
+    if (m.h >= p.tp2) return {cls: "tp", text: "TP2 reached (high " + f2(m.h) + "): close the rest"};
+    if (!p.tp1Taken && m.h >= p.tp1) return {cls: "tp", text: "TP1 reached: sell half, then tick 'TP1 taken' (stop moves to entry)"};
+    var risk0 = p.entry - (p.initStop || p.stop), rNow = risk0 > 0 ? (m.c - p.entry) / risk0 : 0;
+    if (!p.tp1Taken && rNow < 1) return {cls: "hold", text: "Hold: keep the planned stop until the trade is 1R in profit (now " + rNow.toFixed(1) + "R)"};
+    var c = [p.stop];
+    if (m.st && m.st < m.c) c.push(m.st);
+    if (m.low10 && m.low10 * 0.99 < m.c) c.push(r2(m.low10 * 0.99));
+    if (p.tp1Taken) c.push(p.entry);
+    var ns = r2(Math.max.apply(null, c));
+    if (ns > p.stop * 1.005) return {cls: "trail", text: "Raise stop to " + f2(ns) + " (trailing: Supertrend / 10-day low)", ns: ns};
+    return {cls: "hold", text: "Hold: no action"};
+  }
+
+  function render() {
+    var ps = load(), held = {}, cap = Math.min(D.cap, D.max);
+    ps.forEach(function (p) { held[p.t] = 1; });
+    var free = Math.max(0, cap - ps.length);
+    var slots = document.getElementById("ap-slots");
+    slots.className = "ap-slots" + (free === 0 ? " full" : "");
+    slots.textContent = "Open positions: " + ps.length + " of max " + cap + " (market " + D.regime + ") → " +
+      (free === 0 ? "no new trades today; manage what you hold." : free + " new trade(s) allowed.");
+    var wrap = document.getElementById("pos-wrap");
+    if (!ps.length) { wrap.innerHTML = '<div class="ap-notes">No positions stored in this browser yet.</div>'; }
+    else {
+      var h = '<table class="ap-table"><thead><tr><th>Ticker</th><th>Setup</th><th class="num">Entry</th><th class="num">Shares</th>' +
+        '<th class="num">SL</th><th class="num">TP1</th><th class="num">TP2</th><th class="num">Last</th><th class="num">P/L</th>' +
+        '<th class="num">R</th><th>Action</th><th></th></tr></thead><tbody>';
+      ps.forEach(function (p, i) {
+        var m = D.md[p.t], a = action(p, m), last = m ? m.c : null;
+        var pl = last != null ? (last - p.entry) * p.shares : null, risk0 = p.entry - (p.initStop || p.stop);
+        var R = (last != null && risk0 > 0) ? (last - p.entry) / risk0 : null;
+        h += "<tr class='pos-row' data-ticker='" + esc(p.t) + "'><td><b>" + esc(p.t) + "</b><div class='ap-notes'>since " + esc(p.opened || "") + "</div></td><td>" + esc(p.strat || "") +
+          "</td><td class='num mono'>" + f2(p.entry) + "</td><td class='num mono'>" + p.shares + "</td><td class='num mono'>" + f2(p.stop) +
+          "</td><td class='num mono'>" + f2(p.tp1) + "</td><td class='num mono'>" + f2(p.tp2) + "</td><td class='num mono'>" + f2(last) +
+          "</td><td class='num mono' style='color:" + (pl >= 0 ? "var(--sig-pos)" : "var(--sig-neg)") + "'>" + (pl == null ? "—" : (pl >= 0 ? "+$" : "−$") + Math.abs(pl).toFixed(0)) +
+          "</td><td class='num mono'>" + (R == null ? "—" : R.toFixed(1)) + "</td><td><span class='act " + a.cls + "'>" + esc(a.text) + "</span>" +
+          (a.ns ? " <button class='ap-btn' data-act='trail' data-i='" + i + "' data-ns='" + a.ns + "'>Apply</button>" : "") +
+          "</td><td><label class='ap-notes'><input type='checkbox' data-act='tp1' data-i='" + i + "'" + (p.tp1Taken ? " checked" : "") + "> TP1 taken</label> " +
+          "<button class='ap-btn' data-act='stop' data-i='" + i + "'>Edit SL</button> <button class='ap-btn danger' data-act='close' data-i='" + i + "'>Close</button></td></tr>";
+      });
+      wrap.innerHTML = h + "</tbody></table>";
+    }
+    var rows = Array.prototype.slice.call(document.querySelectorAll(".ap-row"));
+    rows.sort(function (a, b) { return a.dataset.rank - b.dataset.rank; });
+    var n = 0;
+    rows.forEach(function (r) {
+      var l = r.querySelector(".ap-lbl");
+      r.classList.remove("ap-take", "ap-bench", "ap-held");
+      if (held[r.dataset.ticker]) { r.classList.add("ap-held"); l.innerHTML = '<span class="lbl held">Held</span>'; return; }
+      if (r.dataset.eligible === "1" && n < free) { r.classList.add("ap-take"); l.innerHTML = '<span class="lbl take">TAKE</span>'; n++; }
+      else { r.classList.add("ap-bench"); l.innerHTML = '<span class="lbl bench">Bench</span>'; }
+    });
+  }
+
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    var ps = load();
+    if (b.dataset.take) {
+      var d = b.closest(".ap-row").dataset;
+      var fill = prompt("Fill price for " + d.ticker + "?", d.entry); if (fill === null) return;
+      var sh = prompt("Shares bought?", d.shares); if (sh === null) return;
+      ps.push({t: d.ticker, entry: +fill, shares: +sh, stop: +d.stop, initStop: +d.stop, tp1: +d.tp1, tp2: +d.tp2,
+               strat: d.strategy, opened: D.date, tp1Taken: false});
+      save(ps); render(); return;
+    }
+    var i = +b.dataset.i;
+    if (b.dataset.act === "close" && confirm("Remove " + ps[i].t + " from your open positions?")) { ps.splice(i, 1); save(ps); render(); }
+    if (b.dataset.act === "trail") { ps[i].stop = +b.dataset.ns; save(ps); render(); }
+    if (b.dataset.act === "stop") { var v = prompt("New stop for " + ps[i].t + "?", ps[i].stop); if (v !== null && +v > 0) { ps[i].stop = +v; save(ps); render(); } }
+    if (b.id === "pos-export") { document.getElementById("pos-io").value = JSON.stringify(ps); }
+    if (b.id === "pos-import") {
+      try { var x = JSON.parse(document.getElementById("pos-io").value); if (Array.isArray(x)) { save(x); render(); } }
+      catch (err) { alert("That backup text is not valid."); }
+    }
+  });
+  document.addEventListener("change", function (e) {
+    var c = e.target; if (c.dataset.act !== "tp1") return;
+    var ps = load(), p = ps[+c.dataset.i]; p.tp1Taken = c.checked; if (c.checked) p.stop = Math.max(p.stop, p.entry);
+    save(ps); render();
+  });
+  var form = document.getElementById("pos-form");
+  if (form) form.addEventListener("submit", function (e) {
+    e.preventDefault(); var f = new FormData(form), ps = load();
+    ps.push({t: String(f.get("t")).toUpperCase().trim(), entry: +f.get("entry"), shares: +f.get("shares"), stop: +f.get("stop"),
+             initStop: +f.get("stop"), tp1: +f.get("tp1"), tp2: +f.get("tp2"), strat: "Manual", opened: D.date, tp1Taken: false});
+    save(ps); form.reset(); render();
+  });
+  function openFromHash() {
+    var id = location.hash.slice(1), n = id && document.getElementById(id);
+    while (n) { if (n.tagName === "DETAILS") n.open = true; n = n.parentElement; }
+  }
+  window.addEventListener("hashchange", openFromHash); openFromHash();
+  render();
+})();
+"""
+
+
 def _sub(title: str, note: str = "") -> str:
     note_html = f' <span class="count">· {note}</span>' if note else ""
     return f'<h3 class="subsection">{title}{note_html}</h3>'
@@ -2378,6 +2645,8 @@ def render(
     trade_logs: dict | None = None,
     trade_scoreboards: dict | None = None,
     strategy_scoreboards: dict | None = None,
+    action_plan: dict | None = None,
+    market_data: dict | None = None,
     sector_counts: dict,
     funnel: dict,
     eligible_refreshed_at: str,
@@ -2538,6 +2807,11 @@ def render(
   </header>
 
   {_render_health(data_health)}
+  {_render_action_plan(action_plan, market_data, date_str)}
+
+  <details class="research" id="research" open>
+  <summary>All sections in detail <span class="s">· the 8 colour-coded strategy blocks, with today's lists, weekly quality lists,
+  scoreboards, trade logs and full tables. Click here to collapse if you only want the Action Plan.</span></summary>
   <h2 class="section">At a glance</h2>
   <div class="glance">{glance}</div>
   <div class="legend">
@@ -2554,6 +2828,7 @@ def render(
   </div>
 
   {cats_html}
+  </details>
 
   <details class="panel" id="p-diag" style="--pc:{PANEL_COLORS['diag']}">
     <summary><span class="p-title">Diagnostics</span><span class="p-desc">Sector distribution and the full filter funnel.</span></summary>
@@ -2569,6 +2844,7 @@ def render(
     <div>Not investment advice. For personal research use.</div>
   </footer>
 </div>
+<script>{_AP_SCRIPT}</script>
 </body>
 </html>
 """

@@ -48,6 +48,7 @@ SETUPS_ARCHIVE_PATH = Path("data/setups_archive.json")          # S/R, retest, r
 FUNDAMENTALS_CACHE_PATH = Path("data/fundamentals_cache.json")
 CROSSOVER_LOG_PATH = Path("data/crossover_log.json")             # legacy (migrated into trade_log.json)
 TRADE_LOG_PATH = Path("data/trade_log.json")                     # every recommendation + tracked outcome
+EARNINGS_CACHE_PATH = Path("data/earnings_cache.json")           # next earnings date for Action Plan candidates
 REPORTS_DIR = Path("reports")
 
 YFINANCE_DELAY_SECONDS = 0.3
@@ -232,6 +233,40 @@ MAX_EMA2050_SHOWN          = 25     # full table cap (dashboard shows top 10)
 # Trade log with outcome tracking for every section
 CROSSOVER_LOG_RETENTION_DAYS = 45   # retention (by signal date) for the whole trade log
 PENDING_EXPIRY_SESSIONS      = 10   # unfilled buy-stop / buy-limit orders expire after this
+
+# ----------------------------------------------------------------------------
+# ACTION PLAN — your trading rules. The plan turns all sections into at most a
+# handful of ready-to-place orders sized to these inputs.
+# ----------------------------------------------------------------------------
+TRADE_SIZE_USD           = 500    # position size per trade (notional cap)
+RISK_PER_TRADE_USD       = 50     # maximum loss per trade if the stop is hit
+MAX_POSITIONS            = 5      # never more than this many open trades
+REGIME_MAX_POSITIONS     = {"Favorable": 5, "Neutral": 3, "Adverse": 1}   # cap by market regime
+ALLOW_FRACTIONAL_SHARES  = False  # True if your broker buys fractional US shares
+ACTION_PLAN_CANDIDATES   = 10     # ranked list shown (picks + bench); your browser trims to free slots
+MAX_PER_SECTOR           = 2      # diversification (ignored for unknown sectors)
+MARKET_ENTRY_VALID_SESSIONS = 2   # "enter at market" ideas go stale after 2 sessions
+MAX_CHASE_PCT            = 3.0    # skip if price already > 3% beyond the planned entry
+EARNINGS_LOOKAHEAD_DAYS  = 14     # flag picks reporting earnings within ~2 weeks
+EARNINGS_MAX_LOOKUPS     = 20     # Yahoo calendar calls per run (top candidates only)
+EARNINGS_CACHE_DAYS      = 3
+
+# Score scale per strategy, so different sections can be ranked on one scale
+STRATEGY_MAX_SCORE = {
+    "breakout": 180, "watchlist": 112, "resistance": 142, "retest": 132, "holding": 132,
+    "supertrend": 122, "support": 122, "reversal": 147, "mtf_rsi": 147, "recovery": 142,
+    "positional": 132, "golden_cross": 132, "ema2050": 100,
+}
+
+# Prior quality weight per strategy: how much a section's raw strength counts before
+# its own track record exists. Gated, confirmed setups weigh 1.0; looser or earlier-
+# stage ones less. The ungated 20/50 cross is discounted most, so a merely fresh cross
+# cannot outrank a filtered breakout. The scoreboard bonus (±10) adjusts this over time.
+STRATEGY_PRIOR = {
+    "breakout": 1.0, "retest": 1.0, "watchlist": 0.9, "supertrend": 0.9, "positional": 0.9,
+    "golden_cross": 0.9, "resistance": 0.85, "holding": 0.85, "support": 0.85, "mtf_rsi": 0.85,
+    "reversal": 0.8, "recovery": 0.75, "ema2050": 0.6,
+}
 
 # Which strategies feed each dashboard block's scoreboard and signal log
 CATEGORY_STRATEGIES = {
@@ -1700,6 +1735,173 @@ def trade_scoreboard(log_rows: list[dict], strategies: list[str]) -> dict:
             "hit_rate": round(winners / resolved * 100) if resolved else None,
             "avg_result": round(sum(results) / len(results), 2) if results else None,
             "days": CROSSOVER_LOG_RETENTION_DAYS}
+
+
+# ---------------- Action Plan: sizing, earnings, conviction ranking ----------------
+
+def size_position(entry: float, stop: float) -> dict:
+    """Shares = min($ size / entry, $ risk / (entry - stop)); whole shares unless fractional allowed."""
+    risk_ps = entry - stop
+    shares = min(TRADE_SIZE_USD / entry, RISK_PER_TRADE_USD / risk_ps) if risk_ps > 0 else 0.0
+    shares = round(shares, 3) if ALLOW_FRACTIONAL_SHARES else float(int(shares))
+    return {"shares": shares, "position_usd": round(shares * entry, 2), "risk_usd": round(shares * risk_ps, 2)}
+
+
+def _row_score(r: dict) -> float:
+    for k in ("score", "watchlist_score", "supertrend_score", "recovery_score"):
+        if r.get(k) is not None:
+            return float(r[k])
+    return 0.0
+
+
+def load_earnings_cache() -> dict:
+    try:
+        return json.loads(EARNINGS_CACHE_PATH.read_text()) if EARNINGS_CACHE_PATH.exists() else {}
+    except Exception:
+        return {}
+
+
+def next_earnings_date(ticker: str, cache: dict, today_str: str, budget: list) -> str | None:
+    """Next earnings date (YYYY-MM-DD) from Yahoo's calendar, cached for a few days.
+    Free calendar data is unreliable: used as a warning only. budget = [remaining lookups]."""
+    e = cache.get(ticker)
+    today = datetime.strptime(today_str, "%Y-%m-%d").date()
+    if e:
+        try:
+            if (today - datetime.strptime(e["fetched"], "%Y-%m-%d").date()).days < EARNINGS_CACHE_DAYS:
+                return e.get("next")
+        except (KeyError, ValueError):
+            pass
+    if budget[0] <= 0:
+        return e.get("next") if e else None
+    budget[0] -= 1
+    nxt = None
+    try:
+        cal = yf.Ticker(ticker).calendar
+        dates = cal.get("Earnings Date") if isinstance(cal, dict) else None
+        if dates is None and hasattr(cal, "loc"):
+            dates = list(cal.loc["Earnings Date"].values)
+        if dates is not None and not isinstance(dates, (list, tuple)):
+            dates = [dates]
+        future = sorted(pd.Timestamp(d).date() for d in (dates or []) if pd.Timestamp(d).date() >= today)
+        nxt = future[0].isoformat() if future else None
+    except Exception:
+        nxt = None
+    cache[ticker] = {"fetched": today_str, "next": nxt}
+    return nxt
+
+
+def build_action_plan(today_lists: dict, price_cache: dict, liquidity_info: dict,
+                      strategy_scoreboards: dict, breadth: dict, today_str: str) -> dict:
+    """Rank every planned recommendation on one conviction scale, apply your rules,
+    and return the top candidates with sizing, validity and warnings."""
+    regime = report.verdict_from_score(breadth["weekly_score"])
+    regime_cap = min(MAX_POSITIONS, REGIME_MAX_POSITIONS.get(regime, 3))
+
+    sections_by_ticker: dict[str, set] = {}
+    for strategy, rows in today_lists.items():
+        for r in rows:
+            sections_by_ticker.setdefault(r["ticker"], set()).add(strategy)
+
+    def track_bonus(strategy: str) -> float:
+        sb = strategy_scoreboards.get(strategy) or {}
+        resolved = sb.get("tp1_hit", 0) + sb.get("tp2_hit", 0) + sb.get("stopped", 0)
+        if resolved < 15 or sb.get("hit_rate") is None:
+            return 0.0                       # not enough evidence yet
+        return max(-10.0, min(10.0, (sb["hit_rate"] - 40) / 4))
+
+    best: dict[str, dict] = {}
+    for strategy, rows in today_lists.items():
+        for r in rows:
+            pl, t = r.get("plan"), r["ticker"]
+            prices = price_cache.get(t)
+            if not pl or prices is None:
+                continue
+            trade = r.get("trade") or {}
+            if trade.get("status") in ("Stopped", "TP2 hit", "Expired"):
+                continue                      # this signal already played out
+            close = float(prices["Close"].iloc[-1])
+            if pl["entry_type"] == "market" and close > pl["entry"] * (1 + MAX_CHASE_PCT / 100):
+                continue                      # already ran away from the planned entry
+            if pl["entry_type"] == "buy_stop" and close > pl["entry"] * (1 + MAX_CHASE_PCT / 100):
+                continue
+            liq = liquidity_info.get(t) or {}
+            risk = pl["risk_pct"]
+            conviction = min(_row_score(r) / STRATEGY_MAX_SCORE.get(strategy, 120) * 100, 100) * STRATEGY_PRIOR.get(strategy, 0.8)
+            conviction += min((len(sections_by_ticker.get(t, ())) - 1) * 10, 20)
+            conviction += 10 if r.get("high_probability") else 0
+            conviction += {"Very high": 5, "High": 3}.get(liq.get("tier"), 0)
+            conviction += track_bonus(strategy)
+            conviction += 5 if 2 <= risk <= 8 else (0 if risk <= 12 else -10)
+            conviction -= 5 if risk < 1.5 else 0
+            sig_date = r.get("cross_date") or prices.index[-1].strftime("%Y-%m-%d")
+            valid_sessions = MARKET_ENTRY_VALID_SESSIONS if pl["entry_type"] == "market" else PENDING_EXPIRY_SESSIONS
+            valid_until = (pd.Timestamp(prices.index[-1].strftime("%Y-%m-%d")) + pd.offsets.BDay(valid_sessions)).strftime("%Y-%m-%d")
+            cand = {
+                "ticker": t, "strategy": strategy, "sector": r.get("sector", "Unknown"),
+                "sections": sorted(sections_by_ticker.get(t, ())), "conviction": round(conviction, 1),
+                "plan": pl, "close": round(close, 2), "signal_date": sig_date, "valid_until": valid_until,
+                "high_probability": bool(r.get("high_probability")), "liquidity": liq, "trade": r.get("trade"),
+                **size_position(pl["entry"], pl["stop"]),
+            }
+            if t not in best or cand["conviction"] > best[t]["conviction"]:
+                best[t] = cand
+
+    ranked = sorted(best.values(), key=lambda c: c["conviction"], reverse=True)
+    earnings_cache, budget = load_earnings_cache(), [EARNINGS_MAX_LOOKUPS]
+    today = datetime.strptime(today_str, "%Y-%m-%d").date()
+    out, per_sector = [], {}
+    for c in ranked:
+        if len(out) >= ACTION_PLAN_CANDIDATES:
+            break
+        notes = []
+        sec = c["sector"]
+        if sector_etf_for(sec):
+            if per_sector.get(sec, 0) >= MAX_PER_SECTOR:
+                continue                      # diversification: max 2 per sector
+        nxt = next_earnings_date(c["ticker"], earnings_cache, today_str, budget)
+        c["earnings"] = nxt
+        if nxt and (datetime.strptime(nxt, "%Y-%m-%d").date() - today).days <= EARNINGS_LOOKAHEAD_DAYS:
+            notes.append(f"Earnings {nxt}: gap risk inside the holding period")
+        if c["shares"] <= 0:
+            notes.append(f"Price ${c['plan']['entry']:.0f} > ${TRADE_SIZE_USD} per trade (fractional shares off)")
+        c["notes"] = notes
+        c["eligible"] = not notes
+        if sector_etf_for(sec):
+            per_sector[sec] = per_sector.get(sec, 0) + 1
+        out.append(c)
+    EARNINGS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    EARNINGS_CACHE_PATH.write_text(json.dumps(earnings_cache, indent=1, sort_keys=True))
+    out.sort(key=lambda c: (not c["eligible"], -c["conviction"]))
+    for i, c in enumerate(out, 1):
+        c["rank"] = i
+    return {"regime": regime, "regime_cap": regime_cap, "candidates": out,
+            "sizing": {"trade_size": TRADE_SIZE_USD, "risk": RISK_PER_TRADE_USD,
+                       "max_positions": MAX_POSITIONS, "fractional": ALLOW_FRACTIONAL_SHARES},
+            "sector_data": any(sector_etf_for(c["sector"]) for c in ranked)}
+
+
+def build_market_data(price_cache: dict) -> dict:
+    """Latest levels per ticker, embedded in the report so YOUR BROWSER can manage
+    the positions you store locally (nothing about your positions is uploaded)."""
+    md = {}
+    for t, df in price_cache.items():
+        try:
+            c = df["Close"]
+            st = patterns.supertrend_state(df, SUPERTREND_ATR_PERIOD, SUPERTREND_MULTIPLIER)
+            md[t] = {
+                "d": df.index[-1].strftime("%Y-%m-%d"),
+                "c": round(float(c.iloc[-1]), 2), "h": round(float(df["High"].iloc[-1]), 2),
+                "l": round(float(df["Low"].iloc[-1]), 2),
+                "sma50": round(float(c.rolling(50).mean().iloc[-1]), 2),
+                "sma200": round(float(c.rolling(200).mean().iloc[-1]), 2) if len(c) >= 200 else None,
+                "ema20": round(float(c.ewm(span=20, adjust=False).mean().iloc[-1]), 2),
+                "low10": round(float(df["Low"].iloc[-10:].min()), 2),
+                "st": st["level"] if st and st["direction"] == 1 else None,
+            }
+        except Exception:
+            continue
+    return md
 
 
 # ---------------- Generic 7-day archive for setup types without their own ----------------
@@ -3247,6 +3449,14 @@ def main() -> None:
         for r in rows:
             r["trade"] = latest_trade.get((r["setup"], r["ticker"]))
 
+    # ---- Action Plan: one ranked, sized, rule-checked list across all sections ----
+    action_plan = build_action_plan(today_lists, price_cache, liquidity_info, strategy_scoreboards, breadth, today_str)
+    market_data = build_market_data(price_cache)
+    elig = [c for c in action_plan["candidates"] if c["eligible"]]
+    log(f"Action plan: regime {action_plan['regime']} → max {action_plan['regime_cap']} positions; "
+        f"{len(action_plan['candidates'])} ranked ({len(elig)} eligible). Top: "
+        + ", ".join(f"{c['ticker']}({c['strategy']},{c['conviction']:.0f})" for c in elig[:5]))
+
     html = report.render(
         date_str=today_str,
         generated_at_utc=generated_at,
@@ -3272,6 +3482,8 @@ def main() -> None:
         golden_cross=golden_shown,
         ema2050=ema2050_shown,
         trade_logs=trade_logs,
+        action_plan=action_plan,
+        market_data=market_data,
         trade_scoreboards=trade_scoreboards,
         strategy_scoreboards=strategy_scoreboards,
         recent_quality=recent_quality,

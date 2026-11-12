@@ -42,7 +42,8 @@ breakout-swing-tool/
 │   ├── recovery_archive.json          Recovery entries, rolling 7 d
 │   ├── setups_archive.json            S/R, retest, holding, reversal, MTF RSI, positional; rolling 7 d
 │   ├── fundamentals_cache.json        Yahoo fundamentals per ticker, refreshed weekly
-│   └── trade_log.json                 Every recommendation's plan + tracked outcome, 45 d
+│   ├── trade_log.json                 Every recommendation's plan + tracked outcome, 45 d
+│   └── earnings_cache.json            Next earnings date for Action Plan candidates (3-day cache)
 ├── reports/YYYY-MM-DD.html            One report per run (committed)
 ├── index.html                         Copy of the latest report (GitHub Pages landing)
 ├── requirements.txt                   pandas, numpy, requests, yfinance==0.2.65
@@ -371,6 +372,52 @@ volume or accumulation bonus`; show top 10.
 
 ---
 
+## 6b. Action Plan (the daily decision layer)
+
+Built just before rendering by `build_action_plan()`; the only part of the report
+needed for daily decisions.
+
+**Your rules** (constants at the top of `daily_scan.py`): `TRADE_SIZE_USD = 500`,
+`RISK_PER_TRADE_USD = 50`, `MAX_POSITIONS = 5`, `REGIME_MAX_POSITIONS` (Favorable 5,
+Neutral 3, Adverse 1), `ALLOW_FRACTIONAL_SHARES = False`, `MAX_PER_SECTOR = 2`,
+`MAX_CHASE_PCT = 3`, `MARKET_ENTRY_VALID_SESSIONS = 2`, `EARNINGS_LOOKAHEAD_DAYS = 14`.
+
+**Ranking.** Every displayed recommendation with a plan becomes a candidate (fake
+breakouts excluded; signals whose logged trade already Stopped, hit TP2 or Expired are
+skipped; market and buy-stop ideas already > 3% past their entry are skipped).
+Conviction = strength within its section (score ÷ `STRATEGY_MAX_SCORE`) ×
+`STRATEGY_PRIOR` (1.0 for confirmed gated setups down to 0.6 for the ungated 20/50
+cross) + up to 20 for multiple sections + 10 for ★ + liquidity (5/3) + track record
+(±10 once a strategy has ≥ 15 resolved trades) + stop-distance adjustment. One
+candidate per ticker (best section kept), max 2 per known sector.
+
+**Sizing.** `size_position()`: shares = min($500 ÷ entry, $50 ÷ (entry − SL)), whole
+shares unless fractional is enabled. With typical 3–8% stops the $500 cap binds, so
+actual risk is often below $50.
+
+**Warnings.** The top candidates (up to 20 lookups per run) get their next earnings
+date from Yahoo's calendar (cached 3 days). Earnings within 14 days, or zero shares
+affordable, make a candidate ineligible: it stays on the list as Bench with the reason.
+
+**Output.** Up to 10 ranked candidates. The server labels the top `regime_cap` eligible
+ones TAKE (as if you held nothing); the page's script relabels them using your stored
+positions (Held / TAKE / Bench, TAKE count = free slots).
+
+**Private positions.** Positions are stored only in the browser's `localStorage`
+(key `swingTool.positions.v1`), never in the repo or the published page.
+`build_market_data()` embeds each ticker's latest close/high/low, SMA50/200, EMA20,
+10-day low and Supertrend level as JSON; the script computes per position: EXIT (low
+≤ stop), TP2 reached, TP1 reached (sell half, stop to entry), Raise stop (only once
+≥ 1R in profit or TP1 taken; to the higher of the Supertrend line and 10-day low − 1%,
+never lower), else Hold. Buttons: I took this, TP1 taken, Edit SL, Apply, Close;
+backup/restore via copy-paste text. Same origin across daily reports, so positions
+persist day to day in the same browser.
+
+The 8 strategy blocks are unchanged and sit in an **expanded** "All sections in detail" area below the plan
+(collapsible with one click). Each idea's setup name links to its strategy block.
+
+---
+
 ## 7. Report (`report.py`)
 
 `render()` builds one self-contained HTML dashboard (embedded CSS, no scripts, no
@@ -455,6 +502,10 @@ pipeline. The ones you are most likely to touch:
 | `RECOVERY_STRICT_MOMENTUM` | False | True restores Recovery's original 3-of-4 momentum gate |
 | `HEALTH_FAIL_FETCH_RATE` / `HEALTH_FAIL_STALE_SHARE` | 0.80 / 0.40 | When a run refuses to publish |
 | `HEALTH_WARN_*` | 0.95 / 0.10 / 0.10 | When the amber partial-data banner appears |
+| `TRADE_SIZE_USD` / `RISK_PER_TRADE_USD` | 500 / 50 | Position size cap and max loss per trade |
+| `MAX_POSITIONS` / `REGIME_MAX_POSITIONS` | 5 / 5-3-1 | Open-position limits overall and by market regime |
+| `ALLOW_FRACTIONAL_SHARES` | False | True if your broker buys fractional US shares |
+| `STRATEGY_PRIOR` | 1.0 … 0.6 | How much each section counts in the Action Plan before its own track record |
 
 When a section is empty, read the funnel before tuning: it shows whether candidates
 died at pattern detection, a base gate, or the elite filter.
@@ -504,6 +555,10 @@ There is no unit-test suite yet. Two checks are used before every release:
 - **A failed health check means no report that day.** That is deliberate (no report
   beats a misleading one); re-run from the Actions tab once Yahoo recovers. GitHub
   emails the repo owner on failed workflow runs by default.
+- **Positions live in one browser.** They don't sync between devices; use the backup
+  text to move them. Clearing browser data deletes them.
+- **Earnings dates are best-effort.** Yahoo's free calendar can be missing or wrong;
+  a missing date is not a guarantee there is no report.
 - **Tracked results are idealised.** Fills are assumed exactly at the planned price
   (no slippage; a gap through a buy-stop still fills at the trigger) and there are no
   costs. Treat the scoreboards as a comparison between sections, not exact P&L.
