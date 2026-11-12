@@ -2,41 +2,41 @@
  "AAPL": {
   "debt_to_equity": 84.286,
   "earnings_growth": 0.141,
-  "fetched": "2026-11-05",
-  "forward_pe": 32.823452,
+  "fetched": "2026-11-12",
+  "forward_pe": 33.72352,
   "free_cashflow": 105658376192.0,
-  "market_cap": 5079143284736.0,
-  "peg": 2.66,
+  "market_cap": 5168079831040.0,
+  "peg": 2.81,
   "profit_margin": 0.27604,
   "revenue_growth": 0.117,
   "roe": 1.42257,
-  "trailing_pe": 38.920937
+  "trailing_pe": 39.60245
  },
  "ABBV": {
   "debt_to_equity": null,
   "earnings_growth": 22.821,
-  "fetched": "2026-11-05",
-  "forward_pe": 18.219929,
+  "fetched": "2026-11-12",
+  "forward_pe": 18.21097,
   "free_cashflow": 17693124608.0,
-  "market_cap": 521146269696.0,
-  "peg": 0.58,
+  "market_cap": 521411461120.0,
+  "peg": 0.59,
   "profit_margin": 0.15666,
   "revenue_growth": 0.103,
   "roe": null,
-  "trailing_pe": 50.658073
+  "trailing_pe": 50.68385
  },
  "ABNB": {
-  "debt_to_equity": 32.004,
-  "earnings_growth": 0.334,
-  "fetched": "2026-11-05",
-  "forward_pe": 28.404716,
-  "free_cashflow": 3206874880.0,
-  "market_cap": 105607823360.0,
-  "peg": 1.43,
-  "profit_margin": 0.2045,
-  "revenue_growth": 0.165,
-  "roe": 0.34542,
-  "trailing_pe": 40.1754
+  "debt_to_equity": 27.008,
+  "earnings_growth": 0.427,
+  "fetched": "2026-11-12",
+  "forward_pe": 28.705957,
+  "free_cashflow": 3249999872.0,
+  "market_cap": 108087918592.0,
+  "peg": 1.6,
+  "profit_margin": 0.23017,
+  "revenue_growth": 0.189,
+  "roe": 0.35788,
+  "trailing_pe": 33.983116
  },
  "ABT": {
   "debt_to_equity": 63.212,
@@ -80,28 +80,28 @@
  "ADI": {
   "debt_to_equity": 27.314,
   "earnings_growth": 1.635,
-  "fetched": "2026-11-05",
-  "forward_pe": 24.619442,
+  "fetched": "2026-11-12",
+  "forward_pe": 24.791553,
   "free_cashflow": 4147339008.0,
-  "market_cap": 196849876992.0,
-  "peg": 0.62,
+  "market_cap": 198226034688.0,
+  "peg": 0.58,
   "profit_margin": 0.29787,
   "revenue_growth": 0.396,
   "roe": 0.12227,
-  "trailing_pe": 48.24703
+  "trailing_pe": 48.58432
  },
  "ADP": {
   "debt_to_equity": 109.764,
   "earnings_growth": 0.137,
-  "fetched": "2026-11-05",
-  "forward_pe": 22.432005,
+  "fetched": "2026-11-12",
+  "forward_pe": 22.640404,
   "free_cashflow": 6463450112.0,
-  "market_cap": 119825276928.0,
-  "peg": 2.72,
+  "market_cap": 120938487808.0,
+  "peg": 2.81,
   "profit_margin": 0.20327999,
   "revenue_growth": 0.061,
   "roe": 0.78942,
-  "trailing_pe": 26.909576
+  "trailing_pe": 27.159575
  },
  "ADSK": {
   "debt_to_equity": 109.518,
@@ -143,17 +143,17 @@
   "trailing_pe": 141.9803
  },
  "ALL": {
-  "debt_to_equity": 22.261,
-  "earnings_growth": 0.612,
-  "fetched": "2026-11-05",
-  "forward_pe": 9.570311,
-  "free_cashflow": 15158625280.0,
-  "market_cap": 68033961984.0,
+  "debt_to_equity": 23.207,
+  "earnings_growth": -0.424,
+  "fetched": "2026-11-12",
+  "forward_pe": 9.21589,
+  "free_cashflow": 8845750272.0,
+  "market_cap": 64876310528.0,
   "peg": 1.92,
-  "profit_margin": 0.18971,
-  "revenue_growth": 0.118,
-  "roe": 0.46113998,
-  "trailing_pe": 5.383353
+  "profit_margin": 0.16573,
+  "revenue_growth": 0.005,
+  "roe": 0.38929,
+  "trailing_pe": 5.946473
  },
  "AMD": {
   "debt_to_equity": 6.361,
@@ -171,54 +171,54 @@
  "AME": {
   "debt_to_equity": 59.564,
   "earnings_growth": 0.156,
-  "fetched": "2026-11-05",
-  "forward_pe": 24.701714,
+  "fetched": "2026-11-12",
+  "forward_pe": 24.920853,
   "free_cashflow": 1512989440.0,
-  "market_cap": 54369005568.0,
-  "peg": 2.82,
+  "market_cap": 54965231616.0,
+  "peg": 2.68,
   "profit_margin": 0.19913,
   "revenue_growth": 0.173,
   "roe": 0.1468,
-  "trailing_pe": 33.440056
+  "trailing_pe": 33.80677
  },
  "AMGN": {
   "debt_to_equity": 376.303,
   "earnings_growth": 0.194,
-  "fetched": "2026-11-05",
-  "forward_pe": 19.428894,
-  "free_cashflow": 6800249856.0,
-  "market_cap": 258815328256.0,
-  "peg": 2.75,
+  "fetched": "2026-11-12",
+  "forward_pe": 18.707518,
+  "free_cashflow": 7376750080.0,
+  "market_cap": 253206069248.0,
+  "peg": 2.8,
   "profit_margin": 0.24139999,
   "revenue_growth": 0.085,
   "roe": 0.78353,
-  "trailing_pe": 27.737972
+  "trailing_pe": 27.13681
  },
  "AMZN": {
   "debt_to_equity": 49.681,
   "earnings_growth": -0.031,
-  "fetched": "2026-11-05",
-  "forward_pe": 24.371632,
+  "fetched": "2026-11-12",
+  "forward_pe": 24.411116,
   "free_cashflow": -34731749376.0,
-  "market_cap": 2876619096064.0,
-  "peg": 1.17,
+  "market_cap": 2878132977664.0,
+  "peg": 1.26,
   "profit_margin": 0.16900998,
   "revenue_growth": 0.121,
   "roe": 0.27416,
-  "trailing_pe": 21.506063
+  "trailing_pe": 21.517382
  },
  "ANET": {
   "debt_to_equity": null,
   "earnings_growth": 0.821,
-  "fetched": "2026-11-05",
-  "forward_pe": 33.05479,
+  "fetched": "2026-11-12",
+  "forward_pe": 32.579094,
   "free_cashflow": 3001337600.0,
-  "market_cap": 225492041728.0,
-  "peg": 1.26,
+  "market_cap": 248485969920.0,
+  "peg": 1.34,
   "profit_margin": 0.39966,
   "revenue_growth": 0.585,
   "roe": 0.33519,
-  "trailing_pe": 47.849865
+  "trailing_pe": 52.72922
  },
  "ANF": {
   "debt_to_equity": 93.997,
@@ -390,17 +390,17 @@
   "trailing_pe": 31.740261
  },
  "BDX": {
-  "debt_to_equity": 68.84,
-  "earnings_growth": -0.314,
-  "fetched": "2026-11-05",
-  "forward_pe": 15.726539,
-  "free_cashflow": 4478374912.0,
-  "market_cap": 56980598784.0,
+  "debt_to_equity": 66.222,
+  "earnings_growth": 0.476,
+  "fetched": "2026-11-12",
+  "forward_pe": 15.079041,
+  "free_cashflow": 4142500096.0,
+  "market_cap": 58432421888.0,
   "peg": 1.11,
-  "profit_margin": 0.0419,
-  "revenue_growth": 0.054,
-  "roe": 0.06607,
-  "trailing_pe": 48.648834
+  "profit_margin": 0.05885,
+  "revenue_growth": -0.105,
+  "roe": 0.056560002,
+  "trailing_pe": 42.39526
  },
  "BHP": {
   "debt_to_equity": 50.473,
@@ -416,17 +416,17 @@
   "trailing_pe": 21.143782
  },
  "BLK": {
-  "debt_to_equity": 23.192,
+  "debt_to_equity": 22.11,
   "earnings_growth": 0.254,
-  "fetched": "2026-11-05",
-  "forward_pe": 18.8885,
-  "free_cashflow": null,
-  "market_cap": 198930972672.0,
-  "peg": 0.96,
+  "fetched": "2026-11-12",
+  "forward_pe": 18.91843,
+  "free_cashflow": 8455499776.0,
+  "market_cap": 189370990592.0,
+  "peg": 1.01,
   "profit_margin": 0.24216999,
   "revenue_growth": 0.191,
-  "roe": null,
-  "trailing_pe": 27.877277
+  "roe": 0.11607,
+  "trailing_pe": 27.92145
  },
  "BP": {
   "debt_to_equity": 87.465,
@@ -453,6 +453,19 @@
   "revenue_growth": 0.05,
   "roe": 0.40148,
   "trailing_pe": 21.475084
+ },
+ "BRO": {
+  "debt_to_equity": 64.241,
+  "earnings_growth": -0.01,
+  "fetched": "2026-11-12",
+  "forward_pe": 15.018661,
+  "free_cashflow": 1209750016.0,
+  "market_cap": 23679479808.0,
+  "peg": 1.85,
+  "profit_margin": 0.17875,
+  "revenue_growth": 0.097,
+  "roe": 0.09797,
+  "trailing_pe": 22.591772
  },
  "BTI": {
   "debt_to_equity": 72.154,
@@ -496,28 +509,28 @@
  "CB": {
   "debt_to_equity": 32.945,
   "earnings_growth": 0.044,
-  "fetched": "2026-11-05",
-  "forward_pe": 12.696042,
+  "fetched": "2026-11-12",
+  "forward_pe": 12.565745,
   "free_cashflow": 11234750464.0,
-  "market_cap": 142962589696.0,
-  "peg": 2.76,
+  "market_cap": 141495402496.0,
+  "peg": 2.78,
   "profit_margin": 0.18127,
   "revenue_growth": 0.003,
   "roe": 0.1425,
-  "trailing_pe": 13.114966
+  "trailing_pe": 12.9803705
  },
  "CDNS": {
   "debt_to_equity": 40.908,
   "earnings_growth": 0.0,
-  "fetched": "2026-11-05",
-  "forward_pe": 33.46988,
+  "fetched": "2026-11-12",
+  "forward_pe": 33.44347,
   "free_cashflow": 1746447872.0,
-  "market_cap": 90413367296.0,
-  "peg": 2.4,
+  "market_cap": 90342031360.0,
+  "peg": 2.41,
   "profit_margin": 0.22514999,
   "revenue_growth": 0.22,
   "roe": 0.22869,
-  "trailing_pe": 65.51093
+  "trailing_pe": 65.45924
  },
  "CF": {
   "debt_to_equity": 40.504,
@@ -561,15 +574,15 @@
  "CHD": {
   "debt_to_equity": 52.942,
   "earnings_growth": 0.187,
-  "fetched": "2026-11-05",
-  "forward_pe": 27.663643,
+  "fetched": "2026-11-12",
+  "forward_pe": 27.630877,
   "free_cashflow": 777249984.0,
-  "market_cap": 26442670080.0,
-  "peg": 3.07,
+  "market_cap": 26440308736.0,
+  "peg": 3.13,
   "profit_margin": 0.124060005,
   "revenue_growth": 0.01,
   "roe": 0.17797,
-  "trailing_pe": 34.365032
+  "trailing_pe": 34.36196
  },
  "CHKP": {
   "debt_to_equity": 74.914,
@@ -600,28 +613,28 @@
  "CL": {
   "debt_to_equity": 1205.625,
   "earnings_growth": 0.033,
-  "fetched": "2026-11-05",
-  "forward_pe": 24.086689,
+  "fetched": "2026-11-12",
+  "forward_pe": 23.90133,
   "free_cashflow": 3373499904.0,
-  "market_cap": 78506352640.0,
-  "peg": 1.74,
+  "market_cap": 77902209024.0,
+  "peg": 1.79,
   "profit_margin": 0.09645,
   "revenue_growth": 0.046,
   "roe": 2.31736,
-  "trailing_pe": 38.428017
+  "trailing_pe": 38.132298
  },
  "CME": {
   "debt_to_equity": 14.507,
   "earnings_growth": 0.161,
-  "fetched": "2026-11-05",
-  "forward_pe": 23.299175,
+  "fetched": "2026-11-12",
+  "forward_pe": 23.847866,
   "free_cashflow": 3051225088.0,
-  "market_cap": 110340276224.0,
-  "peg": 4.19,
+  "market_cap": 113058783232.0,
+  "peg": 4.26,
   "profit_margin": 0.63482,
   "revenue_growth": 0.13,
   "roe": 0.16131,
-  "trailing_pe": 25.268032
+  "trailing_pe": 25.890574
  },
  "CNQ": {
   "debt_to_equity": 43.13,
@@ -637,30 +650,30 @@
   "trailing_pe": 12.19656
  },
  "COP": {
-  "debt_to_equity": 35.639,
-  "earnings_growth": 1.07,
-  "fetched": "2026-11-05",
-  "forward_pe": 12.539317,
-  "free_cashflow": 7691375104.0,
-  "market_cap": 164511154176.0,
-  "peg": 1.06,
-  "profit_margin": 0.144,
-  "revenue_growth": 0.355,
-  "roe": 0.1418,
-  "trailing_pe": 18.137749
+  "debt_to_equity": 35.25,
+  "earnings_growth": 1.419,
+  "fetched": "2026-11-12",
+  "forward_pe": 12.246483,
+  "free_cashflow": 11464625152.0,
+  "market_cap": 162996715520.0,
+  "peg": 1.0,
+  "profit_margin": 0.16758,
+  "revenue_growth": 0.293,
+  "roe": 0.17656,
+  "trailing_pe": 14.526871
  },
  "COST": {
   "debt_to_equity": 28.436,
   "earnings_growth": 0.15,
-  "fetched": "2026-11-05",
-  "forward_pe": 41.812305,
+  "fetched": "2026-11-12",
+  "forward_pe": 43.44583,
   "free_cashflow": 6752750080.0,
-  "market_cap": 463721562112.0,
-  "peg": 5.1,
+  "market_cap": 481951907840.0,
+  "peg": 5.34,
   "profit_margin": 0.03043,
   "revenue_growth": 0.111,
   "roe": 0.28402,
-  "trailing_pe": 50.407993
+  "trailing_pe": 52.38969
  },
  "CP": {
   "debt_to_equity": 52.822,
@@ -691,15 +704,15 @@
  "CRWD": {
   "debt_to_equity": 15.958,
   "earnings_growth": null,
-  "fetched": "2026-11-05",
-  "forward_pe": 149.64297,
+  "fetched": "2026-11-12",
+  "forward_pe": 142.24591,
   "free_cashflow": 1995385472.0,
-  "market_cap": 246768304128.0,
-  "peg": 6.31,
+  "market_cap": 234542514176.0,
+  "peg": 5.83,
   "profit_margin": 0.00834,
   "revenue_growth": 0.258,
   "roe": 0.01461,
-  "trailing_pe": 4820.0
+  "trailing_pe": 3817.6667
  },
  "CSCO": {
   "debt_to_equity": 62.017,
@@ -717,28 +730,28 @@
  "CSX": {
   "debt_to_equity": 135.169,
   "earnings_growth": 0.538,
-  "fetched": "2026-11-05",
-  "forward_pe": 22.247108,
+  "fetched": "2026-11-12",
+  "forward_pe": 22.145134,
   "free_cashflow": 2421499904.0,
-  "market_cap": 96421314560.0,
-  "peg": 1.8,
+  "market_cap": 95672369152.0,
+  "peg": 1.81,
   "profit_margin": 0.23966,
   "revenue_growth": 0.12,
   "roe": 0.26389,
-  "trailing_pe": 27.109375
+  "trailing_pe": 27.031252
  },
  "CTAS": {
   "debt_to_equity": 52.096,
   "earnings_growth": 0.133,
-  "fetched": "2026-11-05",
-  "forward_pe": 37.1744,
+  "fetched": "2026-11-12",
+  "forward_pe": 36.887108,
   "free_cashflow": 1743985280.0,
-  "market_cap": 90942111744.0,
-  "peg": 3.51,
+  "market_cap": 90239287296.0,
+  "peg": 3.53,
   "profit_margin": 0.17824,
   "revenue_growth": 0.109,
   "roe": 0.41375,
-  "trailing_pe": 45.17357
+  "trailing_pe": 44.824455
  },
  "CTVA": {
   "debt_to_equity": 57.256,
@@ -767,17 +780,17 @@
   "trailing_pe": 10.91923
  },
  "CVX": {
-  "debt_to_equity": 18.959,
+  "debt_to_equity": 16.769,
   "earnings_growth": 1.78,
-  "fetched": "2026-11-05",
-  "forward_pe": 13.263568,
-  "free_cashflow": null,
-  "market_cap": 423288995840.0,
-  "peg": 0.97,
-  "profit_margin": 0.11919,
+  "fetched": "2026-11-12",
+  "forward_pe": 12.929642,
+  "free_cashflow": 26048374784.0,
+  "market_cap": 416163364864.0,
+  "peg": 0.8,
+  "profit_margin": 0.11923,
   "revenue_growth": 0.348,
-  "roe": null,
-  "trailing_pe": 15.929516
+  "roe": 0.13853,
+  "trailing_pe": 15.659325
  },
  "CXW": {
   "debt_to_equity": 95.487,
@@ -795,15 +808,15 @@
  "DAL": {
   "debt_to_equity": 88.549,
   "earnings_growth": -0.47,
-  "fetched": "2026-11-05",
-  "forward_pe": 12.227321,
+  "fetched": "2026-11-12",
+  "forward_pe": 12.498289,
   "free_cashflow": 2492124928.0,
-  "market_cap": 58712100864.0,
+  "market_cap": 60080558080.0,
   "peg": 0.21,
   "profit_margin": 0.04581,
   "revenue_growth": 0.211,
   "roe": 0.15913999,
-  "trailing_pe": 17.812374
+  "trailing_pe": 18.227545
  },
  "DD": {
   "debt_to_equity": 23.229,
@@ -834,15 +847,15 @@
  "DE": {
   "debt_to_equity": 230.298,
   "earnings_growth": 0.074,
-  "fetched": "2026-11-05",
-  "forward_pe": 29.527676,
+  "fetched": "2026-11-12",
+  "forward_pe": 30.193304,
   "free_cashflow": 4516250112.0,
-  "market_cap": 182401581056.0,
-  "peg": 1.55,
+  "market_cap": 186513375232.0,
+  "peg": 1.6,
   "profit_margin": 0.10168,
   "revenue_growth": 0.049,
   "roe": 0.18242,
-  "trailing_pe": 37.604225
+  "trailing_pe": 38.45192
  },
  "DHT": {
   "debt_to_equity": 33.231,
@@ -883,6 +896,19 @@
   "roe": 0.04684,
   "trailing_pe": 47.122997
  },
+ "DIS": {
+  "debt_to_equity": 39.404,
+  "earnings_growth": -0.483,
+  "fetched": "2026-11-12",
+  "forward_pe": 15.969494,
+  "free_cashflow": 4860375040.0,
+  "market_cap": 206598078464.0,
+  "peg": 3.88,
+  "profit_margin": 0.086990006,
+  "revenue_growth": 0.068,
+  "roe": 0.0801,
+  "trailing_pe": 24.670103
+ },
  "DLO": {
   "debt_to_equity": 12.464,
   "earnings_growth": 0.286,
@@ -899,28 +925,28 @@
  "DOCU": {
   "debt_to_equity": 10.654,
   "earnings_growth": 0.333,
-  "fetched": "2026-11-05",
-  "forward_pe": 15.450936,
+  "fetched": "2026-11-12",
+  "forward_pe": 15.365121,
   "free_cashflow": 1312730880.0,
-  "market_cap": 15045647360.0,
+  "market_cap": 14980231168.0,
   "peg": 0.74,
   "profit_margin": 0.09816,
   "revenue_growth": 0.094,
   "roe": 0.17803,
-  "trailing_pe": 49.085365
+  "trailing_pe": 48.871952
  },
  "DRI": {
   "debt_to_equity": 415.302,
   "earnings_growth": -0.067,
-  "fetched": "2026-11-05",
-  "forward_pe": 18.603672,
+  "fetched": "2026-11-12",
+  "forward_pe": 18.46895,
   "free_cashflow": 794787520.0,
-  "market_cap": 26091958272.0,
-  "peg": 2.24,
+  "market_cap": 25903009792.0,
+  "peg": 2.34,
   "profit_margin": 0.08845,
   "revenue_growth": 0.051,
   "roe": 0.55431,
-  "trailing_pe": 22.38932
+  "trailing_pe": 22.227184
  },
  "DSGX": {
   "debt_to_equity": 0.458,
@@ -1003,41 +1029,41 @@
  "EMR": {
   "debt_to_equity": 58.658,
   "earnings_growth": 0.185,
-  "fetched": "2026-11-05",
-  "forward_pe": 21.28563,
-  "free_cashflow": 3763249920.0,
-  "market_cap": 95071436800.0,
-  "peg": 1.93,
+  "fetched": "2026-11-12",
+  "forward_pe": 20.789932,
+  "free_cashflow": 3486500096.0,
+  "market_cap": 91649114112.0,
+  "peg": 2.03,
   "profit_margin": 0.14177,
   "revenue_growth": 0.071,
   "roe": 0.13119,
-  "trailing_pe": 35.582466
+  "trailing_pe": 34.876827
  },
  "ENTG": {
   "debt_to_equity": 77.569,
   "earnings_growth": 1.239,
-  "fetched": "2026-11-05",
-  "forward_pe": 25.56747,
+  "fetched": "2026-11-12",
+  "forward_pe": 27.260403,
   "free_cashflow": 497137504.0,
-  "market_cap": 21830535168.0,
-  "peg": 1.26,
+  "market_cap": 23564816384.0,
+  "peg": 1.07,
   "profit_margin": 0.11144,
   "revenue_growth": 0.246,
   "roe": 0.09553,
-  "trailing_pe": 55.59144
+  "trailing_pe": 60.007786
  },
  "EOG": {
-  "debt_to_equity": 25.891,
-  "earnings_growth": 1.094,
-  "fetched": "2026-11-05",
-  "forward_pe": 9.072418,
-  "free_cashflow": 4478750208.0,
-  "market_cap": 77137256448.0,
-  "peg": 1.17,
-  "profit_margin": 0.25733,
-  "revenue_growth": 0.587,
-  "roe": 0.22507,
-  "trailing_pe": 11.444358
+  "debt_to_equity": 24.96,
+  "earnings_growth": 0.974,
+  "fetched": "2026-11-12",
+  "forward_pe": 9.209003,
+  "free_cashflow": 5560249856.0,
+  "market_cap": 79727321088.0,
+  "peg": 1.15,
+  "profit_margin": 0.28059,
+  "revenue_growth": 0.427,
+  "roe": 0.25829,
+  "trailing_pe": 9.927051
  },
  "EPAM": {
   "debt_to_equity": 4.326,
@@ -1055,15 +1081,15 @@
  "EQIX": {
   "debt_to_equity": 181.481,
   "earnings_growth": 0.294,
-  "fetched": "2026-11-05",
-  "forward_pe": 50.934525,
+  "fetched": "2026-11-12",
+  "forward_pe": 51.60957,
   "free_cashflow": 3177874944.0,
-  "market_cap": 104342593536.0,
-  "peg": 3.01,
+  "market_cap": 105725468672.0,
+  "peg": 3.12,
   "profit_margin": 0.16240999,
   "revenue_growth": 0.104,
   "roe": 0.1145,
-  "trailing_pe": 63.30871
+  "trailing_pe": 64.14775
  },
  "EQNR": {
   "debt_to_equity": 65.923,
@@ -1094,41 +1120,41 @@
  "ESTC": {
   "debt_to_equity": 45.94,
   "earnings_growth": null,
-  "fetched": "2026-11-05",
-  "forward_pe": 22.674751,
+  "fetched": "2026-11-12",
+  "forward_pe": 22.075518,
   "free_cashflow": 504316864.0,
-  "market_cap": 9415617536.0,
+  "market_cap": 9166788608.0,
   "peg": 1.37,
   "profit_margin": 0.20844,
   "revenue_growth": 0.151,
   "roe": 0.33122003,
-  "trailing_pe": 25.622858
+  "trailing_pe": 24.945713
  },
  "EW": {
-  "debt_to_equity": 6.568,
-  "earnings_growth": -0.254,
-  "fetched": "2026-11-05",
-  "forward_pe": 29.379938,
-  "free_cashflow": 1232412544.0,
-  "market_cap": 57276870656.0,
-  "peg": 1.99,
-  "profit_margin": 0.15431,
-  "revenue_growth": 0.136,
-  "roe": 0.09175,
-  "trailing_pe": 59.14881
+  "debt_to_equity": 6.427,
+  "earnings_growth": 0.067,
+  "fetched": "2026-11-12",
+  "forward_pe": 31.264587,
+  "free_cashflow": 1145337472.0,
+  "market_cap": 60840747008.0,
+  "peg": 2.13,
+  "profit_margin": 0.15301,
+  "revenue_growth": 0.105,
+  "roe": 0.09333,
+  "trailing_pe": 61.51744
  },
  "EXPD": {
   "debt_to_equity": 24.569,
   "earnings_growth": 0.616,
-  "fetched": "2026-11-05",
-  "forward_pe": 23.19064,
-  "free_cashflow": 772849280.0,
-  "market_cap": 25523888128.0,
-  "peg": 3.24,
+  "fetched": "2026-11-12",
+  "forward_pe": 22.308151,
+  "free_cashflow": 788741760.0,
+  "market_cap": 25123645440.0,
+  "peg": 2.58,
   "profit_margin": 0.07858,
   "revenue_growth": 0.419,
   "roe": 0.45082,
-  "trailing_pe": 25.119442
+  "trailing_pe": 24.72554
  },
  "FANG": {
   "debt_to_equity": 28.678,
@@ -1146,15 +1172,15 @@
  "FAST": {
   "debt_to_equity": 10.886,
   "earnings_growth": 0.207,
-  "fetched": "2026-11-05",
-  "forward_pe": 37.715385,
+  "fetched": "2026-11-12",
+  "forward_pe": 39.284958,
   "free_cashflow": 916437504.0,
-  "market_cap": 61047910400.0,
-  "peg": 3.38,
+  "market_cap": 63663763456.0,
+  "peg": 3.54,
   "profit_margin": 0.15619999,
   "revenue_growth": 0.155,
   "roe": 0.35262,
-  "trailing_pe": 43.260162
+  "trailing_pe": 45.113823
  },
  "FCX": {
   "debt_to_equity": 30.81,
@@ -1172,28 +1198,28 @@
  "FDS": {
   "debt_to_equity": 77.049,
   "earnings_growth": -0.154,
-  "fetched": "2026-11-05",
-  "forward_pe": 15.746238,
+  "fetched": "2026-11-12",
+  "forward_pe": 15.415202,
   "free_cashflow": 653727232.0,
-  "market_cap": 12068997120.0,
-  "peg": 1.13,
+  "market_cap": 11811174400.0,
+  "peg": 1.09,
   "profit_margin": 0.21544,
   "revenue_growth": 0.063,
   "roe": 0.25475,
-  "trailing_pe": 23.485931
+  "trailing_pe": 22.984215
  },
  "FDX": {
   "debt_to_equity": 98.727,
   "earnings_growth": -0.689,
-  "fetched": "2026-11-05",
-  "forward_pe": 15.776103,
+  "fetched": "2026-11-12",
+  "forward_pe": 15.416042,
   "free_cashflow": 5656625152.0,
-  "market_cap": 77145268224.0,
-  "peg": 1.95,
+  "market_cap": 75559739392.0,
+  "peg": 1.96,
   "profit_margin": 0.0468,
   "revenue_growth": 0.119,
   "roe": 0.14846,
-  "trailing_pe": 17.757412
+  "trailing_pe": 17.392454
  },
  "FIGS": {
   "debt_to_equity": 13.036,
@@ -1302,11 +1328,11 @@
  "GILD": {
   "debt_to_equity": 202.462,
   "earnings_growth": -0.202,
-  "fetched": "2026-11-05",
-  "forward_pe": 17.28872,
+  "fetched": "2026-11-12",
+  "forward_pe": 16.77018,
   "free_cashflow": 10676875264.0,
-  "market_cap": 216414273536.0,
-  "peg": 2.48,
+  "market_cap": 210522652672.0,
+  "peg": 2.34,
   "profit_margin": -0.124630004,
   "revenue_growth": 0.068,
   "roe": -0.22445999,
@@ -1380,15 +1406,15 @@
  "HPE": {
   "debt_to_equity": 76.464,
   "earnings_growth": 4.102,
-  "fetched": "2026-11-05",
-  "forward_pe": 10.577888,
+  "fetched": "2026-11-12",
+  "forward_pe": 10.611675,
   "free_cashflow": 4738625024.0,
-  "market_cap": 66492715008.0,
-  "peg": 0.42,
+  "market_cap": 66705108992.0,
+  "peg": 0.38,
   "profit_margin": 0.06666,
   "revenue_growth": 0.337,
   "roe": 0.10936,
-  "trailing_pe": 25.819588
+  "trailing_pe": 25.902061
  },
  "IDXX": {
   "debt_to_equity": 52.053,
@@ -1471,15 +1497,15 @@
  "IOT": {
   "debt_to_equity": 4.338,
   "earnings_growth": null,
-  "fetched": "2026-11-05",
-  "forward_pe": 45.16204,
+  "fetched": "2026-11-12",
+  "forward_pe": 44.560722,
   "free_cashflow": 260455008.0,
-  "market_cap": 25069758464.0,
+  "market_cap": 24735963136.0,
   "peg": null,
   "profit_margin": 0.04901,
   "revenue_growth": 0.299,
   "roe": 0.0643,
-  "trailing_pe": 305.78574
+  "trailing_pe": 301.7143
  },
  "ISRG": {
   "debt_to_equity": null,
@@ -1510,15 +1536,15 @@
  "ITW": {
   "debt_to_equity": 298.281,
   "earnings_growth": 0.068,
-  "fetched": "2026-11-05",
-  "forward_pe": 23.762365,
+  "fetched": "2026-11-12",
+  "forward_pe": 23.379368,
   "free_cashflow": 2306625024.0,
-  "market_cap": 83398492160.0,
-  "peg": 2.77,
+  "market_cap": 82054225920.0,
+  "peg": 2.73,
   "profit_margin": 0.19392,
   "revenue_growth": 0.044,
   "roe": 1.01653,
-  "trailing_pe": 26.17752
+  "trailing_pe": 25.755575
  },
  "JCI": {
   "debt_to_equity": 67.983,
@@ -1549,28 +1575,28 @@
  "JNJ": {
   "debt_to_equity": 54.767,
   "earnings_growth": -0.959,
-  "fetched": "2026-11-05",
-  "forward_pe": 23.784071,
+  "fetched": "2026-11-12",
+  "forward_pe": 24.126686,
   "free_cashflow": 18501875712.0,
-  "market_cap": 665188040704.0,
-  "peg": 2.99,
+  "market_cap": 675033907200.0,
+  "peg": 3.16,
   "profit_margin": 0.16203,
   "revenue_growth": 0.059,
   "roe": 0.20018,
-  "trailing_pe": 41.9302
+  "trailing_pe": 42.6155
  },
  "JPM": {
   "debt_to_equity": null,
   "earnings_growth": 0.099,
-  "fetched": "2026-11-05",
-  "forward_pe": 13.768786,
+  "fetched": "2026-11-12",
+  "forward_pe": 13.427804,
   "free_cashflow": null,
-  "market_cap": 935066664960.0,
-  "peg": 1.43,
+  "market_cap": 911909847040.0,
+  "peg": 1.45,
   "profit_margin": 0.34592,
   "revenue_growth": 0.102,
   "roe": 0.18013,
-  "trailing_pe": 14.769714
+  "trailing_pe": 14.349771
  },
  "KDP": {
   "debt_to_equity": 96.167,
@@ -1599,17 +1625,17 @@
   "trailing_pe": 45.02977
  },
  "KMB": {
-  "debt_to_equity": 348.933,
-  "earnings_growth": -0.323,
-  "fetched": "2026-11-05",
-  "forward_pe": 14.705267,
-  "free_cashflow": 941124992.0,
-  "market_cap": 66757881856.0,
-  "peg": 2.16,
-  "profit_margin": 0.1179,
-  "revenue_growth": 0.006,
-  "roe": 1.04913,
-  "trailing_pe": 21.457594
+  "debt_to_equity": 211.874,
+  "earnings_growth": 3.007,
+  "fetched": "2026-11-12",
+  "forward_pe": 15.282351,
+  "free_cashflow": 1602125056.0,
+  "market_cap": 66804695040.0,
+  "peg": 2.29,
+  "profit_margin": 0.19931999,
+  "revenue_growth": -0.004,
+  "roe": 0.78379995,
+  "trailing_pe": 20.77481
  },
  "KMI": {
   "debt_to_equity": 101.736,
@@ -1640,15 +1666,15 @@
  "KO": {
   "debt_to_equity": 107.449,
   "earnings_growth": 0.083,
-  "fetched": "2026-11-05",
-  "forward_pe": 27.155811,
+  "fetched": "2026-11-12",
+  "forward_pe": 27.64845,
   "free_cashflow": 4349000192.0,
-  "market_cap": 412122251264.0,
-  "peg": 3.99,
+  "market_cap": 419736616960.0,
+  "peg": 4.08,
   "profit_margin": 0.28654,
   "revenue_growth": 0.074,
   "roe": 0.40592998,
-  "trailing_pe": 28.259586
+  "trailing_pe": 28.78171
  },
  "KRP": {
   "debt_to_equity": 58.315,
@@ -1705,28 +1731,28 @@
  "LLY": {
   "debt_to_equity": 122.925,
   "earnings_growth": 0.163,
-  "fetched": "2026-11-05",
-  "forward_pe": 28.273577,
+  "fetched": "2026-11-12",
+  "forward_pe": 28.43931,
   "free_cashflow": 9343699968.0,
-  "market_cap": 1263067463680.0,
+  "market_cap": 1280258998272.0,
   "peg": 1.32,
   "profit_margin": 0.31898,
   "revenue_growth": 0.386,
   "roe": 0.86024004,
-  "trailing_pe": 46.023693
+  "trailing_pe": 46.650116
  },
  "LMT": {
   "debt_to_equity": 203.697,
   "earnings_growth": 0.147,
-  "fetched": "2026-11-05",
-  "forward_pe": 17.864096,
+  "fetched": "2026-11-12",
+  "forward_pe": 18.328455,
   "free_cashflow": 5645499904.0,
-  "market_cap": 137456992256.0,
-  "peg": 1.17,
+  "market_cap": 140924370944.0,
+  "peg": 1.11,
   "profit_margin": 0.082320005,
   "revenue_growth": 0.113,
   "roe": 0.8019,
-  "trailing_pe": 21.130682
+  "trailing_pe": 21.663708
  },
  "LPG": {
   "debt_to_equity": 52.263,
@@ -1744,15 +1770,15 @@
  "MA": {
   "debt_to_equity": 355.163,
   "earnings_growth": 0.217,
-  "fetched": "2026-11-05",
-  "forward_pe": 29.054928,
+  "fetched": "2026-11-12",
+  "forward_pe": 28.523016,
   "free_cashflow": 16629250048.0,
-  "market_cap": 586022780928.0,
-  "peg": 1.69,
+  "market_cap": 575612190720.0,
+  "peg": 1.72,
   "profit_margin": 0.46732,
   "revenue_growth": 0.14,
   "roe": 2.31366,
-  "trailing_pe": 35.200417
+  "trailing_pe": 34.57509
  },
  "MANH": {
   "debt_to_equity": 25.776,
@@ -1782,16 +1808,16 @@
  },
  "MCK": {
   "debt_to_equity": null,
-  "earnings_growth": -0.176,
-  "fetched": "2026-11-05",
-  "forward_pe": 21.122265,
-  "free_cashflow": 6801249792.0,
-  "market_cap": 124686385152.0,
-  "peg": 1.88,
-  "profit_margin": 0.01117,
-  "revenue_growth": 0.077,
+  "earnings_growth": 0.17,
+  "fetched": "2026-11-12",
+  "forward_pe": 20.687246,
+  "free_cashflow": 7402625024.0,
+  "market_cap": 124668952576.0,
+  "peg": 1.87,
+  "profit_margin": 0.01122,
+  "revenue_growth": 0.076,
   "roe": null,
-  "trailing_pe": 27.584213
+  "trailing_pe": 27.851173
  },
  "MCO": {
   "debt_to_equity": 223.271,
@@ -1809,15 +1835,15 @@
  "MDLZ": {
   "debt_to_equity": 83.777,
   "earnings_growth": 0.789,
-  "fetched": "2026-11-05",
-  "forward_pe": 20.033775,
+  "fetched": "2026-11-12",
+  "forward_pe": 19.832539,
   "free_cashflow": 2982374912.0,
-  "market_cap": 85292187648.0,
-  "peg": 0.96,
+  "market_cap": 84431413248.0,
+  "peg": 0.98,
   "profit_margin": 0.10221,
   "revenue_growth": 0.023,
   "roe": 0.15478,
-  "trailing_pe": 21.25552
+  "trailing_pe": 21.041008
  },
  "META": {
   "debt_to_equity": 42.161,
@@ -1872,30 +1898,30 @@
   "trailing_pe": 16.66755
  },
  "MNST": {
-  "debt_to_equity": 0.992,
-  "earnings_growth": 0.18,
-  "fetched": "2026-11-05",
-  "forward_pe": 37.19727,
-  "free_cashflow": 1681231104.0,
-  "market_cap": 95503777792.0,
-  "peg": 2.43,
-  "profit_margin": 0.23079,
-  "revenue_growth": 0.202,
-  "roe": 0.25704,
-  "trailing_pe": 45.138885
+  "debt_to_equity": 0.915,
+  "earnings_growth": 0.08,
+  "fetched": "2026-11-12",
+  "forward_pe": 34.813816,
+  "free_cashflow": 1450303616.0,
+  "market_cap": 88871043072.0,
+  "peg": 29.06,
+  "profit_margin": 0.22657,
+  "revenue_growth": 0.167,
+  "roe": 0.24700001,
+  "trailing_pe": 41.272728
  },
  "MPC": {
   "debt_to_equity": 115.416,
   "earnings_growth": 4.896,
-  "fetched": "2026-11-05",
-  "forward_pe": 6.3479137,
+  "fetched": "2026-11-12",
+  "forward_pe": 6.558864,
   "free_cashflow": 16243250176.0,
-  "market_cap": 106919796736.0,
-  "peg": 0.99,
+  "market_cap": 109686185984.0,
+  "peg": 0.9,
   "profit_margin": 0.08342,
   "revenue_growth": 0.609,
   "roe": 0.6046,
-  "trailing_pe": 7.780463
+  "trailing_pe": 7.981771
  },
  "MPWR": {
   "debt_to_equity": 0.572,
@@ -1911,43 +1937,43 @@
   "trailing_pe": 65.25858
  },
  "MRK": {
-  "debt_to_equity": 128.408,
+  "debt_to_equity": 119.928,
   "earnings_growth": -0.12,
-  "fetched": "2026-11-05",
-  "forward_pe": 16.702473,
-  "free_cashflow": null,
-  "market_cap": 370963906560.0,
-  "peg": 3.39,
+  "fetched": "2026-11-12",
+  "forward_pe": 16.387983,
+  "free_cashflow": 14024250368.0,
+  "market_cap": 362834853888.0,
+  "peg": 3.58,
   "profit_margin": 0.03641,
   "revenue_growth": 0.047,
-  "roe": null,
-  "trailing_pe": 151.87878
+  "roe": 0.05057,
+  "trailing_pe": 148.66666
  },
  "MSFT": {
   "debt_to_equity": 28.465,
   "earnings_growth": 0.323,
-  "fetched": "2026-11-05",
-  "forward_pe": 22.986574,
+  "fetched": "2026-11-12",
+  "forward_pe": 21.537926,
   "free_cashflow": 2994125056.0,
-  "market_cap": 4127478775808.0,
-  "peg": 1.54,
+  "market_cap": 3869975511040.0,
+  "peg": 1.58,
   "profit_margin": 0.41169998,
   "revenue_growth": 0.188,
   "roe": 0.34221,
-  "trailing_pe": 29.00835
+  "trailing_pe": 27.198591
  },
  "MSI": {
-  "debt_to_equity": 357.85,
-  "earnings_growth": 0.095,
-  "fetched": "2026-11-05",
-  "forward_pe": 25.575552,
-  "free_cashflow": 1979000064.0,
-  "market_cap": 82248761344.0,
-  "peg": 2.16,
-  "profit_margin": 0.17438999,
-  "revenue_growth": 0.133,
-  "roe": 0.91567004,
-  "trailing_pe": 39.13307
+  "debt_to_equity": 345.593,
+  "earnings_growth": -0.081,
+  "fetched": "2026-11-12",
+  "forward_pe": 27.376966,
+  "free_cashflow": 1906000000.0,
+  "market_cap": 88490024960.0,
+  "peg": 2.3,
+  "profit_margin": 0.16535999,
+  "revenue_growth": 0.122,
+  "roe": 0.7698,
+  "trailing_pe": 43.058727
  },
  "MSM": {
   "debt_to_equity": 37.048,
@@ -1965,15 +1991,15 @@
  "MU": {
   "debt_to_equity": 3.743,
   "earnings_growth": 10.595,
-  "fetched": "2026-11-05",
-  "forward_pe": 3.8276286,
+  "fetched": "2026-11-12",
+  "forward_pe": 3.9049773,
   "free_cashflow": 29140250624.0,
-  "market_cap": 899741646848.0,
+  "market_cap": 917923627008.0,
   "peg": 0.16,
   "profit_margin": 0.63796,
   "revenue_growth": 3.793,
   "roe": 0.8826,
-  "trailing_pe": 10.698641
+  "trailing_pe": 10.914839
  },
  "MUR": {
   "debt_to_equity": 41.896,
@@ -2002,16 +2028,16 @@
   "trailing_pe": 13.701857
  },
  "NET": {
-  "debt_to_equity": 217.858,
+  "debt_to_equity": 321.372,
   "earnings_growth": null,
-  "fetched": "2026-11-05",
-  "forward_pe": 157.54573,
-  "free_cashflow": 691946368.0,
-  "market_cap": 94923726848.0,
+  "fetched": "2026-11-12",
+  "forward_pe": 170.3292,
+  "free_cashflow": 801445504.0,
+  "market_cap": 112893558784.0,
   "peg": 2.38,
-  "profit_margin": -0.082100004,
-  "revenue_growth": 0.359,
-  "roe": -0.14425999,
+  "profit_margin": -0.087469995,
+  "revenue_growth": 0.392,
+  "roe": -0.17003,
   "trailing_pe": null
  },
  "NUE": {
@@ -2069,28 +2095,28 @@
  "NXPI": {
   "debt_to_equity": 88.071,
   "earnings_growth": 0.403,
-  "fetched": "2026-11-05",
-  "forward_pe": 14.448442,
+  "fetched": "2026-11-12",
+  "forward_pe": 14.693784,
   "free_cashflow": 4086625024.0,
-  "market_cap": 66796564480.0,
+  "market_cap": 67930804224.0,
   "peg": 0.53,
   "profit_margin": 0.23395,
   "revenue_growth": 0.193,
   "roe": 0.28674,
-  "trailing_pe": 20.850512
+  "trailing_pe": 21.204563
  },
  "OKTA": {
   "debt_to_equity": 0.76,
   "earnings_growth": 0.757,
-  "fetched": "2026-11-05",
-  "forward_pe": 43.636154,
+  "fetched": "2026-11-12",
+  "forward_pe": 41.62622,
   "free_cashflow": 1037625024.0,
-  "market_cap": 33399539712.0,
-  "peg": 1.36,
+  "market_cap": 31861114880.0,
+  "peg": 1.28,
   "profit_margin": 0.09632,
   "revenue_growth": 0.106,
   "roe": 0.043130003,
-  "trailing_pe": 115.09036
+  "trailing_pe": 109.78916
  },
  "OSW": {
   "debt_to_equity": 15.605,
@@ -2119,17 +2145,17 @@
   "trailing_pe": 19.654596
  },
  "OXY": {
-  "debt_to_equity": 34.511,
-  "earnings_growth": 9.649,
-  "fetched": "2026-11-05",
-  "forward_pe": 11.431135,
-  "free_cashflow": 3788124928.0,
-  "market_cap": 57309212672.0,
-  "peg": 0.91,
-  "profit_margin": 0.30318,
-  "revenue_growth": 0.534,
-  "roe": 0.10629,
-  "trailing_pe": 16.286932
+  "debt_to_equity": 28.803,
+  "earnings_growth": 1.494,
+  "fetched": "2026-11-12",
+  "forward_pe": 11.119745,
+  "free_cashflow": 4909374976.0,
+  "market_cap": 57233977344.0,
+  "peg": 0.85,
+  "profit_margin": 0.32953998,
+  "revenue_growth": 0.19,
+  "roe": 0.13181,
+  "trailing_pe": 12.748331
  },
  "P": {
   "debt_to_equity": 14.622,
@@ -2173,15 +2199,15 @@
  "PANW": {
   "debt_to_equity": 9.337,
   "earnings_growth": null,
-  "fetched": "2026-11-05",
-  "forward_pe": 71.33327,
+  "fetched": "2026-11-12",
+  "forward_pe": 68.48897,
   "free_cashflow": 4240624896.0,
-  "market_cap": 284850946048.0,
-  "peg": 1.79,
+  "market_cap": 273744674816.0,
+  "peg": 1.67,
   "profit_margin": 0.02674,
   "revenue_growth": 0.345,
   "roe": 0.01739,
-  "trailing_pe": 870.10004
+  "trailing_pe": 836.175
  },
  "PARR": {
   "debt_to_equity": 56.166,
@@ -2210,17 +2236,17 @@
   "trailing_pe": 48.765152
  },
  "PAYC": {
-  "debt_to_equity": 171.969,
-  "earnings_growth": 0.481,
-  "fetched": "2026-11-05",
-  "forward_pe": 19.21619,
-  "free_cashflow": 423724992.0,
-  "market_cap": 12086406144.0,
-  "peg": 1.39,
-  "profit_margin": 0.22778,
-  "revenue_growth": 0.098,
-  "roe": 0.41089,
-  "trailing_pe": 28.37672
+  "debt_to_equity": 116.429,
+  "earnings_growth": 0.526,
+  "fetched": "2026-11-12",
+  "forward_pe": 16.040815,
+  "free_cashflow": 608312512.0,
+  "market_cap": 10928141312.0,
+  "peg": 1.08,
+  "profit_margin": 0.23281,
+  "revenue_growth": 0.102,
+  "roe": 0.42215002,
+  "trailing_pe": 23.198853
  },
  "PAYS": {
   "debt_to_equity": 9.492,
@@ -2249,17 +2275,17 @@
   "trailing_pe": 6.522007
  },
  "PCTY": {
-  "debt_to_equity": 10.887,
-  "earnings_growth": 0.276,
-  "fetched": "2026-11-05",
-  "forward_pe": 17.658512,
-  "free_cashflow": 359865120.0,
-  "market_cap": 8919712768.0,
-  "peg": 1.38,
-  "profit_margin": 0.15228,
-  "revenue_growth": 0.11,
-  "roe": 0.21972999,
-  "trailing_pe": 34.747967
+  "debt_to_equity": 16.231,
+  "earnings_growth": 0.244,
+  "fetched": "2026-11-12",
+  "forward_pe": 17.816763,
+  "free_cashflow": 520204640.0,
+  "market_cap": 9355473920.0,
+  "peg": 1.45,
+  "profit_margin": 0.15395,
+  "revenue_growth": 0.107,
+  "roe": 0.24801001,
+  "trailing_pe": 34.95922
  },
  "PDFS": {
   "debt_to_equity": 19.21,
@@ -2290,28 +2316,28 @@
  "PG": {
   "debt_to_equity": 70.343,
   "earnings_growth": 0.008,
-  "fetched": "2026-11-05",
-  "forward_pe": 22.612278,
+  "fetched": "2026-11-12",
+  "forward_pe": 22.662365,
   "free_cashflow": 12652999680.0,
-  "market_cap": 387811475456.0,
-  "peg": 4.16,
+  "market_cap": 388622680064.0,
+  "peg": 4.33,
   "profit_margin": 0.18229,
   "revenue_growth": 0.04,
   "roe": 0.29609,
-  "trailing_pe": 25.198797
+  "trailing_pe": 25.251507
  },
  "PGR": {
   "debt_to_equity": 24.327,
   "earnings_growth": -0.018,
-  "fetched": "2026-11-05",
-  "forward_pe": 14.460365,
+  "fetched": "2026-11-12",
+  "forward_pe": 14.414213,
   "free_cashflow": 13018125312.0,
-  "market_cap": 136045830144.0,
-  "peg": 69.94,
+  "market_cap": 135298449408.0,
+  "peg": 70.74,
   "profit_margin": 0.12674,
   "revenue_growth": 0.03,
   "roe": 0.33238998,
-  "trailing_pe": 11.829723
+  "trailing_pe": 11.764735
  },
  "PH": {
   "debt_to_equity": 108.762,
@@ -2342,15 +2368,15 @@
  "PLTR": {
   "debt_to_equity": 1.986,
   "earnings_growth": 1.444,
-  "fetched": "2026-11-05",
-  "forward_pe": 69.22159,
+  "fetched": "2026-11-12",
+  "forward_pe": 67.9069,
   "free_cashflow": 2652487680.0,
-  "market_cap": 413710745600.0,
-  "peg": 1.59,
+  "market_cap": 415397380096.0,
+  "peg": 1.38,
   "profit_margin": 0.50343,
   "revenue_growth": 0.959,
   "roe": 0.40907001,
-  "trailing_pe": 120.9155
+  "trailing_pe": 121.40845
  },
  "PPG": {
   "debt_to_equity": 86.938,
@@ -2394,28 +2420,28 @@
  "PSX": {
   "debt_to_equity": 52.193,
   "earnings_growth": 42.99,
-  "fetched": "2026-11-05",
-  "forward_pe": 8.2623005,
+  "fetched": "2026-11-12",
+  "forward_pe": 8.01408,
   "free_cashflow": 9516749824.0,
-  "market_cap": 101274484736.0,
-  "peg": 0.87,
+  "market_cap": 100903911424.0,
+  "peg": 0.8,
   "profit_margin": 0.07477,
   "revenue_growth": 0.464,
   "roe": 0.39835998,
-  "trailing_pe": 8.326812
+  "trailing_pe": 8.296344
  },
  "PTC": {
-  "debt_to_equity": 46.335,
-  "earnings_growth": -0.12,
-  "fetched": "2026-11-05",
-  "forward_pe": 19.788427,
-  "free_cashflow": 1031425152.0,
-  "market_cap": 21202837504.0,
-  "peg": 1.82,
-  "profit_margin": 0.41429,
-  "revenue_growth": -0.068,
-  "roe": 0.35053003,
-  "trailing_pe": 21.85666
+  "debt_to_equity": 52.659,
+  "earnings_growth": -0.5,
+  "fetched": "2026-11-12",
+  "forward_pe": 19.567118,
+  "free_cashflow": null,
+  "market_cap": 21307123712.0,
+  "peg": 2.62,
+  "profit_margin": 0.37802,
+  "revenue_growth": -0.247,
+  "roe": 0.2855,
+  "trailing_pe": 21.964165
  },
  "PWR": {
   "debt_to_equity": 67.78,
@@ -2429,6 +2455,19 @@
   "revenue_growth": 0.411,
   "roe": 0.15337,
   "trailing_pe": 73.17756
+ },
+ "PYPL": {
+  "debt_to_equity": 73.146,
+  "earnings_growth": -0.038,
+  "fetched": "2026-11-12",
+  "forward_pe": 10.07881,
+  "free_cashflow": 4487374848.0,
+  "market_cap": 49407553536.0,
+  "peg": 0.94,
+  "profit_margin": 0.13783,
+  "revenue_growth": 0.02,
+  "roe": 0.23825,
+  "trailing_pe": 11.351146
  },
  "QCOM": {
   "debt_to_equity": 55.21,
@@ -2485,15 +2524,15 @@
  "REGN": {
   "debt_to_equity": 8.081,
   "earnings_growth": 0.355,
-  "fetched": "2026-11-05",
-  "forward_pe": 13.15952,
+  "fetched": "2026-11-12",
+  "forward_pe": 13.565924,
   "free_cashflow": 2579912448.0,
-  "market_cap": 96275816448.0,
-  "peg": 1.66,
+  "market_cap": 99248906240.0,
+  "peg": 1.12,
   "profit_margin": 0.28511998,
   "revenue_growth": 0.363,
   "roe": 0.14948,
-  "trailing_pe": 20.571838
+  "trailing_pe": 21.207117
  },
  "RELY": {
   "debt_to_equity": 3.396,
@@ -2563,15 +2602,15 @@
  "ROST": {
   "debt_to_equity": 70.281,
   "earnings_growth": 0.705,
-  "fetched": "2026-11-05",
-  "forward_pe": 27.293196,
+  "fetched": "2026-11-12",
+  "forward_pe": 26.764301,
   "free_cashflow": 2002041600.0,
-  "market_cap": 78828748800.0,
-  "peg": 2.13,
+  "market_cap": 77394853888.0,
+  "peg": 2.19,
   "profit_margin": 0.10848,
   "revenue_growth": 0.133,
   "roe": 0.42628,
-  "trailing_pe": 29.71463
+  "trailing_pe": 29.174122
  },
  "RRC": {
   "debt_to_equity": 18.848,
@@ -2589,15 +2628,15 @@
  "RTX": {
   "debt_to_equity": 54.758,
   "earnings_growth": 0.34,
-  "fetched": "2026-11-05",
-  "forward_pe": 24.6243,
+  "fetched": "2026-11-12",
+  "forward_pe": 24.876322,
   "free_cashflow": 8301749760.0,
-  "market_cap": 267769462784.0,
-  "peg": 2.21,
+  "market_cap": 271628877824.0,
+  "peg": 2.14,
   "profit_margin": 0.08754,
   "revenue_growth": 0.111,
   "roe": 0.1285,
-  "trailing_pe": 32.265038
+  "trailing_pe": 32.73008
  },
  "SBLK": {
   "debt_to_equity": 46.889,
@@ -2615,15 +2654,15 @@
  "SBUX": {
   "debt_to_equity": null,
   "earnings_growth": 4.054,
-  "fetched": "2026-11-05",
-  "forward_pe": 29.42557,
+  "fetched": "2026-11-12",
+  "forward_pe": 29.503918,
   "free_cashflow": 3186162432.0,
-  "market_cap": 125068959744.0,
-  "peg": 1.13,
+  "market_cap": 125285580800.0,
+  "peg": 1.19,
   "profit_margin": 0.06665,
   "revenue_growth": -0.045,
   "roe": null,
-  "trailing_pe": 49.63801
+  "trailing_pe": 49.72398
  },
  "SCCO": {
   "debt_to_equity": 62.583,
@@ -2797,11 +2836,11 @@
  "SNOW": {
   "debt_to_equity": 128.57,
   "earnings_growth": null,
-  "fetched": "2026-11-05",
-  "forward_pe": 95.99694,
+  "fetched": "2026-11-12",
+  "forward_pe": 98.93615,
   "free_cashflow": 1739526656.0,
-  "market_cap": 102523682816.0,
-  "peg": 5.29,
+  "market_cap": 106270416896.0,
+  "peg": 5.3,
   "profit_margin": -0.20071,
   "revenue_growth": 0.351,
   "roe": -0.48063,
@@ -2966,28 +3005,28 @@
  "TGT": {
   "debt_to_equity": 107.583,
   "earnings_growth": 1.005,
-  "fetched": "2026-11-05",
-  "forward_pe": 17.087034,
+  "fetched": "2026-11-12",
+  "forward_pe": 17.003248,
   "free_cashflow": 3432999936.0,
-  "market_cap": 74095804416.0,
-  "peg": 2.11,
+  "market_cap": 73914081280.0,
+  "peg": 2.21,
   "profit_margin": 0.04078,
   "revenue_growth": 0.053,
   "roe": 0.26408002,
-  "trailing_pe": 16.936657
+  "trailing_pe": 16.895119
  },
  "TMO": {
   "debt_to_equity": 75.362,
   "earnings_growth": 0.087,
-  "fetched": "2026-11-05",
-  "forward_pe": 25.416843,
+  "fetched": "2026-11-12",
+  "forward_pe": 25.832565,
   "free_cashflow": 6441625088.0,
-  "market_cap": 261643485184.0,
-  "peg": 2.02,
+  "market_cap": 265922953216.0,
+  "peg": 2.08,
   "profit_margin": 0.14935,
   "revenue_growth": 0.091,
   "roe": 0.13379,
-  "trailing_pe": 37.244724
+  "trailing_pe": 37.853905
  },
  "TREX": {
   "debt_to_equity": 30.034,
@@ -3018,15 +3057,15 @@
  "TRV": {
   "debt_to_equity": 33.844,
   "earnings_growth": 0.097,
-  "fetched": "2026-11-05",
-  "forward_pe": 13.1546335,
+  "fetched": "2026-11-12",
+  "forward_pe": 12.839951,
   "free_cashflow": 15819750400.0,
-  "market_cap": 83855327232.0,
+  "market_cap": 81849352192.0,
   "peg": 2.36,
   "profit_margin": 0.17031999,
   "revenue_growth": -0.005,
   "roe": 0.27497,
-  "trailing_pe": 10.761242
+  "trailing_pe": 10.503813
  },
  "TS": {
   "debt_to_equity": 2.596,
@@ -3044,15 +3083,15 @@
  "TSM": {
   "debt_to_equity": 11.619,
   "earnings_growth": 0.687,
-  "fetched": "2026-10-29",
-  "forward_pe": 18.434238,
+  "fetched": "2026-11-12",
+  "forward_pe": 17.675642,
   "free_cashflow": 1203071877120.0,
-  "market_cap": 2235836923904.0,
-  "peg": 0.8,
+  "market_cap": 2143828574208.0,
+  "peg": 0.72,
   "profit_margin": 0.51116,
   "revenue_growth": 0.509,
   "roe": 0.41854998,
-  "trailing_pe": 27.93843
+  "trailing_pe": 25.689869
  },
  "TTC": {
   "debt_to_equity": 80.671,
@@ -3096,15 +3135,15 @@
  "TXN": {
   "debt_to_equity": 70.654,
   "earnings_growth": 0.77,
-  "fetched": "2026-11-05",
-  "forward_pe": 26.936668,
+  "fetched": "2026-11-12",
+  "forward_pe": 26.791388,
   "free_cashflow": 4778625024.0,
-  "market_cap": 284778987520.0,
-  "peg": 0.95,
+  "market_cap": 283095171072.0,
+  "peg": 0.91,
   "profit_margin": 0.34252998,
   "revenue_growth": 0.277,
   "roe": 0.39723998,
-  "trailing_pe": 40.400776
+  "trailing_pe": 40.18288
  },
  "TYL": {
   "debt_to_equity": 52.155,
@@ -3135,28 +3174,28 @@
  "UNH": {
   "debt_to_equity": 70.426,
   "earnings_growth": 0.761,
-  "fetched": "2026-11-05",
-  "forward_pe": 17.580439,
+  "fetched": "2026-11-12",
+  "forward_pe": 17.27079,
   "free_cashflow": 26501249024.0,
-  "market_cap": 366813741056.0,
+  "market_cap": 361043361792.0,
   "peg": 1.03,
   "profit_margin": 0.03529,
   "revenue_growth": -0.004,
   "roe": 0.15773,
-  "trailing_pe": 23.366438
+  "trailing_pe": 23.117613
  },
  "UNP": {
   "debt_to_equity": 141.303,
   "earnings_growth": 0.159,
-  "fetched": "2026-11-05",
-  "forward_pe": 21.434536,
+  "fetched": "2026-11-12",
+  "forward_pe": 20.988518,
   "free_cashflow": 5069624832.0,
-  "market_cap": 183290118144.0,
-  "peg": 2.95,
+  "market_cap": 179528990720.0,
+  "peg": 2.9,
   "profit_margin": 0.28897,
   "revenue_growth": 0.153,
   "roe": 0.38747,
-  "trailing_pe": 24.066303
+  "trailing_pe": 23.565521
  },
  "UPS": {
   "debt_to_equity": 201.584,
@@ -3185,56 +3224,56 @@
   "trailing_pe": 14.456964
  },
  "V": {
-  "debt_to_equity": 61.12,
+  "debt_to_equity": 63.568,
   "earnings_growth": 0.219,
-  "fetched": "2026-11-05",
-  "forward_pe": 25.490728,
-  "free_cashflow": 21118375936.0,
-  "market_cap": 815951970304.0,
-  "peg": 1.9,
+  "fetched": "2026-11-12",
+  "forward_pe": 24.827293,
+  "free_cashflow": 20983375872.0,
+  "market_cap": 793991184384.0,
+  "peg": 1.91,
   "profit_margin": 0.51203996,
   "revenue_growth": 0.132,
   "roe": 0.63507,
-  "trailing_pe": 35.43588
+  "trailing_pe": 34.541397
  },
  "VEEV": {
   "debt_to_equity": 2.041,
   "earnings_growth": 0.395,
-  "fetched": "2026-11-05",
-  "forward_pe": 30.28052,
+  "fetched": "2026-11-12",
+  "forward_pe": 29.702477,
   "free_cashflow": 1257709824.0,
-  "market_cap": 50293747712.0,
-  "peg": 1.17,
+  "market_cap": 49344958464.0,
+  "peg": 1.18,
   "profit_margin": 0.29345,
   "revenue_growth": 0.176,
   "roe": 0.14425,
-  "trailing_pe": 50.92295
+  "trailing_pe": 49.962296
  },
  "VLO": {
   "debt_to_equity": 35.391,
   "earnings_growth": 5.768,
-  "fetched": "2026-11-05",
-  "forward_pe": 6.829478,
+  "fetched": "2026-11-12",
+  "forward_pe": 6.7990074,
   "free_cashflow": 12579375104.0,
-  "market_cap": 101887631360.0,
-  "peg": 1.45,
+  "market_cap": 101433049088.0,
+  "peg": 1.26,
   "profit_margin": 0.08834,
   "revenue_growth": 0.465,
   "roe": 0.46872002,
-  "trailing_pe": 8.308846
+  "trailing_pe": 8.271776
  },
  "VLTO": {
   "debt_to_equity": 96.689,
   "earnings_growth": 0.084,
-  "fetched": "2026-11-05",
-  "forward_pe": 23.991062,
+  "fetched": "2026-11-12",
+  "forward_pe": 24.34984,
   "free_cashflow": 763374976.0,
-  "market_cap": 28452456448.0,
-  "peg": 2.75,
+  "market_cap": 28877953024.0,
+  "peg": 2.71,
   "profit_margin": 0.17273001,
   "revenue_growth": 0.075,
   "roe": 0.32961,
-  "trailing_pe": 28.893826
+  "trailing_pe": 29.325924
  },
  "VNOM": {
   "debt_to_equity": 16.32,
@@ -3265,15 +3304,15 @@
  "VRTX": {
   "debt_to_equity": 30.986,
   "earnings_growth": -0.39,
-  "fetched": "2026-11-05",
-  "forward_pe": 27.520264,
+  "fetched": "2026-11-12",
+  "forward_pe": 27.421207,
   "free_cashflow": 2337787392.0,
-  "market_cap": 139202314240.0,
-  "peg": 2.07,
+  "market_cap": 138692722688.0,
+  "peg": 2.38,
   "profit_margin": 0.30698,
   "revenue_growth": 0.118,
   "roe": 0.20802,
-  "trailing_pe": 35.330757
+  "trailing_pe": 35.201416
  },
  "WAB": {
   "debt_to_equity": 59.609,
@@ -3291,15 +3330,15 @@
  "WCN": {
   "debt_to_equity": 123.958,
   "earnings_growth": 0.288,
-  "fetched": "2026-11-05",
-  "forward_pe": 31.100677,
+  "fetched": "2026-11-12",
+  "forward_pe": 31.15943,
   "free_cashflow": 1076870656.0,
-  "market_cap": 47999995904.0,
-  "peg": 2.45,
+  "market_cap": 48091238400.0,
+  "peg": 2.51,
   "profit_margin": 0.11399,
   "revenue_growth": 0.073,
   "roe": 0.14187999,
-  "trailing_pe": 43.006725
+  "trailing_pe": 43.100895
  },
  "WFC": {
   "debt_to_equity": null,
@@ -3330,54 +3369,54 @@
  "WM": {
   "debt_to_equity": 237.252,
   "earnings_growth": 0.376,
-  "fetched": "2026-11-05",
-  "forward_pe": 26.654491,
+  "fetched": "2026-11-12",
+  "forward_pe": 26.871765,
   "free_cashflow": 2479124992.0,
-  "market_cap": 94831951872.0,
-  "peg": 2.22,
+  "market_cap": 95547686912.0,
+  "peg": 2.25,
   "profit_margin": 0.11776,
   "revenue_growth": 0.063,
   "roe": 0.31679,
-  "trailing_pe": 31.297901
+  "trailing_pe": 31.53412
  },
  "WMT": {
   "debt_to_equity": 71.653,
   "earnings_growth": -0.091,
-  "fetched": "2026-11-05",
-  "forward_pe": 40.034714,
+  "fetched": "2026-11-12",
+  "forward_pe": 39.005783,
   "free_cashflow": 7127625216.0,
-  "market_cap": 1027945070592.0,
-  "peg": 4.24,
+  "market_cap": 1000091746304.0,
+  "peg": 4.26,
   "profit_margin": 0.03,
   "revenue_growth": 0.059,
   "roe": 0.22313999,
-  "trailing_pe": 46.800724
+  "trailing_pe": 45.532608
  },
  "WSM": {
   "debt_to_equity": 71.369,
   "earnings_growth": 0.42,
-  "fetched": "2026-11-05",
-  "forward_pe": 25.699509,
+  "fetched": "2026-11-12",
+  "forward_pe": 24.94437,
   "free_cashflow": 1069320128.0,
-  "market_cap": 31809798144.0,
-  "peg": 2.53,
+  "market_cap": 30868744192.0,
+  "peg": 2.61,
   "profit_margin": 0.14729,
   "revenue_growth": 0.067,
   "roe": 0.54960996,
-  "trailing_pe": 27.700512
+  "trailing_pe": 26.881025
  },
  "XOM": {
   "debt_to_equity": 12.568,
   "earnings_growth": 1.114,
-  "fetched": "2026-11-05",
-  "forward_pe": 14.0902405,
-  "free_cashflow": 28896249856.0,
-  "market_cap": 690489982976.0,
-  "peg": 1.44,
+  "fetched": "2026-11-12",
+  "forward_pe": 13.38976,
+  "free_cashflow": 28318750720.0,
+  "market_cap": 680047214592.0,
+  "peg": 1.3,
   "profit_margin": 0.10463,
   "revenue_growth": 0.326,
   "roe": 0.15528,
-  "trailing_pe": 17.41461
+  "trailing_pe": 17.151236
  },
  "XYZ": {
   "debt_to_equity": 32.58,
@@ -3434,14 +3473,14 @@
  "ZM": {
   "debt_to_equity": 0.533,
   "earnings_growth": 3.423,
-  "fetched": "2026-10-29",
-  "forward_pe": 15.385623,
+  "fetched": "2026-11-12",
+  "forward_pe": 15.466836,
   "free_cashflow": 1975528320.0,
-  "market_cap": 28467877888.0,
-  "peg": 2.65,
+  "market_cap": 28618147840.0,
+  "peg": 2.41,
   "profit_margin": 0.65192,
   "revenue_growth": 0.049,
   "roe": 0.32143003,
-  "trailing_pe": 9.050557
+  "trailing_pe": 9.0983305
  }
 }
