@@ -1328,14 +1328,14 @@
    "tp2": 176.9,
    "entry_type": "market",
    "risk_pct": 3.44,
-   "days": 0,
-   "current": 160.37,
+   "days": 1,
+   "current": 160.52,
    "fill_date": "2026-11-05",
    "exit_date": null,
    "status": "Open",
-   "result_pct": -0.0,
-   "return_pct": -0.0,
-   "max_gain_pct": 0.0
+   "result_pct": 0.09,
+   "return_pct": 0.09,
+   "max_gain_pct": 1.18
   },
   {
    "strategy": "support",
@@ -2609,14 +2609,14 @@
    "tp2": 1015.33,
    "entry_type": "market",
    "risk_pct": 3.46,
-   "days": 3,
-   "current": 950.99,
+   "days": 2,
+   "current": 959.41,
    "fill_date": "2026-11-09",
    "exit_date": null,
    "status": "Open",
-   "result_pct": 3.37,
-   "return_pct": 3.37,
-   "max_gain_pct": 6.69
+   "result_pct": 4.29,
+   "return_pct": 4.29,
+   "max_gain_pct": 4.57
   },
   {
    "strategy": "supertrend",
@@ -2861,14 +2861,14 @@
    "tp2": 67.45,
    "entry_type": "market",
    "risk_pct": 3.55,
-   "days": 2,
-   "current": 58.09,
+   "days": 1,
+   "current": 57.24,
    "fill_date": "2026-11-10",
    "exit_date": null,
    "status": "Open",
-   "result_pct": 2.09,
-   "return_pct": 2.09,
-   "max_gain_pct": 2.24
+   "result_pct": 0.6,
+   "return_pct": 0.6,
+   "max_gain_pct": 1.11
   },
   {
    "strategy": "positional",
@@ -3029,14 +3029,14 @@
    "tp2": 1196.68,
    "entry_type": "market",
    "risk_pct": 8.24,
-   "days": 1,
-   "current": 950.99,
+   "days": 0,
+   "current": 959.41,
    "fill_date": "2026-11-11",
    "exit_date": null,
    "status": "Open",
-   "result_pct": -0.88,
-   "return_pct": -0.88,
-   "max_gain_pct": 2.31
+   "result_pct": -0.0,
+   "return_pct": -0.0,
+   "max_gain_pct": 0.0
   },
   {
    "strategy": "holding",
@@ -3197,14 +3197,14 @@
    "tp2": 487.47,
    "entry_type": "market",
    "risk_pct": 5.56,
-   "days": 1,
-   "current": 409.75,
+   "days": 0,
+   "current": 413.35,
    "fill_date": "2026-11-11",
    "exit_date": null,
    "status": "Open",
-   "result_pct": -0.87,
-   "return_pct": -0.87,
-   "max_gain_pct": -0.83
+   "result_pct": 0.0,
+   "return_pct": 0.0,
+   "max_gain_pct": 0.0
   },
   {
    "strategy": "positional",
