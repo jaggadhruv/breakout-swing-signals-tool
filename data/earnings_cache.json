@@ -3,13 +3,33 @@
   "fetched": "2026-11-12",
   "next": "2026-11-24"
  },
+ "CHKP": {
+  "fetched": "2026-11-14",
+  "next": null
+ },
+ "CME": {
+  "fetched": "2026-11-14",
+  "next": null
+ },
  "DOCU": {
   "fetched": "2026-11-12",
   "next": "2026-12-03"
  },
+ "GILD": {
+  "fetched": "2026-11-14",
+  "next": null
+ },
  "MCK": {
   "fetched": "2026-11-12",
   "next": "2027-02-03"
+ },
+ "MPWR": {
+  "fetched": "2026-11-14",
+  "next": null
+ },
+ "NXPI": {
+  "fetched": "2026-11-14",
+  "next": null
  },
  "PCTY": {
   "fetched": "2026-11-12",

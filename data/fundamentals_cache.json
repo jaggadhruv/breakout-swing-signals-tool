@@ -587,15 +587,15 @@
  "CHKP": {
   "debt_to_equity": 74.914,
   "earnings_growth": -0.444,
-  "fetched": "2026-11-06",
-  "forward_pe": 13.138504,
+  "fetched": "2026-11-14",
+  "forward_pe": 13.323737,
   "free_cashflow": 716437504.0,
-  "market_cap": 15129271296.0,
+  "market_cap": 15027170304.0,
   "peg": 1.31,
   "profit_margin": 0.31744,
   "revenue_growth": -0.011,
   "roe": 0.30609,
-  "trailing_pe": 17.831526
+  "trailing_pe": 17.584229
  },
  "CHRD": {
   "debt_to_equity": 17.982,
@@ -1325,6 +1325,19 @@
   "roe": 0.18006,
   "trailing_pe": 21.36963
  },
+ "GE": {
+  "debt_to_equity": 115.989,
+  "earnings_growth": 0.089,
+  "fetched": "2026-11-14",
+  "forward_pe": 35.629494,
+  "free_cashflow": 6332375040.0,
+  "market_cap": 342876487680.0,
+  "peg": 3.88,
+  "profit_margin": 0.17313999,
+  "revenue_growth": 0.159,
+  "roe": 0.50165004,
+  "trailing_pe": 37.921143
+ },
  "GILD": {
   "debt_to_equity": 202.462,
   "earnings_growth": -0.202,
@@ -1402,6 +1415,19 @@
   "revenue_growth": 0.018,
   "roe": 0.18778999,
   "trailing_pe": 15.084034
+ },
+ "HD": {
+  "debt_to_equity": 380.261,
+  "earnings_growth": 0.046,
+  "fetched": "2026-11-14",
+  "forward_pe": 21.863676,
+  "free_cashflow": 10762625024.0,
+  "market_cap": 347884388352.0,
+  "peg": 1.84,
+  "profit_margin": 0.0841,
+  "revenue_growth": 0.057,
+  "roe": 1.0429599,
+  "trailing_pe": 24.40098
  },
  "HPE": {
   "debt_to_equity": 76.464,
