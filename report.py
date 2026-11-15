@@ -221,6 +221,9 @@ details.research > summary .s { font-size: 12px; font-weight: 400; color: var(--
 .st { display: inline-block; padding: 0 6px; border-radius: 3px; font-size: 10px; font-weight: 700; color: #fff; }
 .st-open { background: #5C7A99; } .st-tp1 { background: #2E9E5B; } .st-tp2 { background: #17663A; } .st-stop { background: #C0392B; }
 .st-pend { background: #9A8C5A; } .st-exp { background: #A0A0A8; }
+.st-buy { background: #1E8E5A; } .st-ext { background: #C98A1B; }
+.qmeta { font-size: 11px; margin: 0 0 6px; color: var(--muted); }
+.qmeta b { color: var(--pc); }
 .st { margin-left: 6px; vertical-align: 1px; }
 .plan { display: block; font-size: 10px; font-weight: 400; color: var(--ink); margin-top: 2px; white-space: nowrap; }
 .plan .k { color: var(--muted); }
@@ -1189,8 +1192,8 @@ def _tk(c: dict, compact: bool = False) -> str:
         dot = {"Very high": "t-vh", "High": "t-h", "Adequate": "t-a"}.get(lq.get("tier"), "")
         dot_html = (f'<span class="ldot {dot}" title="Liquidity {escape(lq.get("tier", ""))}: '
                     f'{_money(lq.get("avg_dollar_vol"))}/day, 1% ADV {_money(lq.get("one_pct_adv"))}"></span>') if lq else ""
-        return f'{dot_html}{escape(c["ticker"])}{_cf_badge(c, compact=True)}{_trade_chip(c)}'
-    return f'{escape(c["ticker"])}{_cf_badge(c)}{_trade_chip(c)}{_plan_line(c)}{_liq_html(c)}'
+        return f'{dot_html}{escape(c["ticker"])}{_cf_badge(c, compact=True)}{_trade_chip(c)}{_live_chip(c)}'
+    return f'{escape(c["ticker"])}{_cf_badge(c)}{_trade_chip(c)}{_live_chip(c)}{_plan_line(c)}{_liq_html(c)}'
 
 
 _SETUP_LABELS = {"support": "Near support", "resistance": "Near resistance", "retest": "Break & retest", "holding": "Holding above BO",
@@ -1840,6 +1843,23 @@ def _render_methodology() -> str:
   </details>
 
   <details class="method-block">
+    <summary>Weekly quality lists: how they are built and what the live status means</summary>
+    <div class="method-body">
+      <p><strong>What goes in.</strong> Every stock that passed a section's gates on any day in the last 7 days is archived with its score and its trade plan (entry, SL, TP1, TP2). A name qualifies for the quality list if its best score that week cleared the section's bar (roughly 55–60% of that section's score scale).</p>
+      <p><strong>Ranking.</strong> Best score + recency (seen within 1 day +15, within 3 days +8) + repeat appearances (+2 each, up to +10) + 10 if it was an elite Today pick at least once. Top 10 per list.</p>
+      <p><strong>Live status.</strong> Each name's plan is replayed from its pick date to today's close, so the list shows what is tradeable <em>now</em>, not what was interesting days ago:</p>
+      <ul>
+        <li><span class="st st-buy">Buy zone</span> the signal is intact: price is above the stop and within 3% of the planned entry.</li>
+        <li><span class="st st-pend">Order pending</span> the buy-stop / buy-limit has not been reached and has not expired (10 sessions).</li>
+        <li><span class="st st-ext">Extended +x%</span> already ran more than 3% past the entry; wait for a pullback rather than chase.</li>
+        <li><span class="st st-tp1">✓ TP1</span> / <span class="st st-tp2">✓ TP2</span> a target was already reached; it worked, but the easy entry is gone.</li>
+        <li>Names that were <strong>stopped out</strong> or whose pending order <strong>expired</strong> are removed; the count is shown above the list.</li>
+      </ul>
+      <p><strong>Link to the Action Plan.</strong> Buy-zone and order-pending names are also candidates for the Action Plan, with conviction reduced by 3 points per session since the pick date, so a strong setup from earlier in the week can still be ranked if you were not looking that day.</p>
+    </div>
+  </details>
+
+  <details class="method-block">
     <summary>Trade plans and outcome tracking (every section)</summary>
     <div class="method-body">
       <p>Every recommendation shown in a Today list gets a plan, shown under the ticker in the full tables and in the compact list: order type, entry, SL, TP1 and TP2, plus risk %.</p>
@@ -2151,6 +2171,22 @@ def _trade_chip(c: dict) -> str:
     return f'<span class="st {_STATUS_CLS.get(st, "st-open")}" title="{escape(tip)}">{escape(label)}</span>'
 
 
+def _live_chip(c: dict) -> str:
+    """Live status of a weekly quality-list name: is its plan still tradeable today?"""
+    lv = c.get("live")
+    if not lv:
+        return ""
+    pl = c.get("plan") or {}
+    tip = {"Buy zone": "Signal still valid: price is within 3% of the planned entry and above the stop.",
+           "Order pending": "The buy-stop / buy-limit has not been reached yet and has not expired.",
+           "No plan": "Archived before plans were stored; no levels to check."}.get(lv["label"], "")
+    if lv["label"].startswith("Extended"):
+        tip = f"Already ran past the entry. Wait for a pullback towards {pl.get('entry', '')} rather than chasing."
+    if lv["label"].startswith("✓"):
+        tip = "Target already reached since the pick date: this one worked, but the easy entry is gone."
+    return f'<span class="st {lv["cls"]}" title="{escape(tip)}">{escape(lv["label"])}</span>'
+
+
 def _plan_line(c: dict) -> str:
     pl = c.get("plan")
     if not pl:
@@ -2324,26 +2360,32 @@ def _mini_today(items: list[tuple[str, dict]], cap: int = 10) -> str:
 
 
 def _mini_week(items: list[tuple[str, dict]], today_str: str, cap: int = 8) -> str:
+    """Compact weekly quality list. Rows arrive already ranked (actionable first)."""
     if not items:
         return '<div class="more">No names have reached the quality bar this week yet.</div>'
-    items = sorted(items, key=lambda kv: kv[1].get("keep_score", _sc(kv[1])), reverse=True)
+    items = sorted(items, key=lambda kv: (not (kv[1].get("live") or {}).get("actionable", False),
+                                          -kv[1].get("keep_score", _sc(kv[1]))))
     rows = []
     for kind, r in items[:cap]:
-        if kind == "setup":
-            label, level = _SETUP_LABELS.get(r["setup"], r["setup"]), r.get("level")
+        if kind == "setup":   # short labels keep the compact list inside its column
+            label, level = _TODAY_FIELDS.get(r["setup"], (_SETUP_LABELS.get(r["setup"], r["setup"]),))[0], r.get("level")
         else:
             label, lk = _WEEK_FIELDS[kind]
             level = r.get(lk)
+        pl = r.get("plan") or {}
+        e_mark = {"buy_stop": "↑", "buy_limit": "↓"}.get(pl.get("entry_type"), "")
+        entry = f'{e_mark}{_fmt(pl.get("entry"), ".2f")}' if pl else _fmt(level, ".2f")
         tr_cls = ' class="hp"' if r.get("high_probability") else ""
         pick = r.get("best_score_date", "")
-        pick_html = f'<span class="streak">today</span>' if pick == today_str else escape(pick[5:])
+        pick_html = '<span class="streak">today</span>' if pick == today_str else escape(pick[5:])
         rows.append(
             f'<tr{tr_cls}><td class="tk">{_tk(r, compact=True)}</td><td><span class="setup">{escape(label)}</span></td>'
             f'<td class="num mono">{_sc(r):.0f}</td><td class="num mono">×{r.get("appearances", 1)}</td>'
-            f'<td class="num mono">{pick_html}</td><td class="num mono">{_fmt(level, ".2f")}</td></tr>')
+            f'<td class="num mono">{pick_html}</td><td class="num mono">{entry}</td>'
+            f'<td class="num mono">{_fmt(pl.get("stop"), ".2f")}</td></tr>')
     more = f'<div class="more">+{len(items) - cap} more in Full detail</div>' if len(items) > cap else ""
     return ('<table class="mini"><thead><tr><th>Ticker</th><th>Setup</th><th class="num">Best</th>'
-            '<th class="num">Seen</th><th class="num">Picked</th><th class="num">Level</th></tr></thead>'
+            '<th class="num">Seen</th><th class="num">Picked</th><th class="num">Entry</th><th class="num">SL</th></tr></thead>'
             f'<tbody>{"".join(rows)}</tbody></table>{more}')
 
 
@@ -2412,6 +2454,8 @@ def _render_action_plan(ap: dict | None, market_data: dict | None, date_str: str
             notes.append("★ high-probability retest")
         if others:
             notes.append("also in: " + ", ".join(escape(_STRAT_LABELS.get(x, x)) for x in others))
+        if c.get("picked"):
+            notes.append(f"from this week's quality list (picked {escape(c['picked'][5:])}), still in its buy zone")
         if c.get("earnings") and not any("Earnings" in n for n in c.get("notes", [])):
             notes.append(f"next earnings {escape(c['earnings'])}")
         rr = (pl["tp1"] - pl["entry"]) / (pl["entry"] - pl["stop"])
@@ -2647,6 +2691,7 @@ def render(
     strategy_scoreboards: dict | None = None,
     action_plan: dict | None = None,
     market_data: dict | None = None,
+    quality_meta: dict | None = None,
     sector_counts: dict,
     funnel: dict,
     eligible_refreshed_at: str,
@@ -2754,7 +2799,13 @@ def render(
                                   f"Scoreboard &amp; recent trades ({f.get('crossover_log_days', 45)} days)",
                                   len(trade_logs.get(cid, [])))
         else:
-            week_override[cid] = (sb + _mini_week(week, date_str), "Scoreboard + this week's quality list", len(week))
+            qm = (quality_meta or {}).get(cid)
+            qline = ""
+            if qm:
+                qline = (f'<div class="qmeta"><b>{qm["actionable"]}</b> of {qm["listed"]} still actionable today '
+                         f'(<span class="st st-buy">Buy zone</span> or <span class="st st-pend">Order pending</span>)'
+                         + (f' · {qm["dropped"]} removed this week (stopped out or expired)' if qm["dropped"] else "") + '</div>')
+            week_override[cid] = (sb + qline + _mini_week(week, date_str), "Scoreboard + this week's quality list", len(week))
 
     def top_names(items):
         names = [r["ticker"] for _, r in sorted(items, key=lambda kv: _sc(kv[1]), reverse=True)]

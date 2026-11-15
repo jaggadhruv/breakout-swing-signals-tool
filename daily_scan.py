@@ -27,6 +27,7 @@ import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import yfinance as yf
 
@@ -57,7 +58,7 @@ PRICE_HISTORY_PERIOD = "3y"   # 3y so monthly RSI(14) has enough bars
 # Recent-quality section: rolling 1-week archive of past signals (same rollover
 # cadence as the Positional Trading Tool — each run drops entries > 7 days old).
 ARCHIVE_RETENTION_DAYS = 7
-HIGH_QUALITY_THRESHOLD = 60
+HIGH_QUALITY_THRESHOLD = 95    # ~53% of the breakout scale (was 60, which barely filtered)
 RECENT_TOP_N = 10
 
 # Watchlist: swing-ready stocks that pass all quality gates but haven't
@@ -111,7 +112,7 @@ RECOVERY_RS_MIN              = 60   # looser than base RS gate (75) and elite (8
 RECOVERY_SECTOR_RANK_MAX     = 7    # looser than elite (4)
 RECOVERY_MOMENTUM_PASSES_MIN = 3    # at least 3/4 momentum checks
 RECOVERY_MIN_SHOW_SCORE      = 55   # modest display bar given looser gates
-RECOVERY_QUALITY_THRESHOLD   = 65   # bar for history inclusion
+RECOVERY_QUALITY_THRESHOLD   = 78   # ~55% of the recovery scale (was 65)
 RECOVERY_RECENT_TOP_N        = 10
 MAX_RECOVERY_SHOWN           = 6
 
@@ -183,10 +184,15 @@ LIQUIDITY_TIERS = [(100_000_000, "Very high"), (25_000_000, "High"), (MIN_AVG_DO
 
 # 7-day quality lists for the setup types that previously had no history.
 # Threshold = best score a ticker must reach this week to appear in the list.
-SETUP_QUALITY_THRESHOLDS = {
-    "resistance": 70, "support": 70, "retest": 70, "holding": 70,
-    "reversal": 65, "mtf_rsi": 70, "positional": 75,
+SETUP_QUALITY_THRESHOLDS = {      # each ~55-60% of that section's score scale
+    "resistance": 78, "support": 70, "retest": 73, "holding": 73,
+    "reversal": 80, "mtf_rsi": 80, "positional": 75,
 }
+
+# Quality-list ranking and live status
+QUALITY_POOL_N        = 60   # candidates considered before the live check trims to the top 10
+ELITE_HISTORY_BONUS   = 10   # name was an elite "Today" pick at least once this week
+HISTORY_AGE_PENALTY   = 3    # Action Plan conviction lost per session since the pick date
 
 # ----------------------------------------------------------------------------
 # Positional: financially strong companies at a fair valuation, not overextended
@@ -995,6 +1001,7 @@ def update_watchlist_archive(
             "tp2_pending": w.get("tp2_pending"),
             "pct_to_trigger": w.get("pct_to_trigger"),
             "piotroski": w.get("piotroski"),
+            "plan": w.get("plan"), "shown": bool(w.get("shown")),
         })
     return archive
 
@@ -1186,6 +1193,7 @@ def update_supertrend_archive(
             "stop_distance_pct": e.get("stop_distance_pct"),
             "days_since_flip": e.get("days_since_flip"),
             "piotroski": e.get("piotroski"),
+            "plan": e.get("plan"), "shown": bool(e.get("shown")),
         })
     return archive
 
@@ -1376,6 +1384,7 @@ def update_recovery_archive(
             "distance_pct": e.get("distance_pct"),
             "days_since_cross": e.get("days_since_cross"),
             "piotroski": e.get("piotroski"),
+            "plan": e.get("plan"), "shown": bool(e.get("shown")),
         })
     return archive
 
@@ -1737,6 +1746,70 @@ def trade_scoreboard(log_rows: list[dict], strategies: list[str]) -> dict:
             "days": CROSSOVER_LOG_RETENTION_DAYS}
 
 
+# ---------------- Quality lists: fair ranking + live status ----------------
+
+def finalize_quality_list(rows: list[dict], entries: list[dict], strategy_of, price_cache: dict,
+                          n: int) -> tuple[list[dict], dict]:
+    """Turn a weekly quality list from a frozen snapshot into a live, actionable one.
+
+    For each name: attach the trade plan from its best-scoring day, replay it against
+    the prices since, and label it. Stopped-out and expired names are removed (they
+    are no longer quality setups). Ranking: best score + recency (≤1 day +15, ≤3 days
+    +8) + repeat appearances (+2 each, max 10) + a bonus if it was ever an elite Today
+    pick. Actionable names sort first."""
+    by_key, ever_shown = {}, set()
+    for e in entries:
+        st = strategy_of(e)
+        by_key[(st, e["ticker"], e.get("date"))] = e
+        if e.get("shown"):
+            ever_shown.add((st, e["ticker"]))
+    today = datetime.utcnow().date()
+    out, dropped, no_plan = [], 0, 0
+    for r in rows:
+        st = strategy_of(r)
+        src = by_key.get((st, r["ticker"], r.get("best_score_date")), {})
+        plan = src.get("plan")
+        r["strategy"] = st
+        r["ever_shown"] = (st, r["ticker"]) in ever_shown
+        try:
+            days = (today - datetime.strptime(r.get("latest_date", ""), "%Y-%m-%d").date()).days
+        except ValueError:
+            days = 99
+        r["keep_score"] = round(r["best_score"] + (15 if days <= 1 else 8 if days <= 3 else 0)
+                                + min(int(r.get("appearances", 1)) * 2, 10)
+                                + (ELITE_HISTORY_BONUS if r["ever_shown"] else 0), 1)
+        r["trade"] = None
+        prices = price_cache.get(r["ticker"])
+        if not plan or prices is None:
+            no_plan += 1
+            r["live"] = {"status": None, "label": "No plan", "cls": "st-exp", "actionable": False, "result_pct": None}
+            out.append(r)
+            continue
+        o = patterns.evaluate_trade_outcome(prices, r["best_score_date"], plan["entry"], plan["stop"], plan["tp1"],
+                                            plan["tp2"], plan.get("entry_type", "market"), PENDING_EXPIRY_SESSIONS)
+        if o["status"] in ("Stopped", "Expired"):
+            dropped += 1
+            continue
+        close = float(prices["Close"].iloc[-1])
+        ext = (close / plan["entry"] - 1) * 100
+        if o["status"] == "Pending":
+            live = {"label": "Order pending", "cls": "st-pend", "actionable": True}
+        elif o["status"] == "Open" and ext <= MAX_CHASE_PCT:
+            live = {"label": "Buy zone", "cls": "st-buy", "actionable": True}
+        elif o["status"] == "Open":
+            live = {"label": f"Extended +{ext:.0f}%", "cls": "st-ext", "actionable": False}
+        else:
+            live = {"label": "✓ TP1" if o["status"] == "TP1 hit" else "✓ TP2",
+                    "cls": "st-tp1" if o["status"] == "TP1 hit" else "st-tp2", "actionable": False}
+        r["plan"] = plan
+        r["live"] = {**live, "status": o["status"], "result_pct": o["result_pct"], "current": round(close, 2)}
+        out.append(r)
+    out.sort(key=lambda r: (not r["live"]["actionable"], -r["keep_score"]))
+    out = out[:n]
+    return out, {"listed": len(out), "actionable": sum(r["live"]["actionable"] for r in out),
+                 "dropped": dropped, "no_plan": sum(r["live"]["label"] == "No plan" for r in out)}
+
+
 # ---------------- Action Plan: sizing, earnings, conviction ranking ----------------
 
 def size_position(entry: float, stop: float) -> dict:
@@ -1792,7 +1865,8 @@ def next_earnings_date(ticker: str, cache: dict, today_str: str, budget: list) -
 
 
 def build_action_plan(today_lists: dict, price_cache: dict, liquidity_info: dict,
-                      strategy_scoreboards: dict, breadth: dict, today_str: str) -> dict:
+                      strategy_scoreboards: dict, breadth: dict, today_str: str,
+                      history_lists: list | None = None) -> dict:
     """Rank every planned recommendation on one conviction scale, apply your rules,
     and return the top candidates with sizing, validity and warnings."""
     regime = report.verdict_from_score(breadth["weekly_score"])
@@ -1811,41 +1885,54 @@ def build_action_plan(today_lists: dict, price_cache: dict, liquidity_info: dict
         return max(-10.0, min(10.0, (sb["hit_rate"] - 40) / 4))
 
     best: dict[str, dict] = {}
+
+    def consider(strategy: str, r: dict, score: float, picked: str | None) -> None:
+        pl, t = r.get("plan"), r["ticker"]
+        prices = price_cache.get(t)
+        if not pl or prices is None:
+            return
+        trade = r.get("trade") or {}
+        if trade.get("status") in ("Stopped", "TP2 hit", "Expired"):
+            return                        # this signal already played out
+        close = float(prices["Close"].iloc[-1])
+        if pl["entry_type"] in ("market", "buy_stop") and close > pl["entry"] * (1 + MAX_CHASE_PCT / 100):
+            return                        # already ran away from the planned entry
+        last_bar = pd.Timestamp(prices.index[-1].strftime("%Y-%m-%d"))
+        age = int(np.busday_count(picked, last_bar.strftime("%Y-%m-%d"))) if picked else 0
+        liq = liquidity_info.get(t) or {}
+        risk = pl["risk_pct"]
+        conviction = min(score / STRATEGY_MAX_SCORE.get(strategy, 120) * 100, 100) * STRATEGY_PRIOR.get(strategy, 0.8)
+        conviction += min((len(sections_by_ticker.get(t, ())) - 1) * 10, 20) if t in sections_by_ticker else 0
+        conviction += 10 if r.get("high_probability") else 0
+        conviction += {"Very high": 5, "High": 3}.get(liq.get("tier"), 0)
+        conviction += track_bonus(strategy)
+        conviction += 5 if 2 <= risk <= 8 else (0 if risk <= 12 else -10)
+        conviction -= 5 if risk < 1.5 else 0
+        conviction -= HISTORY_AGE_PENALTY * max(age, 0)
+        if pl["entry_type"] == "market":
+            valid_until = (last_bar + pd.offsets.BDay(MARKET_ENTRY_VALID_SESSIONS)).strftime("%Y-%m-%d")
+        else:
+            start = pd.Timestamp(picked) if picked else last_bar
+            valid_until = (start + pd.offsets.BDay(PENDING_EXPIRY_SESSIONS)).strftime("%Y-%m-%d")
+        cand = {
+            "ticker": t, "strategy": strategy, "sector": r.get("sector", "Unknown"),
+            "sections": sorted(sections_by_ticker.get(t, {strategy})), "conviction": round(conviction, 1),
+            "plan": pl, "close": round(close, 2), "valid_until": valid_until,
+            "picked": picked if (picked and age > 0) else None,
+            "high_probability": bool(r.get("high_probability")), "liquidity": liq, "trade": r.get("trade"),
+            **size_position(pl["entry"], pl["stop"]),
+        }
+        if t not in best or cand["conviction"] > best[t]["conviction"]:
+            best[t] = cand
+
     for strategy, rows in today_lists.items():
         for r in rows:
-            pl, t = r.get("plan"), r["ticker"]
-            prices = price_cache.get(t)
-            if not pl or prices is None:
-                continue
-            trade = r.get("trade") or {}
-            if trade.get("status") in ("Stopped", "TP2 hit", "Expired"):
-                continue                      # this signal already played out
-            close = float(prices["Close"].iloc[-1])
-            if pl["entry_type"] == "market" and close > pl["entry"] * (1 + MAX_CHASE_PCT / 100):
-                continue                      # already ran away from the planned entry
-            if pl["entry_type"] == "buy_stop" and close > pl["entry"] * (1 + MAX_CHASE_PCT / 100):
-                continue
-            liq = liquidity_info.get(t) or {}
-            risk = pl["risk_pct"]
-            conviction = min(_row_score(r) / STRATEGY_MAX_SCORE.get(strategy, 120) * 100, 100) * STRATEGY_PRIOR.get(strategy, 0.8)
-            conviction += min((len(sections_by_ticker.get(t, ())) - 1) * 10, 20)
-            conviction += 10 if r.get("high_probability") else 0
-            conviction += {"Very high": 5, "High": 3}.get(liq.get("tier"), 0)
-            conviction += track_bonus(strategy)
-            conviction += 5 if 2 <= risk <= 8 else (0 if risk <= 12 else -10)
-            conviction -= 5 if risk < 1.5 else 0
-            sig_date = r.get("cross_date") or prices.index[-1].strftime("%Y-%m-%d")
-            valid_sessions = MARKET_ENTRY_VALID_SESSIONS if pl["entry_type"] == "market" else PENDING_EXPIRY_SESSIONS
-            valid_until = (pd.Timestamp(prices.index[-1].strftime("%Y-%m-%d")) + pd.offsets.BDay(valid_sessions)).strftime("%Y-%m-%d")
-            cand = {
-                "ticker": t, "strategy": strategy, "sector": r.get("sector", "Unknown"),
-                "sections": sorted(sections_by_ticker.get(t, ())), "conviction": round(conviction, 1),
-                "plan": pl, "close": round(close, 2), "signal_date": sig_date, "valid_until": valid_until,
-                "high_probability": bool(r.get("high_probability")), "liquidity": liq, "trade": r.get("trade"),
-                **size_position(pl["entry"], pl["stop"]),
-            }
-            if t not in best or cand["conviction"] > best[t]["conviction"]:
-                best[t] = cand
+            consider(strategy, r, _row_score(r), None)
+    # Names from this week's quality lists that are still validly tradeable today
+    for rows in history_lists or []:
+        for r in rows:
+            if (r.get("live") or {}).get("actionable"):
+                consider(r["strategy"], r, float(r["best_score"]), r.get("best_score_date"))
 
     ranked = sorted(best.values(), key=lambda c: c["conviction"], reverse=True)
     earnings_cache, budget = load_earnings_cache(), [EARNINGS_MAX_LOOKUPS]
@@ -1933,6 +2020,7 @@ def update_setups_archive(entries: list[dict], rows_by_setup: dict[str, list[dic
                 "score": r["score"], "close": r.get("close"), "level": r.get(level_key[setup]),
                 "stop": r.get("stop"), "target": r.get("target", r.get("tp1")),
                 "high_probability": bool(r.get("high_probability")),
+                "plan": r.get("plan"), "shown": bool(r.get("shown")),
             })
     return entries
 
@@ -2263,6 +2351,7 @@ def update_signals_archive(
             "piotroski": sig.get("piotroski"),
             "days_on_report": sig.get("days_on_report", 1),
             "volume_multiple": _extract_max_volume_mult(sig),
+            "plan": sig.get("plan"), "shown": bool(sig.get("shown")),
         })
     return archive
 
@@ -3275,18 +3364,30 @@ def main() -> None:
         "recovery": recovery_shown, "positional": positional_shown,
         "golden_cross": golden_shown, "ema2050": ema2050_shown,
     }
+    # Plan every gated signal (not only displayed ones) so the weekly quality lists
+    # carry real entry / SL / TP levels and can be checked for validity later.
+    all_lists = {
+        "breakout": signals, "watchlist": watchlist, "resistance": resistance_list,
+        "retest": retest_list, "holding": holding_list, "supertrend": supertrend_list,
+        "support": support_list, "reversal": reversal_list, "mtf_rsi": mtf_rsi_list,
+        "recovery": recovery_list, "positional": positional_list,
+        "golden_cross": golden_list, "ema2050": ema2050_list,
+    }
+    for strategy, rows in all_lists.items():
+        for r in rows:
+            prices = price_cache.get(r["ticker"])
+            plan = plan_trade(strategy, r, prices) if prices is not None else None
+            if plan:
+                r["plan"] = plan
     new_signals = []
     for strategy, rows in today_lists.items():
         for r in rows:
+            r["shown"] = True
             prices = price_cache.get(r["ticker"])
-            if prices is None:
+            if prices is None or not r.get("plan"):
                 continue
-            plan = plan_trade(strategy, r, prices)
-            if plan is None:
-                continue
-            r["plan"] = plan
             sig_date = r.get("cross_date") or prices.index[-1].strftime("%Y-%m-%d")
-            new_signals.append((strategy, r, sig_date, plan))
+            new_signals.append((strategy, r, sig_date, r["plan"]))
     trade_log = update_trade_log(load_trade_log(), new_signals, price_cache, today_str)
     save_trade_log(trade_log)
 
@@ -3431,6 +3532,31 @@ def main() -> None:
     recent_pullback = compute_recent_setups(setups_archive, ["support", "reversal", "mtf_rsi"])
     recent_positional = compute_recent_setups(setups_archive, ["positional"])
 
+    # ---- Quality lists: re-rank fairly, attach plans, replay to today, drop dead names ----
+    P = QUALITY_POOL_N
+    recent_quality, qm_bo = finalize_quality_list(
+        compute_recent_high_quality(archive, n=P), archive, lambda e: "breakout", price_cache, RECENT_TOP_N)
+    recent_quality_watchlist, qm_wl = finalize_quality_list(
+        compute_recent_quality_watchlist(wl_archive, n=P), wl_archive, lambda e: "watchlist", price_cache, WATCHLIST_RECENT_TOP_N)
+    recent_quality_supertrend, qm_st = finalize_quality_list(
+        compute_recent_quality_supertrend(st_archive, n=P), st_archive, lambda e: "supertrend", price_cache, SUPERTREND_RECENT_TOP_N)
+    recent_quality_recovery, qm_rec = finalize_quality_list(
+        compute_recent_quality_recovery(rec_archive, n=P), rec_archive, lambda e: "recovery", price_cache, RECOVERY_RECENT_TOP_N)
+    by_setup = lambda e: e["setup"]
+    recent_resistance, qm_res = finalize_quality_list(compute_recent_setups(setups_archive, ["resistance"], n=P), setups_archive, by_setup, price_cache, 10)
+    recent_retest, qm_ret = finalize_quality_list(compute_recent_setups(setups_archive, ["retest", "holding"], n=P), setups_archive, by_setup, price_cache, 10)
+    recent_pullback, qm_pb = finalize_quality_list(compute_recent_setups(setups_archive, ["support", "reversal", "mtf_rsi"], n=P), setups_archive, by_setup, price_cache, 10)
+    recent_positional, qm_pos = finalize_quality_list(compute_recent_setups(setups_archive, ["positional"], n=P), setups_archive, by_setup, price_cache, 10)
+    def _qsum(*ms):
+        return {k: sum(m[k] for m in ms) for k in ("listed", "actionable", "dropped", "no_plan")}
+    quality_meta = {"breakout": _qsum(qm_bo), "watch": _qsum(qm_wl, qm_res), "retest": _qsum(qm_ret), "trend": _qsum(qm_st),
+                    "pullback": _qsum(qm_pb), "recovery": _qsum(qm_rec), "positional": _qsum(qm_pos)}
+    history_lists = [recent_quality, recent_quality_watchlist, recent_quality_supertrend, recent_quality_recovery,
+                     recent_resistance, recent_retest, recent_pullback, recent_positional]
+    qtot = _qsum(*quality_meta.values())
+    log(f"Quality lists: {qtot['listed']} names listed, {qtot['actionable']} actionable now, "
+        f"{qtot['dropped']} removed (stopped/expired), {qtot['no_plan']} without a plan (older entries).")
+
     # Attach today's liquidity levels to every row the report will show
     for rows in (shown, watchlist_shown, supertrend_shown, recovery_shown, support_shown,
                  resistance_shown, retest_shown, holding_shown, reversal_shown, fake_shown,
@@ -3440,17 +3566,10 @@ def main() -> None:
                  golden_shown, ema2050_shown, *trade_logs.values()):
         for r in rows:
             r["liquidity"] = liquidity_info.get(r["ticker"])
-    history_strategy = [(recent_quality, "breakout"), (recent_quality_watchlist, "watchlist"),
-                        (recent_quality_supertrend, "supertrend"), (recent_quality_recovery, "recovery")]
-    for rows, strategy in history_strategy:
-        for r in rows:
-            r["trade"] = latest_trade.get((strategy, r["ticker"]))
-    for rows in (recent_resistance, recent_retest, recent_pullback, recent_positional):
-        for r in rows:
-            r["trade"] = latest_trade.get((r["setup"], r["ticker"]))
 
     # ---- Action Plan: one ranked, sized, rule-checked list across all sections ----
-    action_plan = build_action_plan(today_lists, price_cache, liquidity_info, strategy_scoreboards, breadth, today_str)
+    action_plan = build_action_plan(today_lists, price_cache, liquidity_info, strategy_scoreboards, breadth, today_str,
+                                    history_lists=history_lists)
     market_data = build_market_data(price_cache)
     elig = [c for c in action_plan["candidates"] if c["eligible"]]
     log(f"Action plan: regime {action_plan['regime']} → max {action_plan['regime_cap']} positions; "
@@ -3483,6 +3602,7 @@ def main() -> None:
         ema2050=ema2050_shown,
         trade_logs=trade_logs,
         action_plan=action_plan,
+        quality_meta=quality_meta,
         market_data=market_data,
         trade_scoreboards=trade_scoreboards,
         strategy_scoreboards=strategy_scoreboards,

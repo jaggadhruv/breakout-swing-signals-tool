@@ -365,10 +365,28 @@ Each archive update drops entries older than `ARCHIVE_RETENTION_DAYS` and replac
 same-day entries, so re-running a scan on the same date is idempotent. Missing files
 are created on first run.
 
-**Recent Quality ranking.** Per ticker, keep the peak-scoring day; require the peak to
-clear the section's quality threshold (60 / 70 / 70 / 65); rank by
-`keep_score = best_score + recency (+15 ≤ 7 d, +5 ≤ 21 d) + appearances × 2 (≤ 15) +
-volume or accumulation bonus`; show top 10.
+**Weekly quality lists (live).** All plans are computed for every gated row (not only
+displayed ones) and stored in each archive entry, together with `shown` (was it an
+elite Today pick). After the archives are updated, each list is built in two steps:
+
+1. The section's `compute_recent_*` function aggregates the 7-day archive per ticker
+   (best-scoring day wins) and applies the quality bar: breakouts 95, watchlist 70,
+   Supertrend 70, recovery 78, resistance 78, support 70, retest/holding 73, reversal
+   80, MTF RSI 80, positional 75 (each roughly 55–60% of that section's score scale).
+   A pool of up to `QUALITY_POOL_N` (60) is taken.
+2. `finalize_quality_list()` re-ranks (`best_score` + recency: ≤ 1 day +15, ≤ 3 days
+   +8 + appearances × 2, max 10 + `ELITE_HISTORY_BONUS` 10 if ever shown), attaches
+   the plan from the best-scoring day, and replays it to today with
+   `evaluate_trade_outcome()`. Stopped and Expired names are dropped. The rest get a
+   live status: **Buy zone** (open, within `MAX_CHASE_PCT` of entry), **Order
+   pending**, **Extended +x%**, **✓ TP1 / ✓ TP2**, or **No plan** (entries archived
+   before plans were stored; they age out within 7 days). Actionable names sort
+   first; top 10 kept. `quality_meta` carries listed / actionable / dropped counts
+   per block for the line above each list.
+
+Buy-zone and order-pending names are passed to `build_action_plan(history_lists=…)`
+as extra candidates, with conviction reduced by `HISTORY_AGE_PENALTY` (3) per session
+since the pick date.
 
 ---
 
@@ -382,7 +400,8 @@ needed for daily decisions.
 Neutral 3, Adverse 1), `ALLOW_FRACTIONAL_SHARES = False`, `MAX_PER_SECTOR = 2`,
 `MAX_CHASE_PCT = 3`, `MARKET_ENTRY_VALID_SESSIONS = 2`, `EARNINGS_LOOKAHEAD_DAYS = 14`.
 
-**Ranking.** Every displayed recommendation with a plan becomes a candidate (fake
+**Ranking.** Every displayed recommendation with a plan becomes a candidate, plus any
+weekly quality-list name whose plan is still actionable today (aged −3 per session) (fake
 breakouts excluded; signals whose logged trade already Stopped, hit TP2 or Expired are
 skipped; market and buy-stop ideas already > 3% past their entry are skipped).
 Conviction = strength within its section (score ÷ `STRATEGY_MAX_SCORE`) ×
@@ -506,6 +525,8 @@ pipeline. The ones you are most likely to touch:
 | `MAX_POSITIONS` / `REGIME_MAX_POSITIONS` | 5 / 5-3-1 | Open-position limits overall and by market regime |
 | `ALLOW_FRACTIONAL_SHARES` | False | True if your broker buys fractional US shares |
 | `STRATEGY_PRIOR` | 1.0 … 0.6 | How much each section counts in the Action Plan before its own track record |
+| `HIGH_QUALITY_THRESHOLD`, `*_QUALITY_THRESHOLD`, `SETUP_QUALITY_THRESHOLDS` | 95 / 70–80 | Bar a name's best score must clear to enter a weekly quality list |
+| `ELITE_HISTORY_BONUS` / `HISTORY_AGE_PENALTY` | 10 / 3 | Quality-list bonus for ever-elite names; Action Plan discount per session of age |
 
 When a section is empty, read the funnel before tuning: it shows whether candidates
 died at pattern detection, a base gate, or the elite filter.
