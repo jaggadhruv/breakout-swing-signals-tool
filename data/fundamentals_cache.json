@@ -3366,6 +3366,19 @@
   "roe": 0.14187999,
   "trailing_pe": 43.100895
  },
+ "WDAY": {
+  "debt_to_equity": 58.39,
+  "earnings_growth": 2.06,
+  "fetched": "2026-11-15",
+  "forward_pe": 14.834296,
+  "free_cashflow": 3046374912.0,
+  "market_cap": 47344447488.0,
+  "peg": 0.59,
+  "profit_margin": 0.12319,
+  "revenue_growth": 0.128,
+  "roe": 0.16006,
+  "trailing_pe": 40.010185
+ },
  "WFC": {
   "debt_to_equity": null,
   "earnings_growth": 0.127,
