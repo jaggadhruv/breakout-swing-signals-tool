@@ -50,6 +50,85 @@
       "piotroski": null,
       "days_on_report": 6,
       "volume_multiple": 1.83
+    },
+    {
+      "date": "2026-11-17",
+      "ticker": "CHD",
+      "name": "CHD",
+      "sector": "Unknown",
+      "score": 129.4,
+      "pattern_labels": [
+        "52W High",
+        "Resistance Break"
+      ],
+      "entry": 114.74,
+      "stop": 106.62,
+      "tp1": 130.99,
+      "tp2": 139.11,
+      "piotroski": null,
+      "days_on_report": 8,
+      "volume_multiple": 1.94,
+      "plan": {
+        "entry": 114.74,
+        "stop": 106.62,
+        "tp1": 130.99,
+        "tp2": 139.11,
+        "entry_type": "market",
+        "risk_pct": 7.08
+      },
+      "shown": true
+    },
+    {
+      "date": "2026-11-17",
+      "ticker": "CL",
+      "name": "CL",
+      "sector": "Unknown",
+      "score": 57.8,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 100.99,
+      "stop": 91.34,
+      "tp1": 120.28,
+      "tp2": 129.93,
+      "piotroski": null,
+      "days_on_report": 8,
+      "volume_multiple": 1.78,
+      "plan": {
+        "entry": 100.99,
+        "stop": 91.34,
+        "tp1": 120.28,
+        "tp2": 129.93,
+        "entry_type": "market",
+        "risk_pct": 9.56
+      },
+      "shown": false
+    },
+    {
+      "date": "2026-11-17",
+      "ticker": "DIS",
+      "name": "DIS",
+      "sector": "Unknown",
+      "score": 56.8,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 118.7,
+      "stop": 109.64,
+      "tp1": 136.82,
+      "tp2": 145.89,
+      "piotroski": null,
+      "days_on_report": 5,
+      "volume_multiple": 1.64,
+      "plan": {
+        "entry": 118.7,
+        "stop": 109.64,
+        "tp1": 136.82,
+        "tp2": 145.89,
+        "entry_type": "market",
+        "risk_pct": 7.63
+      },
+      "shown": false
     }
   ]
 }

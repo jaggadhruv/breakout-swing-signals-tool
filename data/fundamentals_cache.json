@@ -974,6 +974,19 @@
   "roe": 0.058790002,
   "trailing_pe": 121.75
  },
+ "DUOL": {
+  "debt_to_equity": 5.684,
+  "earnings_growth": -0.909,
+  "fetched": "2026-11-17",
+  "forward_pe": 21.59848,
+  "free_cashflow": 313434240.0,
+  "market_cap": 7961331200.0,
+  "peg": null,
+  "profit_margin": 0.12327,
+  "revenue_growth": 0.137,
+  "roe": 0.104499996,
+  "trailing_pe": 54.788963
+ },
  "DV": {
   "debt_to_equity": 10.218,
   "earnings_growth": 0.6,
@@ -1952,15 +1965,15 @@
  "MPWR": {
   "debt_to_equity": 0.572,
   "earnings_growth": 0.473,
-  "fetched": "2026-11-10",
-  "forward_pe": 29.950592,
+  "fetched": "2026-11-17",
+  "forward_pe": 28.1682,
   "free_cashflow": 506380128.0,
-  "market_cap": 67692425216.0,
-  "peg": 0.68,
+  "market_cap": 64081149952.0,
+  "peg": 0.79,
   "profit_margin": 0.23893999,
   "revenue_growth": 0.631,
   "roe": 0.24466999,
-  "trailing_pe": 65.25858
+  "trailing_pe": 76.2181
  },
  "MRK": {
   "debt_to_equity": 119.928,
@@ -2143,6 +2156,19 @@
   "revenue_growth": 0.106,
   "roe": 0.043130003,
   "trailing_pe": 109.78916
+ },
+ "ORLY": {
+  "debt_to_equity": null,
+  "earnings_growth": 0.141,
+  "fetched": "2026-11-17",
+  "forward_pe": 25.321573,
+  "free_cashflow": 1583734400.0,
+  "market_cap": 74349912064.0,
+  "peg": 1.73,
+  "profit_margin": 0.14273,
+  "revenue_growth": 0.088,
+  "roe": null,
+  "trailing_pe": 28.262194
  },
  "OSW": {
   "debt_to_equity": 15.605,
@@ -2663,6 +2689,19 @@
   "revenue_growth": 0.111,
   "roe": 0.1285,
   "trailing_pe": 32.73008
+ },
+ "SAP": {
+  "debt_to_equity": 22.789,
+  "earnings_growth": 0.134,
+  "fetched": "2026-11-17",
+  "forward_pe": 24.536278,
+  "free_cashflow": 10038750208.0,
+  "market_cap": 269887586304.0,
+  "peg": 1.83,
+  "profit_margin": 0.20413,
+  "revenue_growth": 0.132,
+  "roe": 0.18178,
+  "trailing_pe": 29.265333
  },
  "SBLK": {
   "debt_to_equity": 46.889,
@@ -3317,15 +3356,15 @@
  "VRSK": {
   "debt_to_equity": null,
   "earnings_growth": 0.054,
-  "fetched": "2026-11-10",
-  "forward_pe": 23.035627,
+  "fetched": "2026-11-17",
+  "forward_pe": 24.43478,
   "free_cashflow": 936612480.0,
-  "market_cap": 25734256640.0,
+  "market_cap": 27294216192.0,
   "peg": 1.72,
   "profit_margin": 0.27677,
   "revenue_growth": 0.053,
   "roe": null,
-  "trailing_pe": 30.39394
+  "trailing_pe": 31.473372
  },
  "VRTX": {
   "debt_to_equity": 30.986,

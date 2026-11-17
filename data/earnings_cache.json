@@ -1,14 +1,18 @@
 {
  "ADI": {
-  "fetched": "2026-11-12",
+  "fetched": "2026-11-17",
   "next": "2026-11-24"
  },
+ "CHD": {
+  "fetched": "2026-11-17",
+  "next": "2027-01-29"
+ },
  "CHKP": {
-  "fetched": "2026-11-14",
+  "fetched": "2026-11-17",
   "next": null
  },
  "CME": {
-  "fetched": "2026-11-14",
+  "fetched": "2026-11-17",
   "next": null
  },
  "DOCU": {
@@ -28,7 +32,7 @@
   "next": null
  },
  "NXPI": {
-  "fetched": "2026-11-14",
+  "fetched": "2026-11-17",
   "next": null
  },
  "PCTY": {
@@ -51,6 +55,10 @@
   "fetched": "2026-11-15",
   "next": null
  },
+ "TRV": {
+  "fetched": "2026-11-17",
+  "next": "2027-01-20"
+ },
  "TSM": {
   "fetched": "2026-11-12",
   "next": "2027-01-14"
@@ -58,5 +66,9 @@
  "WCN": {
   "fetched": "2026-11-15",
   "next": null
+ },
+ "WM": {
+  "fetched": "2026-11-17",
+  "next": "2027-01-27"
  }
 }
