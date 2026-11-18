@@ -1,40 +1,6 @@
 {
   "signals": [
     {
-      "date": "2026-11-10",
-      "ticker": "PCTY",
-      "name": "PCTY",
-      "sector": "Unknown",
-      "score": 70.5,
-      "pattern_labels": [
-        "Resistance Break"
-      ],
-      "entry": 177.81,
-      "stop": 164.21,
-      "tp1": 205.01,
-      "tp2": 218.61,
-      "piotroski": null,
-      "days_on_report": 6,
-      "volume_multiple": 1.83
-    },
-    {
-      "date": "2026-11-10",
-      "ticker": "NXPI",
-      "name": "NXPI",
-      "sector": "Unknown",
-      "score": 39.1,
-      "pattern_labels": [
-        "Resistance Break"
-      ],
-      "entry": 256.42,
-      "stop": 237.91,
-      "tp1": 293.43,
-      "tp2": 311.94,
-      "piotroski": null,
-      "days_on_report": 3,
-      "volume_multiple": 1.79
-    },
-    {
       "date": "2026-11-11",
       "ticker": "PCTY",
       "name": "PCTY",
