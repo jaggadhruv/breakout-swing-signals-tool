@@ -19,6 +19,10 @@
   "fetched": "2026-11-12",
   "next": "2026-12-03"
  },
+ "EOG": {
+  "fetched": "2026-11-19",
+  "next": null
+ },
  "EW": {
   "fetched": "2026-11-18",
   "next": null
@@ -35,6 +39,10 @@
   "fetched": "2026-11-14",
   "next": null
  },
+ "MSI": {
+  "fetched": "2026-11-19",
+  "next": null
+ },
  "NXPI": {
   "fetched": "2026-11-17",
   "next": null
@@ -46,6 +54,10 @@
  "PG": {
   "fetched": "2026-11-18",
   "next": "2027-01-21"
+ },
+ "POOL": {
+  "fetched": "2026-11-19",
+  "next": null
  },
  "REGN": {
   "fetched": "2026-11-18",

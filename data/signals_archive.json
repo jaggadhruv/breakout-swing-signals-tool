@@ -1,23 +1,6 @@
 {
   "signals": [
     {
-      "date": "2026-11-11",
-      "ticker": "PCTY",
-      "name": "PCTY",
-      "sector": "Unknown",
-      "score": 70.5,
-      "pattern_labels": [
-        "Resistance Break"
-      ],
-      "entry": 177.81,
-      "stop": 164.21,
-      "tp1": 205.01,
-      "tp2": 218.61,
-      "piotroski": null,
-      "days_on_report": 6,
-      "volume_multiple": 1.83
-    },
-    {
       "date": "2026-11-17",
       "ticker": "CHD",
       "name": "CHD",
@@ -93,6 +76,32 @@
         "tp2": 145.89,
         "entry_type": "market",
         "risk_pct": 7.63
+      },
+      "shown": false
+    },
+    {
+      "date": "2026-11-19",
+      "ticker": "DIS",
+      "name": "DIS",
+      "sector": "Unknown",
+      "score": 61.0,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 122.36,
+      "stop": 111.14,
+      "tp1": 144.79,
+      "tp2": 156.01,
+      "piotroski": null,
+      "days_on_report": 6,
+      "volume_multiple": 2.02,
+      "plan": {
+        "entry": 122.36,
+        "stop": 111.14,
+        "tp1": 144.79,
+        "tp2": 156.01,
+        "entry_type": "market",
+        "risk_pct": 9.17
       },
       "shown": false
     }
