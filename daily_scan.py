@@ -190,7 +190,7 @@ LIQUIDITY_TIERS = [(100_000_000, "Very high"), (25_000_000, "High"), (MIN_AVG_DO
 # Threshold = best score a ticker must reach this week to appear in the list.
 SETUP_QUALITY_THRESHOLDS = {      # each ~55-60% of that section's score scale
     "resistance": 78, "support": 70, "retest": 73, "holding": 73,
-    "reversal": 80, "mtf_rsi": 80, "positional": 75,
+    "reversal": 80, "mtf_rsi": 80, "positional": 75, "early_reversal": 65,
 }
 
 # Quality-list ranking and live status
@@ -240,6 +240,28 @@ MAX_GOLDEN_CROSS_SHOWN     = 8
 EMA2050_MAX_CROSS_AGE      = 5      # cross within the last 5 sessions
 MAX_EMA2050_SHOWN          = 25     # full table cap (dashboard shows top 10)
 
+# ----------------------------------------------------------------------------
+# Early reversals (long only), ported from the "Reversal Wave Toolkit" Pine script
+# and restricted to financially solid companies.
+# ----------------------------------------------------------------------------
+REV_MIN_CLUES          = 3      # reversal clues needed for a warning (of 5)
+REV_CONFIRM_BARS       = 5      # a close above the warning high must come within 5 bars
+REV_RR                 = 2.0    # TP1 = 2R (TP2 = 3R)
+REV_MAX_RISK_ATR       = 3.0    # skip if the stop is wider than 3 x ATR
+REV_SWING_LEN          = 10     # warning bar must be a new 10-day low...
+REV_BAND_LEN           = 20     # ...below the 20 EMA - 2 x ATR band
+REV_BAND_MULT          = 2.0
+REV_RSI_OVERSOLD       = 30
+REV_WICK_RATIO         = 0.4
+REV_VOL_MULT           = 1.5
+REV_WAVE_LEN           = 21     # higher-timeframe trend line (ALMA) and its ATR trail
+REV_WAVE_MULT          = 1.8
+REV_MIN_HTF_AGREE      = 1      # weekly / monthly trends that must point up (of 2)
+REV_MAX_CONFIRM_AGE    = 2      # confirmed BUYs stay on the Today list for 2 sessions
+REV_REQUIRE_BEHAVIORAL = True   # skip names with a -10% gap in 20 sessions (often bad news)
+REV_MIN_SHOW_SCORE     = 55
+MAX_EARLYREV_SHOWN     = 8
+
 # Trade log with outcome tracking for every section
 CROSSOVER_LOG_RETENTION_DAYS = 45   # retention (by signal date) for the whole trade log
 PENDING_EXPIRY_SESSIONS      = 10   # unfilled buy-stop / buy-limit orders expire after this
@@ -265,7 +287,7 @@ EARNINGS_CACHE_DAYS      = 3
 STRATEGY_MAX_SCORE = {
     "breakout": 180, "watchlist": 112, "resistance": 142, "retest": 132, "holding": 132,
     "supertrend": 122, "support": 122, "reversal": 147, "mtf_rsi": 147, "recovery": 142,
-    "positional": 132, "golden_cross": 132, "ema2050": 100,
+    "positional": 132, "golden_cross": 132, "ema2050": 100, "early_reversal": 120,
 }
 
 # Prior quality weight per strategy: how much a section's raw strength counts before
@@ -275,14 +297,14 @@ STRATEGY_MAX_SCORE = {
 STRATEGY_PRIOR = {
     "breakout": 1.0, "retest": 1.0, "watchlist": 0.9, "supertrend": 0.9, "positional": 0.9,
     "golden_cross": 0.9, "resistance": 0.85, "holding": 0.85, "support": 0.85, "mtf_rsi": 0.85,
-    "reversal": 0.8, "recovery": 0.75, "ema2050": 0.6,
+    "reversal": 0.8, "recovery": 0.75, "ema2050": 0.6, "early_reversal": 0.8,
 }
 
 # Which strategies feed each dashboard block's scoreboard and signal log
 CATEGORY_STRATEGIES = {
     "breakout": ["breakout"], "watch": ["watchlist", "resistance"], "retest": ["retest", "holding"],
     "trend": ["supertrend"], "pullback": ["support", "reversal", "mtf_rsi"], "recovery": ["recovery"],
-    "positional": ["positional", "golden_cross"], "ema2050": ["ema2050"],
+    "positional": ["positional", "golden_cross"], "ema2050": ["ema2050"], "earlyrev": ["early_reversal"],
 }
 
 # ----------------------------------------------------------------------------
@@ -1573,6 +1595,37 @@ def refresh_fundamentals(cache: dict, tickers: list[str], today_str: str) -> tup
     return refreshed, failed
 
 
+def financially_solid(f: dict | None) -> dict | None:
+    """Quality-only gate (no valuation): ROE >= 10%, positive net margin, positive free
+    cash flow and debt/equity <= 2x where reported. Returns quality points, or None."""
+    if not f or f.get("error"):
+        return None
+    roe, margin, fcf, de = f.get("roe"), f.get("profit_margin"), f.get("free_cashflow"), f.get("debt_to_equity")
+    if roe is None or margin is None or roe < POS_MIN_ROE or margin <= 0:
+        return None
+    if fcf is not None and fcf <= 0:
+        return None
+    if de is not None and de > POS_MAX_DEBT_TO_EQUITY:
+        return None
+    pts = (12 if roe >= 0.20 else 8 if roe >= 0.15 else 4) + (10 if margin >= 0.20 else 6 if margin >= 0.10 else 2)
+    pts += 0 if de is None else (8 if de <= 50 else 5 if de <= 100 else 2)
+    pts += 10 if (fcf is not None and fcf > 0) else 0
+    return {"quality_pts": pts, "roe": roe, "profit_margin": margin, "debt_to_equity": de}
+
+
+def compute_early_reversal_score(*, sig: dict, confirmed: bool, htf: dict, quality_pts: float) -> float:
+    """0 to ~120: clues 12 each, weekly trend up +12, monthly up +8, quality / 2,
+    freshness for confirmed BUYs (today 15, 1 day 10, 2 days 5), tight stop +5."""
+    score = 12 * sig["clue_count"]
+    score += 12 if htf.get("weekly") == 1 else 0
+    score += 8 if htf.get("monthly") == 1 else 0
+    score += quality_pts / 2
+    if confirmed:
+        score += {0: 15, 1: 10, 2: 5}.get(sig["age"], 0)
+    score += 5 if sig["risk_atr"] <= 1.5 else 0
+    return round(score, 1)
+
+
 def fundamental_quality_value(f: dict) -> dict | None:
     """Financial-quality and fair-valuation gates + points (no technical gates).
     Shared by the Positional section and the golden-cross subsection."""
@@ -1688,6 +1741,13 @@ def plan_trade(strategy: str, r: dict, prices: pd.DataFrame) -> dict | None:
         return mk(close, stop)
     if strategy == "positional":
         return mk(r.get("close"), r.get("stop"), tp2=r.get("target"))
+    if strategy == "early_reversal":
+        if r.get("status") == "confirmed":     # BUY confirmed: enter at the confirmation close
+            return mk(r["entry"], r["stop"], r["tp2"], tp1=r["tp1"])
+        plan = mk(r["trigger"], r["stop"], r["tp2"], "buy_stop", r["tp1"])   # warning: buy-stop at its high
+        if plan:
+            plan["expiry_sessions"] = max(1, int(r.get("bars_left", REV_CONFIRM_BARS)))
+        return plan
     return None
 
 
@@ -1715,28 +1775,47 @@ def save_trade_log(rows: list[dict]) -> None:
 
 def update_trade_log(log_rows: list[dict], new_signals: list[tuple], price_cache: dict,
                      today_str: str) -> list[dict]:
-    """new_signals: (strategy, row, signal_date, plan). A signal is logged once per
-    (strategy, ticker, signal date), and not at all while an earlier trade for the
-    same strategy+ticker is still active. Levels are frozen at logging; every run
-    replays the bars since the signal to update the outcome."""
-    cutoff = (datetime.utcnow() - timedelta(days=CROSSOVER_LOG_RETENTION_DAYS)).strftime("%Y-%m-%d")
-    log_rows = [r for r in log_rows if r.get("signal_date", "") >= cutoff]
-    keys = {(r["strategy"], r["ticker"], r["signal_date"]) for r in log_rows}
-    active = {(r["strategy"], r["ticker"]) for r in log_rows if r.get("status", "Open") in ACTIVE_STATUSES}
-    for strategy, row, sig_date, plan in new_signals:
-        t = row["ticker"]
-        if (strategy, t, sig_date) in keys or (strategy, t) in active:
-            continue
-        keys.add((strategy, t, sig_date)); active.add((strategy, t))
-        log_rows.append({"strategy": strategy, "ticker": t, "sector": row.get("sector", "Unknown"),
-                         "signal_date": sig_date, "logged": today_str, **plan})
-    for r in log_rows:
+    """new_signals: (strategy, row, signal_date, plan). Levels are frozen at logging and
+    every run replays the bars since the signal to update the outcome.
+
+    Order of work matters: existing trades are evaluated against today's bar FIRST, so a
+    pending order that filled today counts as a live trade before new signals are added.
+    Then, per strategy + ticker:
+      - a filled trade (Open / TP1 hit) is kept and the new signal is skipped (already in it);
+      - an UNFILLED pending order is cancelled and replaced when today's plan differs
+        (a newer trigger, or a confirmed BUY), exactly as you would amend a broker order;
+      - otherwise the signal is logged once per signal date."""
+    def evaluate(r: dict) -> None:
         prices = price_cache.get(r["ticker"])
         if prices is None:
-            continue  # keep last known outcome
+            return  # keep last known outcome
         r.update(patterns.evaluate_trade_outcome(
             prices, r["signal_date"], r["entry"], r["stop"], r["tp1"], r["tp2"],
-            r.get("entry_type", "market"), PENDING_EXPIRY_SESSIONS))
+            r.get("entry_type", "market"), r.get("expiry_sessions", PENDING_EXPIRY_SESSIONS)))
+
+    cutoff = (datetime.utcnow() - timedelta(days=CROSSOVER_LOG_RETENTION_DAYS)).strftime("%Y-%m-%d")
+    log_rows = [r for r in log_rows if r.get("signal_date", "") >= cutoff]
+    for r in log_rows:
+        evaluate(r)
+    keys = {(r["strategy"], r["ticker"], r["signal_date"]) for r in log_rows}
+    for strategy, row, sig_date, plan in new_signals:
+        t = row["ticker"]
+        if (strategy, t, sig_date) in keys:
+            continue
+        active = [r for r in log_rows if r["strategy"] == strategy and r["ticker"] == t
+                  and r.get("status", "Open") in ACTIVE_STATUSES]
+        if any(r.get("status") != "Pending" for r in active):
+            continue                                  # already in this trade
+        same = lambda r: (r.get("entry_type") == plan["entry_type"] and abs(r["entry"] - plan["entry"]) < 1e-6
+                          and abs(r["stop"] - plan["stop"]) < 1e-6)
+        if active and all(same(r) for r in active):
+            continue                                  # identical order already resting
+        log_rows = [r for r in log_rows if r not in active]   # cancel + replace stale pending orders
+        keys.add((strategy, t, sig_date))
+        new = {"strategy": strategy, "ticker": t, "sector": row.get("sector", "Unknown"),
+               "signal_date": sig_date, "logged": today_str, **plan}
+        evaluate(new)
+        log_rows.append(new)
     return log_rows
 
 
@@ -1808,7 +1887,7 @@ def finalize_quality_list(rows: list[dict], entries: list[dict], strategy_of, pr
             out.append(r)
             continue
         o = patterns.evaluate_trade_outcome(prices, r["best_score_date"], plan["entry"], plan["stop"], plan["tp1"],
-                                            plan["tp2"], plan.get("entry_type", "market"), PENDING_EXPIRY_SESSIONS)
+                                            plan["tp2"], plan.get("entry_type", "market"), plan.get("expiry_sessions", PENDING_EXPIRY_SESSIONS))
         if o["status"] in ("Stopped", "Expired"):
             dropped += 1
             continue
@@ -1935,7 +2014,7 @@ def build_action_plan(today_lists: dict, price_cache: dict, liquidity_info: dict
             valid_until = (last_bar + pd.offsets.BDay(MARKET_ENTRY_VALID_SESSIONS)).strftime("%Y-%m-%d")
         else:
             start = pd.Timestamp(picked) if picked else last_bar
-            valid_until = (start + pd.offsets.BDay(PENDING_EXPIRY_SESSIONS)).strftime("%Y-%m-%d")
+            valid_until = (start + pd.offsets.BDay(pl.get("expiry_sessions", PENDING_EXPIRY_SESSIONS))).strftime("%Y-%m-%d")
         cand = {
             "ticker": t, "strategy": strategy, "sector": r.get("sector", "Unknown"),
             "sections": sorted(sections_by_ticker.get(t, {strategy})), "conviction": round(conviction, 1),
@@ -2033,7 +2112,7 @@ def update_setups_archive(entries: list[dict], rows_by_setup: dict[str, list[dic
     cutoff = (datetime.utcnow() - timedelta(days=ARCHIVE_RETENTION_DAYS)).strftime("%Y-%m-%d")
     entries = [e for e in entries if e.get("date", "") >= cutoff and e.get("date") != today_str]
     level_key = {"support": "level", "resistance": "level", "retest": "breakout_level", "holding": "breakout_level",
-                 "reversal": "entry", "mtf_rsi": "entry", "positional": "close"}
+                 "reversal": "entry", "mtf_rsi": "entry", "positional": "close", "early_reversal": "close"}
     for setup, rows in rows_by_setup.items():
         for r in rows:
             entries.append({
@@ -2726,6 +2805,7 @@ def main() -> None:
     raw_positional: list[dict] = []
     st_counts = {"fresh": 0, "whipsaw": 0, "old": 0}
     raw_ema2050: list[dict] = []
+    raw_earlyrev: list[dict] = []
     raw_golden: list[dict] = []
     quality_base_pass = 0
 
@@ -2747,6 +2827,21 @@ def main() -> None:
         if len(prices) < 221:
             continue
         beh_ok, _ = passes_behavioral_filter(prices, ticker)
+
+        # Early reversal (warning or fresh confirmation). Runs before the 200-SMA quality
+        # base on purpose: reversal candidates are usually below their short-term averages.
+        if beh_ok or not REV_REQUIRE_BEHAVIORAL:
+            rv_scan = patterns.early_reversal_scan(
+                prices, REV_MIN_CLUES, REV_CONFIRM_BARS, REV_RR, REV_MAX_RISK_ATR, REV_SWING_LEN, REV_BAND_LEN,
+                REV_BAND_MULT, 14, 14, REV_RSI_OVERSOLD, REV_WICK_RATIO, REV_VOL_MULT)
+            if rv_scan:
+                b, w = rv_scan["buy"], rv_scan["warning"]
+                fresh_buy = b is not None and b["age"] <= REV_MAX_CONFIRM_AGE and not b["stopped"]
+                live_warn = w is not None and not w["too_wide"] and w["bars_left"] > 0
+                if fresh_buy or live_warn:
+                    raw_earlyrev.append({"ticker": ticker, "entry_info": entry_info, "scan": rv_scan,
+                                         "htf": patterns.higher_tf_trend(prices, REV_WAVE_LEN, REV_WAVE_MULT, 14)})
+
         if not beh_ok:
             continue
 
@@ -2845,7 +2940,8 @@ def main() -> None:
 
     # ---- Fundamentals for positional candidates (cached, weekly refresh, capped) ----
     fundamentals = load_fundamentals_cache()
-    f_targets = list(dict.fromkeys([c["ticker"] for c in raw_golden] + [c["ticker"] for c in raw_positional]))
+    f_targets = list(dict.fromkeys([c["ticker"] for c in raw_earlyrev] + [c["ticker"] for c in raw_golden]
+                                   + [c["ticker"] for c in raw_positional]))
     f_refreshed, f_failed = refresh_fundamentals(fundamentals, f_targets, today_str)
     save_fundamentals_cache(fundamentals)
     f_available = sum(1 for c in raw_positional
@@ -3292,6 +3388,48 @@ def main() -> None:
         f"{len(golden_list)} pass → {len(golden_shown)} shown; 20/50 EMA cross {len(ema2050_list)} "
         f"(showing {len(ema2050_shown)}).")
 
+    # ---- Pass 2h: early reversals on financially solid names ----
+    earlyrev_list: list[dict] = []
+    rev_stats = {"raw": len(raw_earlyrev), "no_fund": 0, "not_solid": 0, "htf": 0}
+    for c in raw_earlyrev:
+        f = fundamentals.get(c["ticker"])
+        if not f or f.get("error"):
+            rev_stats["no_fund"] += 1
+            continue
+        fq = financially_solid(f)
+        if fq is None:
+            rev_stats["not_solid"] += 1
+            continue
+        htf = c["htf"]
+        if sum(1 for x in (htf.get("weekly"), htf.get("monthly")) if x == 1) < REV_MIN_HTF_AGREE:
+            rev_stats["htf"] += 1
+            continue
+        e, sc = c["entry_info"], c["scan"]
+        b, w = sc["buy"], sc["warning"]
+        confirmed = b is not None and b["age"] <= REV_MAX_CONFIRM_AGE and not b["stopped"]
+        sig = b if confirmed else w
+        row = {
+            "ticker": c["ticker"], "name": e.get("name", ""), "sector": e.get("sector", "Unknown"),
+            "sector_rank": _rank_for(e), "rs_percentile": rs_percentiles.get(c["ticker"]),
+            "status": "confirmed" if confirmed else "warning", "clues": sig["clues"], "clue_count": sig["clue_count"],
+            "warning_date": sig["warning_date"], "htf_weekly": htf.get("weekly"), "htf_monthly": htf.get("monthly"),
+            "roe": fq["roe"], "profit_margin": fq["profit_margin"], "debt_to_equity": fq["debt_to_equity"],
+            "close": sc["close"], "risk_atr": sig["risk_atr"], "stop": sig["stop"], "tp1": sig["tp1"], "tp2": sig["tp2"],
+            "score": compute_early_reversal_score(sig={**sig, "age": sig.get("age", 0)}, confirmed=confirmed,
+                                                  htf=htf, quality_pts=fq["quality_pts"]),
+        }
+        if confirmed:
+            row.update({"entry": b["entry"], "confirm_date": b["confirm_date"], "confirm_age": b["age"]})
+        else:
+            row.update({"trigger": w["trigger"], "fail": w["fail"], "bars_left": w["bars_left"],
+                        "bars_since": w["bars_since"]})
+        earlyrev_list.append(row)
+    earlyrev_qualified, earlyrev_shown = _curate(earlyrev_list, REV_MIN_SHOW_SCORE, MAX_EARLYREV_SHOWN)
+    log(f"Pass 2h (early reversals) complete: {rev_stats['raw']} signals → {rev_stats['no_fund']} without fundamentals, "
+        f"{rev_stats['not_solid']} not financially solid, {rev_stats['htf']} higher timeframes down → "
+        f"{len(earlyrev_list)} pass ({sum(r['status'] == 'confirmed' for r in earlyrev_list)} confirmed BUYs, "
+        f"{sum(r['status'] == 'warning' for r in earlyrev_list)} warnings) → {len(earlyrev_shown)} shown.")
+
 
     # Update history with today's signals (all four pipelines) BEFORE breadth
     update_history(history, [s["ticker"] for s in signals])
@@ -3387,7 +3525,7 @@ def main() -> None:
         "retest": retest_shown, "holding": holding_shown, "supertrend": supertrend_shown,
         "support": support_shown, "reversal": reversal_shown, "mtf_rsi": mtf_rsi_shown,
         "recovery": recovery_shown, "positional": positional_shown,
-        "golden_cross": golden_shown, "ema2050": ema2050_shown,
+        "golden_cross": golden_shown, "ema2050": ema2050_shown, "early_reversal": earlyrev_shown,
     }
     # Plan every gated signal (not only displayed ones) so the weekly quality lists
     # carry real entry / SL / TP levels and can be checked for validity later.
@@ -3396,7 +3534,7 @@ def main() -> None:
         "retest": retest_list, "holding": holding_list, "supertrend": supertrend_list,
         "support": support_list, "reversal": reversal_list, "mtf_rsi": mtf_rsi_list,
         "recovery": recovery_list, "positional": positional_list,
-        "golden_cross": golden_list, "ema2050": ema2050_list,
+        "golden_cross": golden_list, "ema2050": ema2050_list, "early_reversal": earlyrev_list,
     }
     for strategy, rows in all_lists.items():
         for r in rows:
@@ -3500,6 +3638,10 @@ def main() -> None:
         "ema2050_signals": len(ema2050_list), "ema2050_shown": len(ema2050_shown),
         "ema2050_max_age": EMA2050_MAX_CROSS_AGE, "gc_max_age": GC_MAX_CROSS_AGE,
         "crossover_log_days": CROSSOVER_LOG_RETENTION_DAYS,
+        "earlyrev_raw": rev_stats["raw"], "earlyrev_no_fund": rev_stats["no_fund"],
+        "earlyrev_not_solid": rev_stats["not_solid"], "earlyrev_htf": rev_stats["htf"],
+        "earlyrev_signals": len(earlyrev_list), "earlyrev_shown": len(earlyrev_shown),
+        "max_earlyrev_cap": MAX_EARLYREV_SHOWN, "rev_confirm_bars": REV_CONFIRM_BARS,
         "supertrend_max_flip_age_days": SUPERTREND_MAX_FLIP_AGE_DAYS,
         "supertrend_whipsaw": st_counts["whipsaw"], "supertrend_old": st_counts["old"],
         "min_show_score_used": adaptive_min_score,
@@ -3551,6 +3693,7 @@ def main() -> None:
     setups_archive = update_setups_archive(load_setups_archive(), {
         "support": support_list, "resistance": resistance_list, "retest": retest_list, "holding": holding_list,
         "reversal": reversal_list, "mtf_rsi": mtf_rsi_list, "positional": positional_list,
+        "early_reversal": earlyrev_list,
     }, today_str)
     save_setups_archive(setups_archive)
     recent_resistance = compute_recent_setups(setups_archive, ["resistance"])
@@ -3574,12 +3717,14 @@ def main() -> None:
     recent_retest, qm_ret = finalize_quality_list(compute_recent_setups(setups_archive, ["retest", "holding"], n=P), setups_archive, by_setup, price_cache, 10)
     recent_pullback, qm_pb = finalize_quality_list(compute_recent_setups(setups_archive, ["support", "reversal", "mtf_rsi"], n=P), setups_archive, by_setup, price_cache, 10)
     recent_positional, qm_pos = finalize_quality_list(compute_recent_setups(setups_archive, ["positional"], n=P), setups_archive, by_setup, price_cache, 10)
+    recent_earlyrev, qm_rev = finalize_quality_list(compute_recent_setups(setups_archive, ["early_reversal"], n=P), setups_archive, by_setup, price_cache, 10)
     def _qsum(*ms):
         return {k: sum(m[k] for m in ms) for k in ("listed", "actionable", "dropped", "no_plan")}
     quality_meta = {"breakout": _qsum(qm_bo), "watch": _qsum(qm_wl, qm_res), "retest": _qsum(qm_ret), "trend": _qsum(qm_st),
-                    "pullback": _qsum(qm_pb), "recovery": _qsum(qm_rec), "positional": _qsum(qm_pos)}
+                    "pullback": _qsum(qm_pb), "recovery": _qsum(qm_rec), "positional": _qsum(qm_pos),
+                    "earlyrev": _qsum(qm_rev)}
     history_lists = [recent_quality, recent_quality_watchlist, recent_quality_supertrend, recent_quality_recovery,
-                     recent_resistance, recent_retest, recent_pullback, recent_positional]
+                     recent_resistance, recent_retest, recent_pullback, recent_positional, recent_earlyrev]
     qtot = _qsum(*quality_meta.values())
     log(f"Quality lists: {qtot['listed']} names listed, {qtot['actionable']} actionable now, "
         f"{qtot['dropped']} removed (stopped/expired), {qtot['no_plan']} without a plan (older entries).")
@@ -3590,7 +3735,7 @@ def main() -> None:
                  high_prob_shown, mtf_rsi_shown, positional_shown, recent_quality,
                  recent_quality_watchlist, recent_quality_supertrend, recent_quality_recovery,
                  recent_resistance, recent_retest, recent_pullback, recent_positional,
-                 golden_shown, ema2050_shown, *trade_logs.values()):
+                 golden_shown, ema2050_shown, earlyrev_shown, recent_earlyrev, *trade_logs.values()):
         for r in rows:
             r["liquidity"] = liquidity_info.get(r["ticker"])
 
@@ -3627,6 +3772,8 @@ def main() -> None:
         data_health=health,
         golden_cross=golden_shown,
         ema2050=ema2050_shown,
+        early_reversal=earlyrev_shown,
+        recent_earlyrev=recent_earlyrev,
         trade_logs=trade_logs,
         action_plan=action_plan,
         quality_meta=quality_meta,

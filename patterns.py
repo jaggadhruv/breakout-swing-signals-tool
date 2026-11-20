@@ -825,6 +825,192 @@ def evaluate_trade_outcome(prices: pd.DataFrame, signal_date: str, entry: float,
             "max_gain_pct": round((max_high / entry - 1) * 100, 2)}
 
 
+# ============================================================================
+# Early reversal (ported from the "Reversal Wave Toolkit" Pine script, long side)
+# ============================================================================
+
+def _rma(x: np.ndarray, n: int) -> np.ndarray:
+    """Pine's ta.rma / ta.atr smoothing: SMA seed of the first n values, then Wilder."""
+    out = np.full(len(x), np.nan)
+    vals = np.asarray(x, float)
+    start = None
+    for i in range(len(vals)):
+        if start is None:
+            window = vals[max(0, i - n + 1):i + 1]
+            if i >= n - 1 and not np.isnan(window).any():
+                out[i] = window.mean(); start = i
+        else:
+            out[i] = (out[i - 1] * (n - 1) + vals[i]) / n
+    return out
+
+
+def _atr_pine(h: np.ndarray, l: np.ndarray, c: np.ndarray, n: int) -> np.ndarray:
+    pc = np.concatenate([[np.nan], c[:-1]])
+    tr = np.where(np.isnan(pc), h - l, np.maximum.reduce([h - l, np.abs(h - pc), np.abs(l - pc)]))
+    return _rma(tr, n)
+
+
+def _rsi_pine(c: np.ndarray, n: int) -> np.ndarray:
+    d = np.diff(c, prepend=np.nan)
+    up, dn = np.where(d > 0, d, 0.0), np.where(d < 0, -d, 0.0)
+    up[0] = dn[0] = np.nan
+    au, ad = _rma(up, n), _rma(dn, n)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        r = 100 - 100 / (1 + au / ad)
+    return np.where(ad == 0, 100.0, r)
+
+
+def alma(x: np.ndarray, length: int, offset: float = 0.85, sigma: float = 6.0) -> np.ndarray:
+    """Pine ta.alma: Gaussian-weighted moving average, weights peaked near the newest bar."""
+    m = offset * (length - 1)
+    sd = length / sigma
+    w = np.exp(-((np.arange(length) - m) ** 2) / (2 * sd * sd))
+    w /= w.sum()
+    out = np.full(len(x), np.nan)
+    for i in range(length - 1, len(x)):
+        out[i] = np.dot(w, x[i - length + 1:i + 1])
+    return out
+
+
+def wave_trend_direction(ohlc: pd.DataFrame, length: int = 21, mult: float = 1.8, atr_len: int = 14) -> np.ndarray:
+    """The script's f_trend: ALMA trend line with an ATR trailing stop. +1 up, -1 down."""
+    h, l, c = (ohlc[k].to_numpy(float) for k in ("High", "Low", "Close"))
+    w, a = alma(c, length), _atr_pine(h, l, c, atr_len)
+    up, dn = w - a * mult, w + a * mult
+    d = np.ones(len(c), dtype=int)
+    trail = np.nan
+    for i in range(len(c)):
+        cur = 1 if i == 0 else d[i - 1]
+        if np.isnan(trail):
+            trail = up[i]
+        elif cur == 1:
+            trail = max(trail, up[i])
+            if c[i] < trail:
+                cur, trail = -1, dn[i]
+        else:
+            trail = min(trail, dn[i])
+            if c[i] > trail:
+                cur, trail = 1, up[i]
+        d[i] = cur
+    return d
+
+
+def higher_tf_trend(prices: pd.DataFrame, length: int = 21, mult: float = 1.8, atr_len: int = 14) -> dict:
+    """Weekly and monthly wave-trend direction on the last COMPLETED bar of each
+    (the script reads the higher timeframe with [1], so no look-ahead)."""
+    out = {}
+    agg = {"Open": "first", "High": "max", "Low": "min", "Close": "last"}
+    for name, rule in (("weekly", "W-FRI"), ("monthly", "ME")):
+        try:
+            bars = prices[["Open", "High", "Low", "Close"]].resample(rule).agg(agg).dropna()
+        except ValueError:                       # pandas < 2.2
+            bars = prices[["Open", "High", "Low", "Close"]].resample("M" if rule == "ME" else rule).agg(agg).dropna()
+        if len(bars) < length + 3:          # ALMA needs `length` bars; 3y of data = 36 monthly bars
+            out[name] = None
+            continue
+        out[name] = int(wave_trend_direction(bars, length, mult, atr_len)[-2])
+    return out
+
+
+def early_reversal_scan(
+    prices: pd.DataFrame,
+    min_clues: int = 3, confirm_bars: int = 5, rr: float = 2.0, max_risk_atr: float = 3.0,
+    swing_len: int = 10, band_len: int = 20, band_mult: float = 2.0, atr_len: int = 14,
+    rsi_len: int = 14, rsi_os: float = 30.0, wick_ratio: float = 0.4, vol_mult: float = 1.5,
+    lookback: int = 40,
+) -> dict | None:
+    """Replay the script's bullish warning -> confirm / fail / expire logic over the last
+    `lookback` closed daily bars. Returns the latest confirmed BUY (with its plan), the
+    currently pending warning (if any), and event counts. None if data is too short."""
+    n = len(prices)
+    if n < max(band_len, swing_len, rsi_len, atr_len) + lookback + 25:
+        return None
+    o, h, l, c = (prices[k].to_numpy(float) for k in ("Open", "High", "Low", "Close"))
+    v = prices["Volume"].to_numpy(float)
+    atr_v = _atr_pine(h, l, c, atr_len)
+    basis = pd.Series(c).ewm(span=band_len, adjust=False).mean().to_numpy()
+    lower = basis - atr_v * band_mult
+    lo_n = pd.Series(l).rolling(swing_len).min().to_numpy()
+    lo_prev = np.concatenate([[np.nan], lo_n[:-1]])
+    rsi = _rsi_pine(c, rsi_len)
+    rsi_lo_prev = np.concatenate([[np.nan], pd.Series(rsi).rolling(swing_len).min().to_numpy()[:-1]])
+    rsi_min3 = pd.Series(rsi).rolling(3).min().to_numpy()
+    vol_avg = pd.Series(v).rolling(20).mean().to_numpy()
+    rng = h - l
+    dn_wick = np.minimum(o, c) - l
+
+    def clues(i):
+        return {
+            "rsi_oversold": bool(rsi_min3[i] <= rsi_os),
+            "rejection_wick": bool(rng[i] > 0 and dn_wick[i] >= wick_ratio * rng[i]),
+            "back_inside_band": bool(c[i] > lower[i]),
+            "rsi_divergence": bool(l[i] < lo_prev[i] and rsi[i] > rsi_lo_prev[i]),
+            "volume_spike": bool(vol_avg[i] > 0 and v[i] > vol_avg[i] * vol_mult),
+        }
+
+    pend = None
+    last_buy = None
+    counts = {"warnings": 0, "confirmed": 0, "failed": 0, "expired": 0, "skipped_wide_stop": 0}
+    dates = prices.index
+    for i in range(n - lookback, n):
+        # 1) pending warning: confirm / fail / expire (checked before new warnings, as in the script)
+        if pend is not None and i > pend["bar"]:
+            pend["stop_low"] = min(pend["stop_low"], l[i])
+            if c[i] < pend["fail"]:
+                counts["failed"] += 1; pend = None
+            elif c[i] > pend["trigger"]:
+                sl = pend["stop_low"] - 0.1 * atr_v[i]
+                risk = c[i] - sl
+                if risk < 0.5 * atr_v[i]:
+                    sl, risk = c[i] - 0.5 * atr_v[i], 0.5 * atr_v[i]
+                if risk > max_risk_atr * atr_v[i]:
+                    counts["skipped_wide_stop"] += 1
+                else:
+                    counts["confirmed"] += 1
+                    last_buy = {
+                        "bar": i, "confirm_date": dates[i].strftime("%Y-%m-%d"),
+                        "warning_date": dates[pend["bar"]].strftime("%Y-%m-%d"),
+                        "clues": pend["clues"], "clue_count": pend["score"],
+                        "entry": round(c[i], 2), "stop": round(sl, 2),
+                        "tp1": round(c[i] + rr * risk, 2), "tp2": round(c[i] + 1.5 * rr * risk, 2),
+                        "risk_atr": round(risk / atr_v[i], 2), "risk_pct": round(risk / c[i] * 100, 2),
+                        "warning_low": round(pend["fail"], 2), "warning_high": round(pend["trigger"], 2),
+                    }
+                pend = None
+            elif i - pend["bar"] >= confirm_bars:
+                counts["expired"] += 1; pend = None
+        # 2) new bullish warning: new 10-bar low that pierces the lower band, with enough clues
+        if not np.isnan(lower[i]) and l[i] <= lo_n[i] and l[i] < lower[i]:
+            cl = clues(i)
+            if sum(cl.values()) >= min_clues:
+                counts["warnings"] += 1
+                pend = {"bar": i, "fail": l[i], "stop_low": l[i], "trigger": h[i],
+                        "clues": cl, "score": sum(cl.values())}
+
+    out = {"counts": counts, "buy": None, "warning": None, "close": round(c[-1], 2),
+           "atr": round(atr_v[-1], 4), "date": dates[-1].strftime("%Y-%m-%d")}
+    if last_buy is not None:
+        age = n - 1 - last_buy["bar"]
+        stopped = bool((l[last_buy["bar"] + 1:] <= last_buy["stop"]).any())
+        out["buy"] = {**last_buy, "age": int(age), "stopped": stopped}
+    if pend is not None:
+        bars_since = n - 1 - pend["bar"]
+        sl = pend["stop_low"] - 0.1 * atr_v[-1]
+        entry = pend["trigger"]
+        risk = entry - sl
+        if risk < 0.5 * atr_v[-1]:
+            sl, risk = entry - 0.5 * atr_v[-1], 0.5 * atr_v[-1]
+        out["warning"] = {
+            "warning_date": dates[pend["bar"]].strftime("%Y-%m-%d"), "bars_since": int(bars_since),
+            "bars_left": int(confirm_bars - bars_since), "clues": pend["clues"], "clue_count": pend["score"],
+            "trigger": round(entry, 2), "fail": round(pend["fail"], 2), "stop": round(sl, 2),
+            "tp1": round(entry + rr * risk, 2), "tp2": round(entry + 1.5 * rr * risk, 2),
+            "risk_atr": round(risk / atr_v[-1], 2), "risk_pct": round(risk / entry * 100, 2),
+            "too_wide": bool(risk > max_risk_atr * atr_v[-1]),
+        }
+    return out
+
+
 def accumulation_day_count(prices: pd.DataFrame, lookback: int = 25, vol_avg_window: int = 20) -> int:
     """Count accumulation days in the last `lookback` sessions.
 

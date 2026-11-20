@@ -229,6 +229,20 @@ that is higher than 20 sessions ago) and collects three setup types:
   trends. Weekly-list names are re-validated daily by `supertrend_still_valid()`
   (still long, same flip, ≤ `SUPERTREND_STALE_AGE_DAYS` = 10) via the `still_valid`
   hook of `finalize_quality_list()`.
+- **Early reversal** (`patterns.early_reversal_scan()`, a long-side, daily-candle port
+  of the "Reversal Wave Toolkit" Pine script). Runs on every liquid ticker *before* the
+  200-SMA quality base (reversal candidates are usually below their short-term
+  averages), behind the behavioral filter (`REV_REQUIRE_BEHAVIORAL`). It replays the
+  last 40 closed bars: a **warning** is a new 10-day low below the 20 EMA − 2 × ATR14
+  band with ≥ `REV_MIN_CLUES` (3) of 5 clues (RSI ≤ 30 in 3 bars, ≥ 40% lower wick,
+  close back inside the band, bullish RSI divergence, volume ≥ 1.5× average); a
+  **BUY** is a close above the warning high within `REV_CONFIRM_BARS` (5); a close
+  below the warning low fails it, a newer warning replaces it. SL = lowest low since
+  the warning − 0.1 ATR (minimum 0.5 ATR risk; skipped above 3 ATR); TP1 2R, TP2 3R.
+  ATR and RSI use Pine's RMA seeding. `higher_tf_trend()` evaluates the script's ALMA
+  wave trend (ALMA 21/0.85/6 with a 1.8 × ATR14 trail, `wave_trend_direction()`) on
+  the last completed weekly and monthly bars. Kept if a BUY confirmed within
+  `REV_MAX_CONFIRM_AGE` (2) sessions and not stopped, or a warning is still live.
 - **Multi-timeframe RSI**: `patterns.mtf_rsi_bounce()` requires monthly and weekly
   RSI(14) ≥ 60 and a daily RSI cross from below 50 within 3 sessions, with cross-day
   volume ≥ 1.0× average. Checked after the behavioral filter, before the 200 SMA
@@ -254,9 +268,12 @@ is the signal price, and levels use only data up to the cross bar):
 `plan_trade()` gives every displayed recommendation an order type, entry, SL, TP1 and
 TP2 (sections with their own levels keep them; watchlist and near-resistance become
 pending buy-stops, holding-above a pending buy-limit; see the Methodology table).
-`update_trade_log()` records each once in `trade_log.json` (key: strategy, ticker,
-signal date; skipped while an earlier trade for the same strategy+ticker is still
-active), keeps 45 days, and every run re-evaluates all trades with
+`update_trade_log()` first re-evaluates every existing trade against today's bar (so
+an order that filled today counts as live), then records new signals in
+`trade_log.json` (key: strategy, ticker, signal date). Per strategy + ticker: a filled
+trade (Open / TP1 hit) blocks new signals; an **unfilled pending order is cancelled
+and replaced** when today's plan differs (newer trigger, or a confirmed BUY), and kept
+if identical. Trades are kept 45 days, and every run re-evaluates all trades with
 `patterns.evaluate_trade_outcome()`: pending orders fill when price reaches the entry
 or expire after 10 sessions; after the fill, stop before TP1 = Stopped (stop checked
 first on a bar touching both), TP1 = TP1 hit (half banked, runner continues), TP2 =
@@ -283,6 +300,16 @@ financial quality (ROE ≥ 10%, positive margin and FCF, D/E ≤ 2×), fair valu
 (PEG ≤ 2, or forward P/E ≤ 30 without PEG) and not overextended (0–15% above the 200
 SMA, ≤ 8% above the 50 SMA, RSI ≤ 65, weekly RSI ≤ 70), then scores quality (≤ 50),
 valuation (≤ 30), extension (≤ 20), RS ÷ 5 and sector.
+
+**Early reversals (Pass 2h).** Candidates need fundamentals (fetched first in the
+refresh queue) that pass `financially_solid()`: ROE ≥ 10%, net margin > 0, FCF > 0 and
+D/E ≤ 2× where reported (no valuation test), plus ≥ `REV_MIN_HTF_AGREE` (1) of the
+weekly/monthly trends up. Score (`compute_early_reversal_score`, max ~120): 12 per
+clue, weekly up +12, monthly up +8, quality ÷ 2, confirmation freshness 15/10/5, stop
+≤ 1.5 ATR +5. Plans: confirmed → market at the confirmation close; warning → buy-stop
+at the warning high with `expiry_sessions` = bars left in its 5-bar window (per-plan
+expiry is honoured by the trade log, quality lists and Action Plan "valid until").
+Archived in `setups_archive.json` as `early_reversal` (bar 65); block `earlyrev`.
 
 **High-probability retest** = retest + bounce today + resistance_touches ≥ 2 +
 zero fake flags. It gets +15 score and a gold ★ row, both in its own subsection and
@@ -477,6 +504,7 @@ external assets):
 | Pullback & reversal | green | near support, reversal, MTF RSI | setups: support, reversal, mtf_rsi |
 | Recovery | orange | recovery | `recovery_archive` |
 | Positional | navy | quality at a fair price, golden crosses | setups: positional + golden-cross log & scoreboard |
+| Early reversals | brown | confirmed BUYs (≤ 2 sessions) and live ⚠ warnings, financially solid names | setups: early_reversal |
 | EMA 20/50 crossover | olive | 20/50 crosses (no gates) | 20/50 signal log & scoreboard (45 d) |
 
 **Multi-section highlighting.** `render()` maps each ticker to the set of today
@@ -514,6 +542,8 @@ pipeline. The ones you are most likely to touch:
 | `ELITE_SECTOR_RANK_MAX` | 4 | Elite sector bar |
 | `SUPERTREND_MAX_FLIP_AGE_DAYS` / `SUPERTREND_MIN_PRIOR_BARS` | 5 / 3 | How fresh a flip must be, and how long the prior short phase must have lasted |
 | `SUPERTREND_STALE_AGE_DAYS` | 10 | Weekly-list Supertrend names drop off after this |
+| `REV_MIN_CLUES` / `REV_CONFIRM_BARS` / `REV_MIN_HTF_AGREE` | 3 / 5 / 1 | Early-reversal warning strength, confirmation window, higher-timeframe agreement |
+| `REV_REQUIRE_BEHAVIORAL` | True | Skip early reversals after a −10% gap (often bad news) |
 | `RECOVERY_MAX_DISTANCE_PCT` | 10.0 | Max 20/200 EMA gap |
 | `RS_PERCENTILE_MIN` / `SECTOR_MAX_RANK` | 75 / 6 | Base gates (affect archives too) |
 | `ARCHIVE_RETENTION_DAYS` | 7 | History window |

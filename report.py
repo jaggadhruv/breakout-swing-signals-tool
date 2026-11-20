@@ -1198,7 +1198,8 @@ def _tk(c: dict, compact: bool = False) -> str:
 
 
 _SETUP_LABELS = {"support": "Near support", "resistance": "Near resistance", "retest": "Break & retest", "holding": "Holding above BO",
-                 "reversal": "Reversal", "mtf_rsi": "MTF RSI", "positional": "Positional"}
+                 "reversal": "Reversal", "mtf_rsi": "MTF RSI", "positional": "Positional",
+                 "early_reversal": "Early reversal"}
 
 
 def _render_setup_history_table(rows: list[dict], today_str: str) -> str:
@@ -1656,6 +1657,9 @@ def _render_funnel(funnel: dict) -> str:
         ("MTF RSI: raw → gated → qualified → shown", f'{funnel.get("mtf_rsi_raw", 0)} → {funnel.get("mtf_rsi_signals", 0)} → {funnel.get("mtf_rsi_qualified", 0)} → {funnel.get("mtf_rsi_shown", 0)}'),
         ("Positional: candidates → no fundamentals → pass → shown", f'{funnel.get("positional_raw", 0)} → {funnel.get("positional_no_data", 0)} → {funnel.get("positional_signals", 0)} → {funnel.get("positional_shown", 0)}'),
         ("Golden cross: raw → no fundamentals → pass → shown", f'{funnel.get("golden_raw", 0)} → {funnel.get("golden_no_data", 0)} → {funnel.get("golden_signals", 0)} → {funnel.get("golden_shown", 0)}'),
+        ("Early reversals: signals → no fundamentals / not solid / higher TFs down → pass → shown",
+         f'{funnel.get("earlyrev_raw", 0)} → {funnel.get("earlyrev_no_fund", 0)} / {funnel.get("earlyrev_not_solid", 0)} / '
+         f'{funnel.get("earlyrev_htf", 0)} → {funnel.get("earlyrev_signals", 0)} → {funnel.get("earlyrev_shown", 0)}'),
         ("EMA 20/50 crosses (no gates) → shown", f'{funnel.get("ema2050_signals", 0)} → {funnel.get("ema2050_shown", 0)}'),
         ("Reversal: gated → qualified → shown", f'{funnel.get("reversal_signals", 0)} → {funnel.get("reversal_qualified", 0)} → {funnel.get("reversal_shown", 0)}'),
     ]
@@ -1940,6 +1944,26 @@ def _render_methodology() -> str:
   </details>
 
   <details class="method-block">
+    <summary>Early reversals (ported from the Reversal Wave Toolkit script)</summary>
+    <div class="method-body">
+      <p>A long-only, daily-candle port of the script's reversal engine, restricted to financially solid companies. Logic follows the script bar by bar on closed daily candles.</p>
+      <table class="method-table">
+        <thead><tr><th>Step</th><th>Rule</th></tr></thead>
+        <tbody>
+          <tr><td>⚠ Warning</td><td>Low is a new 10-day low <em>and</em> below the band (20 EMA − 2 × ATR14), with ≥ 3 of 5 clues: RSI(14) ≤ 30 in the last 3 bars; lower wick ≥ 40% of the range; close back above the band; bullish divergence (new low, RSI above its prior 10-bar low); volume ≥ 1.5× its 20-day average</td></tr>
+          <tr><td>BUY</td><td>A daily close above the warning candle's high within 5 bars. A close below the warning low cancels it (failed); no confirmation in 5 bars = expired. A newer warning replaces a pending one</td></tr>
+          <tr><td>Stop / targets</td><td>SL = lowest low since the warning − 0.1 ATR, with at least 0.5 ATR of risk; skipped if risk &gt; 3 ATR. TP1 = 2R (the script's target), TP2 = 3R</td></tr>
+          <tr><td>Higher timeframes</td><td>The script's trend line (ALMA 21, offset 0.85, sigma 6, with a 1.8 × ATR14 trail) on the last <em>completed</em> weekly and monthly bars; at least one must point up</td></tr>
+          <tr><td>Financially solid</td><td>ROE ≥ 10%, net margin &gt; 0, free cash flow &gt; 0 and debt/equity ≤ 2× (Yahoo fundamentals, weekly cache). No valuation test: a quality name on sale is the point</td></tr>
+          <tr><td>Other gates</td><td>Liquidity filter; no −10% gap-down in 20 sessions (often bad news; switch off with <code>REV_REQUIRE_BEHAVIORAL</code>)</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Score (0 to ~120).</strong> 12 per clue, weekly trend up +12, monthly up +8, financial quality ÷ 2 (up to +20), confirmation freshness (today +15, 1 day +10, 2 days +5), stop within 1.5 ATR +5.</p>
+      <p><strong>Differences from the script.</strong> Daily bars only, so the "higher timeframes" are weekly and monthly. Warnings are planned as a buy-stop at the warning high, which fills intraday when touched, while the script waits for a daily close above it. The script's Fibonacci "trend pullback" entries are not included (the Pullback &amp; reversal block covers that ground), and there is no short side.</p>
+    </div>
+  </details>
+
+  <details class="method-block">
     <summary>Fake-breakout detection, high-probability retests, liquidity filter, multi-timeframe RSI</summary>
     <div class="method-body">
       <p><strong>Liquidity filter (all sections).</strong> Before any pipeline runs, a ticker needs a price ≥ $10, a 20-session average volume ≥ 500K shares and average dollar volume ≥ $10M. Thin names produce unreliable breakouts, wide spreads and slippage. The funnel shows how many were dropped.</p>
@@ -2064,10 +2088,18 @@ def _render_methodology() -> str:
 PANEL_COLORS = {
     "breakout": "#2A6FDB", "watch": "#138A8A", "retest": "#C8961E", "trend": "#7B4FBF",
     "pullback": "#2E7D5B", "recovery": "#D9731A", "positional": "#1F3A5F", "diag": "#6B6B75",
-    "ema2050": "#6B8E23",
+    "ema2050": "#6B8E23", "earlyrev": "#8D4E2A",
 }
 
 CATEGORY_GUIDE = {
+    "earlyrev": (
+        "Early bottoms in financially solid companies (ROE ≥ 10%, profitable, positive free cash flow, debt/equity ≤ 2×). "
+        "⚠ Warning = a new 10-day low that pierces the lower band (20 EMA − 2 ATR) with ≥ 3 of 5 clues: RSI ≤ 30, rejection "
+        "wick, close back inside the band, bullish RSI divergence, volume spike. BUY = a close above the warning candle's "
+        "high within 5 bars. Weekly or monthly trend must still point up (a dip inside a bigger uptrend, not a falling knife).",
+        "BUY rows: enter at the close shown (valid 2 sessions). ⚠ rows: a buy-stop (↑) at the warning high that expires when "
+        "its 5-bar window closes; stricter traders wait for a daily close above it. SL sits just under the lowest low since "
+        "the warning; TP1 2R / TP2 3R. A close below the warning low cancels the setup. Counter-trend: size smaller."),
     "ema2050": (
         "Every liquid stock whose 20 EMA crossed above its 50 EMA in the last 5 sessions (daily candles). No quality, "
         "trend or momentum filters, by design: a raw, simple signal. Each signal is logged for 45 days and its outcome "
@@ -2140,6 +2172,7 @@ _TODAY_FIELDS = {
     "positional": ("Positional",      "close",   "stop",             "target"),
     "golden_cross": ("Golden ×",      "entry",   "stop",             "tp1"),
     "ema2050":    ("20/50 ×",         "entry",   "stop",             "tp1"),
+    "early_reversal": ("Reversal",    "entry",   "stop",             "tp1"),
 }
 # (label, level key) per weekly-list kind
 _WEEK_FIELDS = {
@@ -2227,7 +2260,8 @@ def _scoreboard(sb: dict | None, label: str) -> str:
 _STRAT_LABELS = {"breakout": "Breakout", "watchlist": "Watchlist", "resistance": "Near resistance",
                  "retest": "Break & retest", "holding": "Holding above", "supertrend": "Supertrend",
                  "support": "Near support", "reversal": "Reversal", "mtf_rsi": "MTF RSI", "recovery": "Recovery",
-                 "positional": "Positional", "golden_cross": "Golden cross", "ema2050": "20/50 cross"}
+                 "positional": "Positional", "golden_cross": "Golden cross", "ema2050": "20/50 cross",
+                 "early_reversal": "Early reversal"}
 
 
 def _mini_log(rows: list[dict], cap: int = 8) -> str:
@@ -2271,6 +2305,58 @@ signal close; buy-stop and buy-limit orders stay Pending until price reaches the
 After the fill: a stop touch before TP1 = ✗ Stopped (stop checked first on a bar touching both); TP1 = ✓ TP1 (half banked,
 the rest runs with no stop counted); TP2 = ✓ TP2. Result = Stopped: SL vs entry; TP2: TP2 vs entry; TP1: half at TP1 and
 half at the latest close; Open: latest close vs entry.</p>
+"""
+
+
+_CLUE_SHORT = [("rsi_oversold", "RSI≤30"), ("rejection_wick", "Wick"), ("back_inside_band", "Inside band"),
+               ("rsi_divergence", "Divergence"), ("volume_spike", "Vol spike")]
+
+
+def _render_earlyrev_table(rows: list[dict]) -> str:
+    if not rows:
+        return _empty("No early-reversal warnings or fresh BUY confirmations in financially solid names today.")
+    body = []
+    for r in rows:
+        if r["status"] == "confirmed":
+            status = (f'<span class="tag pos">BUY</span> <span class="dim">confirmed {escape(r["confirm_date"][5:])}'
+                      f' ({r["confirm_age"]}d ago)</span>')
+            order, entry = "Market", r["entry"]
+        else:
+            when = "warned today" if r["bars_since"] == 0 else f'day {r["bars_since"]} of 5'
+            status = (f'<span class="tag warn">⚠ Warning</span> <span class="dim">{when}, '
+                      f'fails below {_fmt(r["fail"], ".2f")}</span>')
+            order, entry = "Buy-stop ↑", r["trigger"]
+        clues = " ".join(f'<span class="{"tag pos" if r["clues"].get(k) else "dim"}" style="font-size:10px">'
+                         f'{"✓" if r["clues"].get(k) else "·"} {lbl}</span>' for k, lbl in _CLUE_SHORT)
+        arrow = lambda d: ('<span style="color:var(--sig-pos)">▲</span>' if d == 1 else
+                           '<span style="color:var(--sig-neg)">▼</span>' if d == -1 else '<span class="dim">—</span>')
+        de = "—" if r.get("debt_to_equity") is None else f'{r["debt_to_equity"] / 100:.2f}×'
+        body.append(f"""
+<tr>
+  <td class="ticker">{_tk(r)}</td>
+  <td class="{_score_class(r["score"])} num mono">{_fmt(r["score"], ".0f")}</td>
+  <td>{status}</td>
+  <td class="mono">{escape(r["warning_date"])}</td>
+  <td class="num mono">{r["clue_count"]}/5<br>{clues}</td>
+  <td class="num">W {arrow(r.get("htf_weekly"))} · M {arrow(r.get("htf_monthly"))}</td>
+  <td class="num mono">{_pct(r.get("roe"))} · {_pct(r.get("profit_margin"))} · {de}</td>
+  <td>{order}</td>
+  <td class="num mono">{_fmt(entry, ".2f")}</td><td class="num mono">{_fmt(r["stop"], ".2f")}</td>
+  <td class="num mono">{_fmt(r["tp1"], ".2f")}</td><td class="num mono">{_fmt(r["tp2"], ".2f")}</td>
+  <td class="num mono">{r["risk_atr"]:.1f} ATR</td>
+  <td>{_render_sector_cell(r.get("sector", ""), r.get("sector_rank"))}</td>
+</tr>""")
+    return f"""
+<table class="candidates">
+  <thead><tr><th>Ticker</th><th class="num">Score</th><th>Status</th><th>Warning bar</th><th class="num">Clues</th>
+  <th class="num">Higher TFs</th><th class="num">ROE · margin · D/E</th><th>Order</th><th class="num">Entry</th>
+  <th class="num">SL</th><th class="num">TP1 (2R)</th><th class="num">TP2 (3R)</th><th class="num">Risk</th><th>Sector</th></tr></thead>
+  <tbody>{"".join(body)}</tbody>
+</table>
+<p class="dim" style="font-size:11px;margin-top:6px;">Ported from the Reversal Wave Toolkit script (long side, daily candles). Warning bar = a new
+10-day low below the 20 EMA − 2 ATR band with ≥ 3 clues. BUY = close above that bar's high within 5 bars; a close below its
+low cancels it. Higher TFs = the script's ALMA wave trend on the last completed weekly (W) and monthly (M) bar; at least one
+must be ▲. SL = lowest low since the warning − 0.1 ATR (minimum 0.5 ATR of risk); setups needing more than 3 ATR are skipped.</p>
 """
 
 
@@ -2352,6 +2438,10 @@ def _mini_today(items: list[tuple[str, dict]], cap: int = 10) -> str:
             label = f'ST flip {r["days_since_flip"]}d ago'
         elif kind == "golden_cross" and r.get("cross_age") is not None:
             label = f'Golden × {r["cross_age"]}d ago'
+        elif kind == "early_reversal":
+            age = r.get("confirm_age", 0)
+            label = ((f'Rev BUY {age}d ago' if age else "Rev BUY today") if r.get("status") == "confirmed"
+                     else f'⚠ Warn, {r.get("bars_left", 0)}d left')
         pl = r.get("plan") or {}
         tr_cls = ' class="hp"' if r.get("high_probability") else ""
         e_mark = {"buy_stop": "↑", "buy_limit": "↓"}.get(pl.get("entry_type"), "")
@@ -2442,7 +2532,7 @@ _ORDER_LABEL = {"market": "Market", "buy_stop": "Buy-stop ↑", "buy_limit": "Bu
 _STRATEGY_BLOCK = {"breakout": "breakout", "watchlist": "watch", "resistance": "watch", "retest": "retest",
                    "holding": "retest", "supertrend": "trend", "support": "pullback", "reversal": "pullback",
                    "mtf_rsi": "pullback", "recovery": "recovery", "positional": "positional",
-                   "golden_cross": "positional", "ema2050": "ema2050"}
+                   "golden_cross": "positional", "ema2050": "ema2050", "early_reversal": "earlyrev"}
 
 
 def _render_action_plan(ap: dict | None, market_data: dict | None, date_str: str) -> str:
@@ -2696,6 +2786,8 @@ def render(
     data_health: dict | None = None,
     golden_cross: list[dict] | None = None,
     ema2050: list[dict] | None = None,
+    early_reversal: list[dict] | None = None,
+    recent_earlyrev: list[dict] | None = None,
     trade_logs: dict | None = None,
     trade_scoreboards: dict | None = None,
     strategy_scoreboards: dict | None = None,
@@ -2714,10 +2806,12 @@ def render(
     rq, rq_wl, rq_st, rq_rec = L(recent_quality), L(recent_quality_watchlist), L(recent_quality_supertrend), L(recent_quality_recovery)
     rq_res, rq_ret, rq_pb, rq_pos = L(recent_resistance), L(recent_retest), L(recent_pullback), L(recent_positional)
     golden_cross, ema2050 = L(golden_cross), L(ema2050)
+    early_reversal, rq_rev = L(early_reversal), L(recent_earlyrev)
     trade_logs, trade_scoreboards, strategy_scoreboards = trade_logs or {}, trade_scoreboards or {}, strategy_scoreboards or {}
     CAT_STRATS = {"breakout": ["breakout"], "watch": ["watchlist", "resistance"], "retest": ["retest", "holding"],
                   "trend": ["supertrend"], "pullback": ["support", "reversal", "mtf_rsi"], "recovery": ["recovery"],
-                  "positional": ["positional", "golden_cross"], "ema2050": ["ema2050"]}
+                  "positional": ["positional", "golden_cross"], "ema2050": ["ema2050"],
+                  "earlyrev": ["early_reversal"]}
 
     def track(cid: str) -> str:
         """Per-strategy scoreboards + full signal log for a block's Full detail."""
@@ -2733,14 +2827,14 @@ def render(
         "Break & retest": retest, "Holding above": holding, "Supertrend": supertrend,
         "Near support": support, "Reversal": reversal, "MTF RSI": mtf_rsi,
         "Recovery": recovery, "Positional": positional,
-        "Golden cross": golden_cross, "EMA 20/50 cross": ema2050,
+        "Golden cross": golden_cross, "EMA 20/50 cross": ema2050, "Early reversal": early_reversal,
     }
     sections_by_ticker: dict[str, set] = {}
     for name, rows in section_rows.items():
         for r in rows:
             sections_by_ticker.setdefault(r["ticker"], set()).add(name)
     for rows in list(section_rows.values()) + [high_prob, fake, rq, rq_wl, rq_st, rq_rec, rq_res, rq_ret, rq_pb, rq_pos,
-                                               *trade_logs.values()]:
+                                               rq_rev, *trade_logs.values()]:
         for r in rows:
             r["confluence"] = sorted(sections_by_ticker.get(r["ticker"], ()))
     multi = sorted(((t, sorted(sec)) for t, sec in sections_by_ticker.items() if len(sec) >= 2),
@@ -2799,6 +2893,14 @@ def render(
          _sub("Today's 20/50 crosses", f"last {f.get('ema2050_max_age', 5)} sessions, freshest first")
          + _render_ema2050_table(ema2050)
          + track("ema2050"),
+         None),
+        ("earlyrev", "Early reversals: financially solid names",
+         [("early_reversal", r) for r in early_reversal],
+         [("setup", r) for r in rq_rev],
+         _sub("Today's early reversals", f"BUY confirmations (≤ 2 sessions) and live ⚠ warnings, top {f.get('max_earlyrev_cap', 8)}")
+         + _render_earlyrev_table(early_reversal)
+         + _history("This week's quality early reversals", len(rq_rev), _render_setup_history_table(rq_rev, date_str))
+         + track("earlyrev"),
          None),
     ]
     week_override = {}
