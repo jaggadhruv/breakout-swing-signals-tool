@@ -884,7 +884,7 @@ def _render_supertrend_table(candidates: list[dict]) -> str:
 <tr>
   <td class="ticker">{_tk(c)}</td>
   <td class="{_score_class(c["supertrend_score"])} num mono">{_fmt(c["supertrend_score"], ".0f")}</td>
-  <td class="num">{flip_display}</td>
+  <td class="num">{flip_display}<br><span class="dim mono" style="font-size:11px">{escape(c.get("flip_date") or "")}</span></td>
   <td class="num mono {_rs_class(rs_val)}">{rs_display}</td>
   <td class="num mono">{mom_passes}/4</td>
   <td class="num mono {acc_class}">{acc_days}</td>
@@ -945,7 +945,8 @@ def _render_recent_quality_supertrend_table(candidates: list[dict], today_str: s
         sector_cell = _render_sector_cell(c.get("sector", ""), c.get("sector_rank"))
         mom_passes = c.get("peak_momentum_passes", 0)
         acc_days = c.get("peak_accumulation_days", 0)
-        flip_age = c.get("peak_days_since_flip", 0)
+        flip_age = c.get("flip_age_now", c.get("peak_days_since_flip", 0))
+        flip_cell = f'{escape(c.get("flip_date") or "—")}<br><span class="dim">{flip_age}d ago</span>'
 
         rows.append(f"""
 <tr>
@@ -953,7 +954,7 @@ def _render_recent_quality_supertrend_table(candidates: list[dict], today_str: s
   <td class="ticker">{_tk(c)}</td>
   <td class="num mono">{seen_html}</td>
   <td class="{_score_class(c["best_score"])} num mono">{_fmt(c["best_score"], ".0f")}</td>
-  <td class="num mono">{flip_age}d</td>
+  <td class="num mono">{flip_cell}</td>
   <td class="num mono {_rs_class(rs_val)}">{rs_display}</td>
   <td class="num mono">{mom_passes}/4</td>
   <td class="num mono">{acc_days}</td>
@@ -971,7 +972,7 @@ def _render_recent_quality_supertrend_table(candidates: list[dict], today_str: s
       <th>Ticker</th>
       <th class="num">Seen</th>
       <th class="num">Best Score</th>
-      <th class="num">Flip Age*</th>
+      <th class="num">Flipped (age today)</th>
       <th class="num">RS</th>
       <th class="num">Mom</th>
       <th class="num">AccDays</th>
@@ -1625,7 +1626,8 @@ def _render_funnel(funnel: dict) -> str:
         ("Passed momentum confluence", funnel.get("momentum_pass", 0)),
         ("— Pattern triggered (→ breakouts)", funnel.get("pattern_pass", funnel.get("signals", 0))),
         ("— No pattern yet (→ watchlist pool)", funnel.get("watchlist_raw", 0)),
-        ("— Supertrend long state (→ supertrend pool)", funnel.get("supertrend_raw", 0)),
+        (f"— Fresh Supertrend flips ≤ {funnel.get('supertrend_max_flip_age_days', 5)}d (→ supertrend pool)", funnel.get("supertrend_raw", 0)),
+        ("— Supertrend whipsaw re-flips / older trends ignored", f'{funnel.get("supertrend_whipsaw", 0)} / {funnel.get("supertrend_old", 0)}'),
         ("— 20/200 EMA recovery (→ recovery pool)", funnel.get("recovery_raw", 0)),
         ("Dropped by RS gate (breakouts)", funnel.get("rs_gated", 0)),
         ("Dropped by sector gate (breakouts)", funnel.get("sector_gated", 0)),
@@ -1810,9 +1812,10 @@ def _render_methodology() -> str:
   <details class="method-block">
     <summary>How Supertrend Longs is built and scored</summary>
     <div class="method-body">
-      <p>The Supertrend-long section surfaces tickers where a <strong>fresh</strong> long flip has fired on the daily chart within the last <code>SUPERTREND_MAX_FLIP_AGE_DAYS</code> trading days (default 20). Supertrend is a trailing-stop indicator: when price is above the line, the trend is long and the line itself is your exit level. Uses the same parameters as the Positional Trading Tool: <strong>ATR period 10, multiplier 2.5</strong> (matches TradingView free tier).</p>
+      <p>The Supertrend-long section surfaces tickers where a <strong>fresh</strong> long flip has fired on the daily chart within the last <code>SUPERTREND_MAX_FLIP_AGE_DAYS</code> trading days (default 5). Supertrend is a trailing-stop indicator: when price is above the line, the trend is long and the line itself is your exit level. Uses the same parameters as the Positional Trading Tool: <strong>ATR period 10, multiplier 2.5</strong> (matches TradingView free tier).</p>
       <p><strong>Why the flip-age gate matters:</strong> without it, every sustained long trend keeps appearing day after day. The point of this section is "new signals I didn't see yesterday," not "every stock currently in a trend." Stale but still-strong trends live in the Recent Quality Supertrend history section instead.</p>
-      <p>A ticker enters the pool when (a) it passed trend + behavioral + momentum confluence gates in Pass 1, (b) Supertrend direction is currently long, and (c) flip age ≤ 20 days. Same RS + sector gates apply as for breakouts and watchlist.</p>
+      <p>A ticker enters the pool when (a) it is liquid, has no −10% gap in 20 sessions and trades above a rising 200 SMA, (b) its Supertrend flipped long within the last 5 sessions, and (c) the short phase before that flip lasted at least 3 bars. A 1–2 bar dip below the line inside an ongoing uptrend is a whipsaw, not a new trend, so it is ignored. RS ≥ 75 and the sector gate apply; the Today list additionally needs RS ≥ 80 and 3 of 4 momentum checks. Weekly-list names are re-checked every day and removed once the trend flips back short, a newer flip replaces it, or the flip is more than 10 sessions old.</p>
+      <p><strong>Accuracy.</strong> The calculation is a direct port of TradingView's <code>ta.supertrend</code> (Wilder ATR, hl2 bands, band carry-forward). Checked against an independent implementation on 6,400 checkpoints: identical direction and flip age; the line itself within 0.06% (ATR seeding).</p>
       <p><strong>Supertrend score (0 to ~122):</strong></p>
       <table class="method-table">
         <thead><tr><th>Component</th><th class="num">Points</th></tr></thead>
@@ -2089,8 +2092,9 @@ CATEGORY_GUIDE = {
         "Retests: enter now, SL just under the retest low, TP1 2R / TP2 3R; prefer ★ and 'Bounce today'. Holders: a pending "
         "buy-limit (↓) 1% above the breakout level waits for the retest, SL 3% under the level. Never buy from the Avoid list."),
     "trend": (
-        "Fresh daily Supertrend (ATR 10 × 2.5) long flips in strong names. The Supertrend line itself is the trailing stop. "
-        "Same settings as the Positional Trading Tool.",
+        "Daily Supertrend (ATR 10 × 2.5) long flips from the last 5 sessions, in liquid stocks above a rising 200 SMA. A flip "
+        "only counts if the short phase before it lasted ≥ 3 bars (1–2 day dips are ignored as whipsaws). The flip date is "
+        "shown, so you can check it on TradingView. Same settings as the Positional Trading Tool.",
         "Enter at the close, ideally within ~3 days of the flip. SL = the Supertrend line (trail it up daily and exit on a "
         "close below it); TP1 2R / TP2 3R of the initial risk. Older flips are for riding, not new entries."),
     "pullback": (
@@ -2344,6 +2348,10 @@ def _mini_today(items: list[tuple[str, dict]], cap: int = 10) -> str:
     rows = []
     for kind, r in items[:cap]:
         label = _TODAY_FIELDS[kind][0]
+        if kind == "supertrend" and r.get("days_since_flip") is not None:
+            label = f'ST flip {r["days_since_flip"]}d ago'
+        elif kind == "golden_cross" and r.get("cross_age") is not None:
+            label = f'Golden × {r["cross_age"]}d ago'
         pl = r.get("plan") or {}
         tr_cls = ' class="hp"' if r.get("high_probability") else ""
         e_mark = {"buy_stop": "↑", "buy_limit": "↓"}.get(pl.get("entry_type"), "")
@@ -2372,6 +2380,8 @@ def _mini_week(items: list[tuple[str, dict]], today_str: str, cap: int = 8) -> s
         else:
             label, lk = _WEEK_FIELDS[kind]
             level = r.get(lk)
+            if kind == "supertrend" and r.get("flip_date"):
+                label = f'ST flip {r["flip_date"][5:]}'
         pl = r.get("plan") or {}
         e_mark = {"buy_stop": "↑", "buy_limit": "↓"}.get(pl.get("entry_type"), "")
         entry = f'{e_mark}{_fmt(pl.get("entry"), ".2f")}' if pl else _fmt(level, ".2f")

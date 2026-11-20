@@ -181,8 +181,9 @@ appearances are intended confluence.
 - **Watchlist**: no pattern fired, and `compute_watchlist_setup()` finds a pending
   trigger above price (20-day high, falling back to 55-day). Tickers already above
   both are skipped.
-- **Supertrend**: `patterns.supertrend_state()` (ATR 10 × 2.5, Wilder ATR,
-  TradingView band-carry logic) reports direction = long.
+- **Supertrend**: moved to Pass 1c (see below). It previously ran here, only on
+  stocks that had passed the breakout trend + momentum filters, which favoured mature
+  trends and let month-old flips through.
 
 ### 5.3 Pass 1b: Recovery (separate population)
 
@@ -216,6 +217,18 @@ that is higher than 20 sessions ago) and collects three setup types:
 - **Reversal swing**: `patterns.reversal_swing_setup()` requires a 5–25% pullback
   from the 20-day high, RSI(14) ≤ 40 within 5 sessions, and a bullish engulfing,
   outside-reversal or hammer candle today.
+- **Supertrend fresh flip**: `patterns.supertrend_state()` (ATR 10 × 2.5; a direct
+  port of TradingView's `ta.supertrend`, verified against an independent Pine port on
+  6,400 checkpoints: identical direction and flip age, line within 0.06%) now also
+  returns `flip_date` and `prior_run_bars`. A quality-base ticker enters the
+  Supertrend pool only if long, flipped within `SUPERTREND_MAX_FLIP_AGE_DAYS` (5), and
+  the short phase before the flip lasted ≥ `SUPERTREND_MIN_PRIOR_BARS` (3); shorter
+  prior phases are whipsaws inside an existing uptrend and are ignored. Counts of
+  fresh / whipsaw / older trends are logged and shown in the funnel. Because the pool
+  is fresh-only, the archive, trade log, weekly list and Action Plan never see old
+  trends. Weekly-list names are re-validated daily by `supertrend_still_valid()`
+  (still long, same flip, ≤ `SUPERTREND_STALE_AGE_DAYS` = 10) via the `still_valid`
+  hook of `finalize_quality_list()`.
 - **Multi-timeframe RSI**: `patterns.mtf_rsi_bounce()` requires monthly and weekly
   RSI(14) ≥ 60 and a daily RSI cross from below 50 within 3 sessions, with cross-day
   volume ≥ 1.0× average. Checked after the behavioral filter, before the 200 SMA
@@ -328,7 +341,7 @@ Applied only to the four "Today's" sections. Archives are unaffected.
 |---|---|---|
 | Breakouts | score ≥ regime bar, RS ≥ 85, momentum 4/4, sector ≤ 4 | 5 |
 | Watchlist | score ≥ 60, RS ≥ 85, momentum 4/4, sector ≤ 4, accumulation days ≥ 5 | 8 |
-| Supertrend | score ≥ 60, RS ≥ 85, momentum 4/4, sector ≤ 4, **flip age ≤ 20 d** | 6 |
+| Supertrend | score ≥ 60, RS ≥ 80, momentum ≥ 3/4, sector ≤ 4, **flip ≤ 5 sessions, no whipsaw** | 6 |
 | Recovery | score ≥ 55 (gates already looser upstream) | 6 |
 | Near Support / Near Resistance | score ≥ 60 | 10 each |
 | Break & Retest / Holding Above | score ≥ 60 | 8 each |
@@ -499,7 +512,8 @@ pipeline. The ones you are most likely to touch:
 | `ELITE_RS_PERCENTILE_MIN` | 85 | Elite RS bar |
 | `ELITE_MOMENTUM_PASSES_MIN` | 4 | Elite momentum bar (3 is the main loosening lever) |
 | `ELITE_SECTOR_RANK_MAX` | 4 | Elite sector bar |
-| `SUPERTREND_MAX_FLIP_AGE_DAYS` | 20 | Freshness of displayed flips |
+| `SUPERTREND_MAX_FLIP_AGE_DAYS` / `SUPERTREND_MIN_PRIOR_BARS` | 5 / 3 | How fresh a flip must be, and how long the prior short phase must have lasted |
+| `SUPERTREND_STALE_AGE_DAYS` | 10 | Weekly-list Supertrend names drop off after this |
 | `RECOVERY_MAX_DISTANCE_PCT` | 10.0 | Max 20/200 EMA gap |
 | `RS_PERCENTILE_MIN` / `SECTOR_MAX_RANK` | 75 / 6 | Base gates (affect archives too) |
 | `ARCHIVE_RETENTION_DAYS` | 7 | History window |

@@ -96,7 +96,11 @@ SUPERTREND_MIN_SHOW_SCORE    = 60   # minimum composite to display
 SUPERTREND_QUALITY_THRESHOLD = 70   # bar for history inclusion
 SUPERTREND_RECENT_TOP_N      = 10   # top N in Recent Quality Supertrend
 MAX_SUPERTREND_SHOWN         = 6    # hard cap on today's section
-SUPERTREND_MAX_FLIP_AGE_DAYS = 20   # hide stale flips — only recent (fresh signal) ones
+SUPERTREND_MAX_FLIP_AGE_DAYS = 5    # a "flip" is only a signal for 5 sessions (was 20, which let month-old trends in)
+SUPERTREND_MIN_PRIOR_BARS    = 3    # the short phase before the flip must last >= 3 bars; 1-2 bars = whipsaw, not a new trend
+SUPERTREND_STALE_AGE_DAYS    = 10   # weekly-list names drop off once their flip is older than this
+SUPERTREND_ELITE_RS_MIN      = 80   # Today list: fresh flips rarely have top-15% RS yet, so slightly looser than other sections
+SUPERTREND_ELITE_MOMENTUM_MIN = 3   # ...and 3 of 4 momentum checks (weekly MACD usually lags a fresh flip)
 
 # ----------------------------------------------------------------------------
 # Recovery (20 EMA crossing above 200 EMA from below) — "coming out of correction"
@@ -1192,6 +1196,7 @@ def update_supertrend_archive(
             "supertrend_level": e.get("supertrend_level"),
             "stop_distance_pct": e.get("stop_distance_pct"),
             "days_since_flip": e.get("days_since_flip"),
+            "flip_date": e.get("flip_date"),
             "piotroski": e.get("piotroski"),
             "plan": e.get("plan"), "shown": bool(e.get("shown")),
         })
@@ -1228,6 +1233,7 @@ def compute_recent_quality_supertrend(archive: list[dict], n: int = SUPERTREND_R
                 "peak_supertrend_level": s.get("supertrend_level"),
                 "peak_stop_distance_pct": s.get("stop_distance_pct"),
                 "peak_days_since_flip": s.get("days_since_flip"),
+                "flip_date": s.get("flip_date"),
                 "peak_rs_percentile": s.get("rs_percentile"),
                 "peak_momentum_passes": s.get("momentum_passes", 0),
                 "peak_accumulation_days": s.get("accumulation_days", 0),
@@ -1247,6 +1253,7 @@ def compute_recent_quality_supertrend(archive: list[dict], n: int = SUPERTREND_R
                 agg["peak_supertrend_level"] = s.get("supertrend_level")
                 agg["peak_stop_distance_pct"] = s.get("stop_distance_pct")
                 agg["peak_days_since_flip"] = s.get("days_since_flip")
+                agg["flip_date"] = s.get("flip_date")
                 agg["peak_rs_percentile"] = s.get("rs_percentile")
                 agg["peak_momentum_passes"] = s.get("momentum_passes", 0)
                 agg["peak_accumulation_days"] = s.get("accumulation_days", 0)
@@ -1748,8 +1755,20 @@ def trade_scoreboard(log_rows: list[dict], strategies: list[str]) -> dict:
 
 # ---------------- Quality lists: fair ranking + live status ----------------
 
+def supertrend_still_valid(r: dict, prices: pd.DataFrame) -> bool:
+    """A weekly Supertrend name stays listed only while that same flip is still in force
+    (trend still long, no newer flip) and no older than SUPERTREND_STALE_AGE_DAYS."""
+    st = patterns.supertrend_state(prices, SUPERTREND_ATR_PERIOD, SUPERTREND_MULTIPLIER)
+    if not st or st["direction"] != 1 or st["days_since_flip"] > SUPERTREND_STALE_AGE_DAYS:
+        return False
+    if r.get("flip_date") and r["flip_date"] != st["flip_date"]:
+        return False
+    r["flip_date"], r["flip_age_now"] = st["flip_date"], st["days_since_flip"]
+    return True
+
+
 def finalize_quality_list(rows: list[dict], entries: list[dict], strategy_of, price_cache: dict,
-                          n: int) -> tuple[list[dict], dict]:
+                          n: int, still_valid=None) -> tuple[list[dict], dict]:
     """Turn a weekly quality list from a frozen snapshot into a live, actionable one.
 
     For each name: attach the trade plan from its best-scoring day, replay it against
@@ -1780,6 +1799,9 @@ def finalize_quality_list(rows: list[dict], entries: list[dict], strategy_of, pr
                                 + (ELITE_HISTORY_BONUS if r["ever_shown"] else 0), 1)
         r["trade"] = None
         prices = price_cache.get(r["ticker"])
+        if still_valid is not None and prices is not None and not still_valid(r, prices):
+            dropped += 1
+            continue
         if not plan or prices is None:
             no_plan += 1
             r["live"] = {"status": None, "label": "No plan", "cls": "st-exp", "actionable": False, "result_pct": None}
@@ -2564,25 +2586,7 @@ def main() -> None:
         if rs_val is not None:
             ticker_rs[ticker] = rs_val
 
-        # Supertrend check — orthogonal to breakout/watchlist. A ticker in a
-        # strong Supertrend-long state is a candidate regardless of whether
-        # any breakout pattern also fired. Same ticker CAN appear in multiple
-        # sections (that's useful confluence).
-        st_state = patterns.supertrend_state(
-            prices, SUPERTREND_ATR_PERIOD, SUPERTREND_MULTIPLIER
-        )
-        if st_state and st_state["direction"] == 1:
-            acc_days_st = patterns.accumulation_day_count(prices, ACCUMULATION_LOOKBACK_DAYS)
-            raw_supertrend.append({
-                "ticker": ticker,
-                "entry": entry,
-                "trend_ctx": trend_ctx,
-                "beh_ctx": beh_ctx,
-                "momentum_ctx": mom_ctx,
-                "rs_raw": rs_val,
-                "st_state": st_state,
-                "accumulation_days": acc_days_st,
-            })
+        # (Supertrend flips are detected in Pass 1c on the broader quality base.)
 
         # Pattern detection: pattern fired → breakout candidate; else → watchlist
         p_result = patterns.scan_all_patterns(prices)
@@ -2720,6 +2724,7 @@ def main() -> None:
     raw_reversal: list[dict] = []
     raw_mtf_rsi: list[dict] = []
     raw_positional: list[dict] = []
+    st_counts = {"fresh": 0, "whipsaw": 0, "old": 0}
     raw_ema2050: list[dict] = []
     raw_golden: list[dict] = []
     quality_base_pass = 0
@@ -2785,6 +2790,22 @@ def main() -> None:
         })
 
         _, mom_ctx_c = passes_momentum_confluence(prices)
+
+        # Fresh Supertrend long flip: flipped within SUPERTREND_MAX_FLIP_AGE_DAYS sessions,
+        # after a real short phase (not a 1-2 bar whipsaw inside an existing uptrend).
+        st_c = patterns.supertrend_state(prices, SUPERTREND_ATR_PERIOD, SUPERTREND_MULTIPLIER)
+        if st_c and st_c["direction"] == 1:
+            if st_c["days_since_flip"] > SUPERTREND_MAX_FLIP_AGE_DAYS:
+                st_counts["old"] += 1
+            elif st_c["prior_run_bars"] < SUPERTREND_MIN_PRIOR_BARS:
+                st_counts["whipsaw"] += 1
+            else:
+                st_counts["fresh"] += 1
+                raw_supertrend.append({
+                    "ticker": ticker, "entry": entry_info, "momentum_ctx": mom_ctx_c, "st_state": st_c,
+                    "accumulation_days": patterns.accumulation_day_count(prices, ACCUMULATION_LOOKBACK_DAYS),
+                })
+
         base = {
             "ticker": ticker,
             "entry": entry_info,
@@ -2818,7 +2839,9 @@ def main() -> None:
 
     log(f"Pass 1c complete: RS computed for {len(ticker_rs)} tickers; {quality_base_pass} in quality base "
         f"→ {len(raw_sr)} near S/R, {len(raw_retest)} recent breakouts, {len(raw_reversal)} reversal triggers, "
-        f"{len(raw_mtf_rsi)} MTF-RSI bounces; {len(illiquid)} illiquid tickers excluded.")
+        f"{len(raw_mtf_rsi)} MTF-RSI bounces; {len(illiquid)} illiquid tickers excluded. Supertrend long: "
+        f"{st_counts['fresh']} fresh flips (≤{SUPERTREND_MAX_FLIP_AGE_DAYS}d), {st_counts['whipsaw']} whipsaw re-flips ignored, "
+        f"{st_counts['old']} older trends ignored.")
 
     # ---- Fundamentals for positional candidates (cached, weekly refresh, capped) ----
     fundamentals = load_fundamentals_cache()
@@ -2984,6 +3007,8 @@ def main() -> None:
             "supertrend_level": cand["st_state"]["level"],
             "stop_distance_pct": cand["st_state"]["stop_distance_pct"],
             "days_since_flip": cand["st_state"]["days_since_flip"],
+            "flip_date": cand["st_state"]["flip_date"],
+            "prior_run_bars": cand["st_state"]["prior_run_bars"],
         })
 
     log(f"Pass 2c (supertrend) complete: {st_rs_gated} dropped by RS, "
@@ -3335,8 +3360,8 @@ def main() -> None:
         flip_age = s.get("days_since_flip", 999)
         return (
             s["supertrend_score"] >= SUPERTREND_MIN_SHOW_SCORE
-            and rs_pct >= ELITE_RS_PERCENTILE_MIN
-            and mom_passes >= ELITE_MOMENTUM_PASSES_MIN
+            and rs_pct >= SUPERTREND_ELITE_RS_MIN
+            and mom_passes >= SUPERTREND_ELITE_MOMENTUM_MIN
             and sector_rank_ok(sector_rank, ELITE_SECTOR_RANK_MAX)
             and flip_age <= SUPERTREND_MAX_FLIP_AGE_DAYS   # fresh flips only
         )
@@ -3476,6 +3501,7 @@ def main() -> None:
         "ema2050_max_age": EMA2050_MAX_CROSS_AGE, "gc_max_age": GC_MAX_CROSS_AGE,
         "crossover_log_days": CROSSOVER_LOG_RETENTION_DAYS,
         "supertrend_max_flip_age_days": SUPERTREND_MAX_FLIP_AGE_DAYS,
+        "supertrend_whipsaw": st_counts["whipsaw"], "supertrend_old": st_counts["old"],
         "min_show_score_used": adaptive_min_score,
     }
 
@@ -3539,7 +3565,8 @@ def main() -> None:
     recent_quality_watchlist, qm_wl = finalize_quality_list(
         compute_recent_quality_watchlist(wl_archive, n=P), wl_archive, lambda e: "watchlist", price_cache, WATCHLIST_RECENT_TOP_N)
     recent_quality_supertrend, qm_st = finalize_quality_list(
-        compute_recent_quality_supertrend(st_archive, n=P), st_archive, lambda e: "supertrend", price_cache, SUPERTREND_RECENT_TOP_N)
+        compute_recent_quality_supertrend(st_archive, n=P), st_archive, lambda e: "supertrend", price_cache, SUPERTREND_RECENT_TOP_N,
+        still_valid=supertrend_still_valid)
     recent_quality_recovery, qm_rec = finalize_quality_list(
         compute_recent_quality_recovery(rec_archive, n=P), rec_archive, lambda e: "recovery", price_cache, RECOVERY_RECENT_TOP_N)
     by_setup = lambda e: e["setup"]

@@ -284,10 +284,21 @@ def supertrend_state(
     else:
         stop_distance_pct = (current_close - current_level) / current_level * 100  # will be negative
 
+    # Date of the flip bar, and how long the opposite phase before it lasted. A very
+    # short prior phase (1-2 bars) is a whipsaw: the trend never really changed.
+    flip_idx = n - 1 - days_since_flip
+    prior_run = 0
+    for i in range(flip_idx - 1, -1, -1):
+        if direction[i] == current_dir:
+            break
+        prior_run += 1
+
     return {
         "direction": current_dir,
         "level": round(current_level, 2),
         "days_since_flip": int(days_since_flip),
+        "flip_date": prices.index[flip_idx].strftime("%Y-%m-%d"),
+        "prior_run_bars": int(prior_run),
         "stop_distance_pct": round(float(stop_distance_pct), 2),
         "close": round(current_close, 2),
     }
