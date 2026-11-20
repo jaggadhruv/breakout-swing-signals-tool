@@ -3,6 +3,10 @@
   "fetched": "2026-11-17",
   "next": "2026-11-24"
  },
+ "BDX": {
+  "fetched": "2026-11-20",
+  "next": null
+ },
  "CHD": {
   "fetched": "2026-11-17",
   "next": "2027-01-29"
@@ -14,6 +18,10 @@
  "CME": {
   "fetched": "2026-11-17",
   "next": null
+ },
+ "CVX": {
+  "fetched": "2026-11-20",
+  "next": "2027-01-29"
  },
  "DOCU": {
   "fetched": "2026-11-12",
@@ -32,7 +40,7 @@
   "next": null
  },
  "MCK": {
-  "fetched": "2026-11-15",
+  "fetched": "2026-11-20",
   "next": "2027-02-03"
  },
  "MPWR": {
@@ -44,7 +52,7 @@
   "next": null
  },
  "NXPI": {
-  "fetched": "2026-11-17",
+  "fetched": "2026-11-20",
   "next": null
  },
  "PCTY": {
@@ -94,5 +102,9 @@
  "WM": {
   "fetched": "2026-11-17",
   "next": "2027-01-27"
+ },
+ "WMT": {
+  "fetched": "2026-11-20",
+  "next": null
  }
 }

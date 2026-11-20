@@ -119,15 +119,15 @@
  "AJG": {
   "debt_to_equity": 56.038,
   "earnings_growth": 0.49,
-  "fetched": "2026-11-13",
-  "forward_pe": 18.723698,
+  "fetched": "2026-11-20",
+  "forward_pe": 18.771095,
   "free_cashflow": 2761325056.0,
-  "market_cap": 71098753024.0,
+  "market_cap": 71185932288.0,
   "peg": 1.01,
   "profit_margin": 0.10775,
   "revenue_growth": 0.209,
   "roe": 0.072119996,
-  "trailing_pe": 42.332825
+  "trailing_pe": 42.38473
  },
  "ALAB": {
   "debt_to_equity": 2.574,
@@ -232,6 +232,19 @@
   "revenue_growth": 0.048,
   "roe": 0.40609002,
   "trailing_pe": 14.774611
+ },
+ "AON": {
+  "debt_to_equity": 283.332,
+  "earnings_growth": 0.057,
+  "fetched": "2026-11-20",
+  "forward_pe": 16.376856,
+  "free_cashflow": 4397250048.0,
+  "market_cap": 70228271104.0,
+  "peg": 2.73,
+  "profit_margin": 0.22239,
+  "revenue_growth": 0.026,
+  "roe": 0.43375,
+  "trailing_pe": 18.118225
  },
  "AR": {
   "debt_to_equity": 55.493,
@@ -2667,15 +2680,15 @@
  "ROP": {
   "debt_to_equity": 50.696,
   "earnings_growth": 0.326,
-  "fetched": "2026-11-13",
-  "forward_pe": 19.446812,
+  "fetched": "2026-11-20",
+  "forward_pe": 18.840054,
   "free_cashflow": 2435237376.0,
-  "market_cap": 47326539776.0,
-  "peg": 1.82,
+  "market_cap": 45849907200.0,
+  "peg": 1.81,
   "profit_margin": 0.30712998,
   "revenue_growth": 0.076,
   "roe": 0.13229,
-  "trailing_pe": 18.910564
+  "trailing_pe": 18.320538
  },
  "ROST": {
   "debt_to_equity": 70.281,
@@ -2966,15 +2979,15 @@
  "SPOT": {
   "debt_to_equity": 5.171,
   "earnings_growth": -0.245,
-  "fetched": "2026-11-13",
-  "forward_pe": 34.96803,
+  "fetched": "2026-11-20",
+  "forward_pe": 34.111515,
   "free_cashflow": 1424499968.0,
-  "market_cap": 123009040384.0,
-  "peg": 1.61,
+  "market_cap": 119996030976.0,
+  "peg": 1.6,
   "profit_margin": 0.15726,
   "revenue_growth": 0.163,
   "roe": 0.35811,
-  "trailing_pe": 36.472275
+  "trailing_pe": 35.578915
  },
  "SSL": {
   "debt_to_equity": 65.33,
@@ -3291,15 +3304,15 @@
  "UPS": {
   "debt_to_equity": 203.115,
   "earnings_growth": -0.116,
-  "fetched": "2026-11-13",
-  "forward_pe": 13.63433,
+  "fetched": "2026-11-20",
+  "forward_pe": 13.477458,
   "free_cashflow": 6259624960.0,
-  "market_cap": 93985185792.0,
-  "peg": 1.63,
+  "market_cap": 92903825408.0,
+  "peg": 1.61,
   "profit_margin": 0.0484,
   "revenue_growth": 0.067,
   "roe": 0.28645,
-  "trailing_pe": 21.267822
+  "trailing_pe": 21.02312
  },
  "URBN": {
   "debt_to_equity": 42.512,
