@@ -1260,6 +1260,19 @@
   "roe": 0.14846,
   "trailing_pe": 17.159569
  },
+ "FFIV": {
+  "debt_to_equity": 6.132,
+  "earnings_growth": -0.01,
+  "fetched": "2026-11-20",
+  "forward_pe": 15.642098,
+  "free_cashflow": 605018880.0,
+  "market_cap": 17791389696.0,
+  "peg": 1.29,
+  "profit_margin": 0.21136,
+  "revenue_growth": 0.133,
+  "roe": 0.19011,
+  "trailing_pe": 24.958466
+ },
  "FIGS": {
   "debt_to_equity": 13.036,
   "earnings_growth": 2.75,
