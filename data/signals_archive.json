@@ -130,6 +130,58 @@
         "risk_pct": 7.35
       },
       "shown": false
+    },
+    {
+      "date": "2026-11-21",
+      "ticker": "COST",
+      "name": "COST",
+      "sector": "Unknown",
+      "score": 67.3,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 1102.15,
+      "stop": 1006.33,
+      "tp1": 1293.8,
+      "tp2": 1389.62,
+      "piotroski": null,
+      "days_on_report": 10,
+      "volume_multiple": 1.67,
+      "plan": {
+        "entry": 1102.15,
+        "stop": 1006.33,
+        "tp1": 1293.8,
+        "tp2": 1389.62,
+        "entry_type": "market",
+        "risk_pct": 8.69
+      },
+      "shown": false
+    },
+    {
+      "date": "2026-11-21",
+      "ticker": "ROKU",
+      "name": "ROKU",
+      "sector": "Unknown",
+      "score": 50.2,
+      "pattern_labels": [
+        "Resistance Break"
+      ],
+      "entry": 160.52,
+      "stop": 151.49,
+      "tp1": 178.57,
+      "tp2": 187.6,
+      "piotroski": null,
+      "days_on_report": 1,
+      "volume_multiple": 4.11,
+      "plan": {
+        "entry": 160.52,
+        "stop": 151.49,
+        "tp1": 178.57,
+        "tp2": 187.6,
+        "entry_type": "market",
+        "risk_pct": 5.63
+      },
+      "shown": false
     }
   ]
 }
