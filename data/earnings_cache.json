@@ -4,11 +4,11 @@
   "next": "2026-11-24"
  },
  "AJG": {
-  "fetched": "2026-11-20",
+  "fetched": "2026-11-24",
   "next": "2027-01-28"
  },
  "BDX": {
-  "fetched": "2026-11-20",
+  "fetched": "2026-11-24",
   "next": null
  },
  "CHD": {
@@ -36,11 +36,11 @@
   "next": null
  },
  "EW": {
-  "fetched": "2026-11-21",
+  "fetched": "2026-11-24",
   "next": null
  },
  "GILD": {
-  "fetched": "2026-11-14",
+  "fetched": "2026-11-24",
   "next": null
  },
  "MCK": {
@@ -48,15 +48,15 @@
   "next": "2027-02-03"
  },
  "MPWR": {
-  "fetched": "2026-11-14",
+  "fetched": "2026-11-24",
   "next": null
  },
  "MSI": {
-  "fetched": "2026-11-19",
+  "fetched": "2026-11-24",
   "next": null
  },
  "NXPI": {
-  "fetched": "2026-11-20",
+  "fetched": "2026-11-24",
   "next": null
  },
  "PCTY": {
@@ -72,7 +72,7 @@
   "next": null
  },
  "REGN": {
-  "fetched": "2026-11-18",
+  "fetched": "2026-11-24",
   "next": "2027-01-28"
  },
  "ROP": {
@@ -96,7 +96,7 @@
   "next": "2027-01-26"
  },
  "VLTO": {
-  "fetched": "2026-11-21",
+  "fetched": "2026-11-24",
   "next": null
  },
  "WCN": {
@@ -108,7 +108,7 @@
   "next": "2027-01-27"
  },
  "WMT": {
-  "fetched": "2026-11-20",
-  "next": null
+  "fetched": "2026-11-24",
+  "next": "2027-02-18"
  }
 }
