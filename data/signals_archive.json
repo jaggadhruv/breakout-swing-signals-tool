@@ -103,6 +103,33 @@
         "risk_pct": 5.63
       },
       "shown": false
+    },
+    {
+      "date": "2026-11-26",
+      "ticker": "DIS",
+      "name": "DIS",
+      "sector": "Unknown",
+      "score": 125.9,
+      "pattern_labels": [
+        "52W High",
+        "Resistance Break"
+      ],
+      "entry": 125.6,
+      "stop": 114.73,
+      "tp1": 147.33,
+      "tp2": 158.2,
+      "piotroski": null,
+      "days_on_report": 7,
+      "volume_multiple": 1.59,
+      "plan": {
+        "entry": 125.6,
+        "stop": 114.73,
+        "tp1": 147.33,
+        "tp2": 158.2,
+        "entry_type": "market",
+        "risk_pct": 8.65
+      },
+      "shown": true
     }
   ]
 }
