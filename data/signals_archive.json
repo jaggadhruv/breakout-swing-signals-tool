@@ -1,32 +1,6 @@
 {
   "signals": [
     {
-      "date": "2026-11-19",
-      "ticker": "DIS",
-      "name": "DIS",
-      "sector": "Unknown",
-      "score": 61.0,
-      "pattern_labels": [
-        "Resistance Break"
-      ],
-      "entry": 122.36,
-      "stop": 111.14,
-      "tp1": 144.79,
-      "tp2": 156.01,
-      "piotroski": null,
-      "days_on_report": 6,
-      "volume_multiple": 2.02,
-      "plan": {
-        "entry": 122.36,
-        "stop": 111.14,
-        "tp1": 144.79,
-        "tp2": 156.01,
-        "entry_type": "market",
-        "risk_pct": 9.17
-      },
-      "shown": false
-    },
-    {
       "date": "2026-11-20",
       "ticker": "DIS",
       "name": "DIS",
@@ -121,6 +95,33 @@
       "piotroski": null,
       "days_on_report": 7,
       "volume_multiple": 1.59,
+      "plan": {
+        "entry": 125.6,
+        "stop": 114.73,
+        "tp1": 147.33,
+        "tp2": 158.2,
+        "entry_type": "market",
+        "risk_pct": 8.65
+      },
+      "shown": true
+    },
+    {
+      "date": "2026-11-27",
+      "ticker": "DIS",
+      "name": "DIS",
+      "sector": "Unknown",
+      "score": 126.0,
+      "pattern_labels": [
+        "52W High",
+        "Resistance Break"
+      ],
+      "entry": 125.6,
+      "stop": 114.73,
+      "tp1": 147.33,
+      "tp2": 158.2,
+      "piotroski": null,
+      "days_on_report": 8,
+      "volume_multiple": 1.6,
       "plan": {
         "entry": 125.6,
         "stop": 114.73,

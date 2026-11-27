@@ -8,8 +8,8 @@
   "next": "2027-01-28"
  },
  "BDX": {
-  "fetched": "2026-11-24",
-  "next": null
+  "fetched": "2026-11-27",
+  "next": "2027-02-09"
  },
  "CHD": {
   "fetched": "2026-11-17",
@@ -44,8 +44,8 @@
   "next": null
  },
  "GILD": {
-  "fetched": "2026-11-24",
-  "next": null
+  "fetched": "2026-11-27",
+  "next": "2027-02-09"
  },
  "IDXX": {
   "fetched": "2026-11-26",
@@ -64,8 +64,8 @@
   "next": null
  },
  "MSI": {
-  "fetched": "2026-11-24",
-  "next": null
+  "fetched": "2026-11-27",
+  "next": "2027-02-09"
  },
  "NXPI": {
   "fetched": "2026-11-24",
@@ -84,7 +84,7 @@
   "next": null
  },
  "REGN": {
-  "fetched": "2026-11-24",
+  "fetched": "2026-11-27",
   "next": "2027-01-28"
  },
  "ROP": {
@@ -108,8 +108,8 @@
   "next": "2027-01-26"
  },
  "VLTO": {
-  "fetched": "2026-11-24",
-  "next": null
+  "fetched": "2026-11-27",
+  "next": "2027-02-02"
  },
  "WCN": {
   "fetched": "2026-11-26",

@@ -6425,6 +6425,27 @@
    "result_pct": null,
    "return_pct": null,
    "max_gain_pct": null
+  },
+  {
+   "strategy": "positional",
+   "ticker": "CME",
+   "sector": "Unknown",
+   "signal_date": "2026-11-25",
+   "logged": "2026-11-27",
+   "entry": 311.74,
+   "stop": 273.6,
+   "tp1": 388.02,
+   "tp2": 426.16,
+   "entry_type": "market",
+   "risk_pct": 12.23,
+   "days": 0,
+   "current": 311.74,
+   "fill_date": "2026-11-25",
+   "exit_date": null,
+   "status": "Open",
+   "result_pct": -0.0,
+   "return_pct": -0.0,
+   "max_gain_pct": 0.0
   }
  ]
 }
