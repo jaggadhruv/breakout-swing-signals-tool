@@ -1,32 +1,6 @@
 {
   "signals": [
     {
-      "date": "2026-11-20",
-      "ticker": "DIS",
-      "name": "DIS",
-      "sector": "Unknown",
-      "score": 56.2,
-      "pattern_labels": [
-        "Resistance Break"
-      ],
-      "entry": 120.25,
-      "stop": 111.41,
-      "tp1": 137.92,
-      "tp2": 146.76,
-      "piotroski": null,
-      "days_on_report": 8,
-      "volume_multiple": 1.62,
-      "plan": {
-        "entry": 120.25,
-        "stop": 111.41,
-        "tp1": 137.92,
-        "tp2": 146.76,
-        "entry_type": "market",
-        "risk_pct": 7.35
-      },
-      "shown": false
-    },
-    {
       "date": "2026-11-21",
       "ticker": "COST",
       "name": "COST",
